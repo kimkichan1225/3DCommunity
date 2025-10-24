@@ -7,6 +7,58 @@ import './App.css';
 import { useKeyboardControls } from './useKeyboardControls';
 import { PortalVortex, PortalVortexLevel3 } from './PortalVortex';
 
+// 네비게이션 바 컴포넌트
+function NavigationBar({ isWebMode, onToggleMode }) {
+  const [mouseY, setMouseY] = useState(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMouseY(e.clientY);
+    };
+
+    if (!isWebMode) {
+      window.addEventListener('mousemove', handleMouseMove);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [isWebMode]);
+
+  const shouldShow = isWebMode || mouseY < 80;
+
+  return (
+    <nav
+      className={`navigation-bar ${shouldShow ? 'visible' : 'hidden'}`}
+    >
+      <div className="nav-content">
+        <div className="nav-left">
+          <h1 className="nav-logo">3D Portfolio</h1>
+        </div>
+        <div className="nav-center">
+          <a href="#about" className="nav-link">About</a>
+          <a href="#projects" className="nav-link">Projects</a>
+          <a href="#contact" className="nav-link">Contact</a>
+        </div>
+        <div className="nav-right">
+          <button
+            className={`mode-toggle ${isWebMode ? 'web' : 'game'}`}
+            onClick={onToggleMode}
+            title={isWebMode ? '게임 모드로 전환' : '웹 모드로 전환'}
+          >
+            <span className="toggle-icon">
+              {isWebMode ? '🎮' : '🌐'}
+            </span>
+            <span className="toggle-text">
+              {isWebMode ? 'Game' : 'Web'}
+            </span>
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
 // 커스텀 팝업 함수
 function showCustomPopup(message) {
   // 기존 팝업이 있다면 제거
@@ -2151,10 +2203,50 @@ function Level3({ characterRef }) {
 function App() {
   const [gameState, setGameState] = useState('playing_level1'); // playing_level1, entering_portal, playing_level2
   const characterRef = useRef();
+  const [isWebMode, setIsWebMode] = useState(true); // 웹/게임 모드 상태 - 웹 모드로 시작
+
+  const toggleMode = () => {
+    setIsWebMode(!isWebMode);
+  };
 
   return (
     <div className="App">
-              <Canvas 
+      <NavigationBar isWebMode={isWebMode} onToggleMode={toggleMode} />
+
+      {isWebMode ? (
+        // 웹 모드: 포트폴리오 웹사이트
+        <div className="web-mode-content">
+          <section id="about" className="section">
+            <h2>About Me</h2>
+            <p>3D 인터랙티브 포트폴리오에 오신 것을 환영합니다!</p>
+            <p>우측 상단의 토글 버튼을 눌러 게임 모드로 전환하여 3D 세계를 탐험해보세요.</p>
+          </section>
+          <section id="projects" className="section">
+            <h2>Projects</h2>
+            <div className="projects-grid">
+              <div className="project-card">
+                <h3>프로젝트 1</h3>
+                <p>프로젝트 설명...</p>
+              </div>
+              <div className="project-card">
+                <h3>프로젝트 2</h3>
+                <p>프로젝트 설명...</p>
+              </div>
+              <div className="project-card">
+                <h3>프로젝트 3</h3>
+                <p>프로젝트 설명...</p>
+              </div>
+            </div>
+          </section>
+          <section id="contact" className="section">
+            <h2>Contact</h2>
+            <p>이메일: your-email@example.com</p>
+            <p>GitHub: github.com/yourusername</p>
+          </section>
+        </div>
+      ) : (
+        // 게임 모드: 3D 게임
+        <Canvas 
           camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
           shadows
         >
@@ -2191,7 +2283,8 @@ function App() {
           }} characterRef={characterRef} /> : 
            gameState === 'playing_level3' ? <Level3 characterRef={characterRef} /> : <Level1 characterRef={characterRef} />}
         </Suspense>
-      </Canvas>
+        </Canvas>
+      )}
     </div>
   );
 }
