@@ -1671,7 +1671,7 @@ function GameStartButton({ position = [0, 0, 0], characterRef, ...props }) {
   useEffect(() => {
     if (enter && !lastEnterState.current && showPortal) {
       // 게임 사이트를 새 탭에서 열기
-      window.open('https://kdt-game.onrender.com/', '_blank');
+      window.open('https://kdtwebgame.onrender.com/', '_blank');
     }
     lastEnterState.current = enter;
   }, [enter, isPlayerNear, showPortal]);

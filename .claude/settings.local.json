@@ -12,7 +12,8 @@
       "Bash(taskkill:*)",
       "Bash(npm start)",
       "Bash(powershell -Command \"Stop-Process -Id 10792 -Force\")",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(git config:*)"
     ],
     "deny": [],
     "ask": []
