@@ -11,9 +11,9 @@
   top: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   z-index: 1000;
   transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
   padding: 0 2rem;
@@ -47,7 +47,7 @@
 }
 
 .nav-logo {
-  color: white;
+  color: #2c3e50;
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0;
@@ -60,7 +60,7 @@
 }
 
 .nav-link {
-  color: white;
+  color: #2c3e50;
   text-decoration: none;
   font-size: 1rem;
   font-weight: 500;
@@ -70,7 +70,7 @@
 }
 
 .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 0, 0, 0.05);
   transform: translateY(-2px);
 }
 
@@ -79,35 +79,37 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  color: #2c3e50;
   padding: 0.6rem 1.2rem;
   border-radius: 50px;
   cursor: pointer;
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .mode-toggle:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #e9ecef;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .mode-toggle:active {
   transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .mode-toggle.web {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
+  border-color: #dee2e6;
 }
 
 .mode-toggle.game {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: #f8f9fa;
+  border-color: #adb5bd;
 }
 
 .toggle-icon {
@@ -125,7 +127,7 @@
   width: 100%;
   height: 100vh;
   overflow-y: auto;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f8f9fa;
   padding-top: 70px;
 }
 
@@ -136,14 +138,14 @@
   justify-content: center;
   align-items: center;
   padding: 4rem 2rem;
-  color: white;
+  color: #2c3e50;
 }
 
 .section h2 {
   font-size: 3rem;
   margin-bottom: 2rem;
   text-align: center;
-  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  text-shadow: none;
 }
 
 .section p {
@@ -152,7 +154,8 @@
   text-align: center;
   line-height: 1.8;
   margin-bottom: 1rem;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  text-shadow: none;
+  color: #495057;
 }
 
 .projects-grid {
@@ -165,30 +168,30 @@
 }
 
 .project-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: #ffffff;
+  backdrop-filter: none;
   border-radius: 15px;
   padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s, box-shadow 0.3s;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #e9ecef;
 }
 
 .project-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .project-card h3 {
   font-size: 1.8rem;
   margin-bottom: 1rem;
-  color: white;
+  color: #2c3e50;
 }
 
 .project-card p {
   font-size: 1rem;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.9);
+  color: #495057;
   text-align: left;
 }
 
