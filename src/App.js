@@ -1,6 +1,6 @@
 import React, { Suspense, useRef, useEffect, useState, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations, shaderMaterial, useFBX, Text } from '@react-three/drei';
+import { useGLTF, useAnimations, shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
 import * as THREE from 'three';
 import './App.css';
@@ -8,78 +8,6 @@ import { useKeyboardControls } from './useKeyboardControls';
 import { PortalVortex } from './PortalVortex';
 import AuthOverlay from './components/auth/AuthOverlay';
 import useAuthStore from './store/useAuthStore';
-
-// 커스텀 팝업 함수
-function showCustomPopup(message) {
-  // 기존 팝업이 있다면 제거
-  const existingPopup = document.getElementById('custom-popup');
-  if (existingPopup) {
-    existingPopup.remove();
-  }
-
-  // 팝업 컨테이너 생성
-  const popup = document.createElement('div');
-  popup.id = 'custom-popup';
-  popup.style.cssText = `
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 20px 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    font-family: 'Arial', sans-serif;
-    font-size: 16px;
-    font-weight: bold;
-    text-align: center;
-    z-index: 10000;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    animation: popupSlideIn 0.3s ease-out;
-    min-width: 300px;
-  `;
-
-  // 애니메이션 CSS 추가
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes popupSlideIn {
-      from {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.8);
-      }
-      to {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-      }
-    }
-    @keyframes popupSlideOut {
-      from {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-      }
-      to {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.8);
-      }
-    }
-  `;
-  document.head.appendChild(style);
-
-  popup.textContent = message;
-  document.body.appendChild(popup);
-
-  // 2초 후 자동으로 사라지게 하기
-  setTimeout(() => {
-    popup.style.animation = 'popupSlideOut 0.3s ease-in';
-    setTimeout(() => {
-      if (popup.parentNode) {
-        popup.parentNode.removeChild(popup);
-      }
-    }, 300);
-  }, 2000);
-}
 
 // 그라데이션 바닥을 위한 셰이더 머티리얼 (그림자 지원)
 const GradientFloorMaterial = shaderMaterial(
@@ -174,14 +102,9 @@ function CameraLogger() {
 
 const portalPosition = new THREE.Vector3(-20, 7.5, -20);
 const portalRadius = 2;
-const portalLevel3Position = new THREE.Vector3(20, 7.5, -20);
-const portalLevel3Radius = 2;
 const portalLevel2ToLevel1Position = new THREE.Vector3(0, 7.5, 23.5);
 const portalLevel2ToLevel1Radius = 2;
-const portalLevel3ToLevel1Position = new THREE.Vector3(0, 7.5, 23.5);
-const portalLevel3ToLevel1Radius = 2;
 const level2PortalFrontPosition = new THREE.Vector3(-20, 0, -15); // Level2 포탈 앞 위치
-const level3PortalFrontPosition = new THREE.Vector3(20, 0, -15); // Level3 포탈 앞 위치
 
 function CameraController({ gameState, characterRef }) {
   const { camera } = useThree();
@@ -196,7 +119,7 @@ function CameraController({ gameState, characterRef }) {
   useFrame((state, delta) => {
     if (!characterRef.current || !characterRef.current.position) return;
 
-    if (gameState === 'entering_portal' || gameState === 'entering_portal_level3') {
+    if (gameState === 'entering_portal') {
       const characterPosition = characterRef.current.position;
       const targetPosition = characterPosition.clone().add(new THREE.Vector3(0, 3, 5));
       camera.position.lerp(targetPosition, delta * 2.0);
@@ -204,7 +127,7 @@ function CameraController({ gameState, characterRef }) {
       return;
     }
 
-    if (gameState === 'playing_level1' || gameState === 'playing_level2' || gameState === 'playing_level3') {
+    if (gameState === 'playing_level1' || gameState === 'playing_level2') {
       let targetPosition;
       let currentTargetType = 'character';
       
@@ -387,14 +310,7 @@ function Model({ characterRef, gameState, setGameState }) {
       characterRef.current.position.set(0, 0, 10);
       characterRef.current.scale.set(2, 2, 2);
     }
-    
-    if (gameState === 'playing_level3') {
-      characterRef.current.position.set(0, 0, 15);
-      characterRef.current.scale.set(2, 2, 2);
-    }
 
-
-    
     // Enable shadows on all meshes in the character model
     if (characterRef.current) {
       characterRef.current.traverse((child) => {
@@ -412,7 +328,7 @@ function Model({ characterRef, gameState, setGameState }) {
 
   useEffect(() => {
     let animToPlay = 'Idle';
-    if (gameState === 'playing_level1' || gameState === 'playing_level2' || gameState === 'playing_level3') {
+    if (gameState === 'playing_level1' || gameState === 'playing_level2') {
       if (!isInCar && (forward || backward || left || right)) {
         animToPlay = shift ? 'Run' : 'Walk';
       }
@@ -586,19 +502,6 @@ function Model({ characterRef, gameState, setGameState }) {
       }
       return;
     }
-    
-    if (gameState === 'entering_portal_level3') {
-      const portalCenter = portalLevel3Position.clone();
-      currentCharacter.position.lerp(portalCenter, delta * 2.0);
-      currentCharacter.scale.lerp(new THREE.Vector3(0.01, 0.01, 0.01), delta * 2);
-
-      if (currentCharacter.scale.x < 0.05) { 
-        if (gameState !== 'switched_level3') {
-          setGameState('playing_level3');
-        }
-      }
-      return;
-    }
 
     if (gameState === 'entering_portal_back_to_level1') {
       // Level1로 바로 이동하고 Level2 포탈 앞에 위치
@@ -608,15 +511,7 @@ function Model({ characterRef, gameState, setGameState }) {
       return;
     }
 
-    if (gameState === 'entering_portal_level3_to_level1') {
-      // Level1로 바로 이동하고 Level3 포탈 앞에 위치
-      currentCharacter.position.copy(level3PortalFrontPosition);
-      currentCharacter.scale.set(2, 2, 2);
-      setGameState('playing_level1');
-      return;
-    }
-    
-    const isPlaying = gameState === 'playing_level1' || gameState === 'playing_level2' || gameState === 'playing_level3';
+    const isPlaying = gameState === 'playing_level1' || gameState === 'playing_level2';
     if (!isPlaying) return;
 
     const speed = shift ? 0.3 : 0.1;
@@ -647,7 +542,7 @@ function Model({ characterRef, gameState, setGameState }) {
 
     if (gameState === 'playing_level1') {
       const characterPos = currentCharacter.position.clone();
-      
+
       // Check Level2 portal
       const portalPos = portalPosition.clone();
       characterPos.y = 0;
@@ -656,16 +551,6 @@ function Model({ characterRef, gameState, setGameState }) {
       if (distanceToPortal < portalRadius) {
         setGameState('entering_portal');
         return;
-      }
-      
-      // Check Level3 portal
-      const portalLevel3Pos = portalLevel3Position.clone();
-      const characterPosLevel3 = currentCharacter.position.clone();
-      characterPosLevel3.y = 0;
-      portalLevel3Pos.y = 0;
-      const distanceToPortalLevel3 = characterPosLevel3.distanceTo(portalLevel3Pos);
-      if (distanceToPortalLevel3 < portalLevel3Radius) {
-        setGameState('entering_portal_level3');
       }
     }
 
@@ -798,21 +683,6 @@ function Model({ characterRef, gameState, setGameState }) {
         }
       }
     }
-
-    // Level3에서 Level1로 가는 포탈 체크
-    if (gameState === 'playing_level3' && currentCharacter) {
-      const characterPos = currentCharacter.position.clone();
-      const portalLevel3ToLevel1Pos = portalLevel3ToLevel1Position.clone();
-      characterPos.y = 0;
-      portalLevel3ToLevel1Pos.y = 0;
-      const distanceToPortalLevel3ToLevel1 = characterPos.distanceTo(portalLevel3ToLevel1Pos);
-      
-      if (distanceToPortalLevel3ToLevel1 < portalLevel3ToLevel1Radius) {
-        setGameState('entering_portal_level3_to_level1');
-      }
-    }
-
-
   });
 
   return (
@@ -825,183 +695,6 @@ function Model({ characterRef, gameState, setGameState }) {
       receiveShadow 
         visible={!isInCar} // 자동차 탑승 시 투명하게
       />
-    </>
-  );
-}
-
-useGLTF.preload('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/Casual_Male.gltf');
-
-function SpeechBubble({ position, text, ...props }) {
-  const meshRef = useRef();
-  const { camera } = useThree();
-  const [isVisible, setIsVisible] = useState(false);
-
-  // 텍스트 로딩을 위한 딜레이 - 프리로드된 텍스트가 있으므로 더 빠르게
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 50);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useFrame(() => {
-    if (meshRef.current) {
-      meshRef.current.lookAt(camera.position);
-    }
-  });
-
-  return (
-    <group ref={meshRef} position={position} {...props}>
-      {/* 말풍선 테두리 */}
-      <mesh position={[0, 0, -0.01]}>
-        <planeGeometry args={[4.2, 1.7]} />
-        <meshBasicMaterial color="black" transparent opacity={0.8} />
-      </mesh>
-      {/* 말풍선 배경 */}
-      <mesh position={[0, 0, 0]}>
-        <planeGeometry args={[4, 1.5]} />
-        <meshBasicMaterial color="white" transparent opacity={0.95} />
-      </mesh>
-      {/* 텍스트 - 짧은 딜레이 후 표시 */}
-      {isVisible && (
-        <Suspense fallback={null}>
-          <Text
-            position={[0, 0, 0.02]}
-            fontSize={0.4}
-            color="black"
-            anchorX="center"
-            anchorY="middle"
-            maxWidth={3.5}
-            textAlign="center"
-          >
-            {text}
-          </Text>
-        </Suspense>
-      )}
-    </group>
-  );
-}
-
-function NPCCharacter({ position, playerRef, ...props }) {
-  const npcRef = useRef();
-  const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/Casual_Male.gltf');
-  const { actions } = useAnimations(animations, npcRef);
-
-  const [isPlayerNear, setIsPlayerNear] = useState(false);
-  // const { camera } = useThree(); // 미사용
-  const initialRotationY = useRef(0); // 초기 Y 회전각 저장
-
-  // NPC 모델을 복사해서 독립적으로 작동하도록 함
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
-    cloned.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    return cloned;
-  }, [scene]);
-
-  // 현재 애니메이션 상태 추적
-  const [currentAnim, setCurrentAnim] = useState(null);
-
-  // 통합된 useFrame - 위치, 애니메이션, 거리 체크
-  useFrame(() => {
-    if (!npcRef.current) return;
-
-    // 1. NPC 위치 강제 설정
-    const currentPos = npcRef.current.position;
-    const targetPos = new THREE.Vector3(...position);
-    
-    if (currentPos.distanceTo(targetPos) > 0.1) {
-      npcRef.current.position.copy(targetPos);
-    }
-
-    // 1.1. 초기 회전각 설정 및 저장 (첫 번째 프레임에서만)
-    if (initialRotationY.current === 0) {
-      const initialAngle = Math.PI / 4; // 45도 (π/4 라디안)
-      npcRef.current.rotation.y = initialAngle;
-      initialRotationY.current = initialAngle;
-    }
-
-    // 1.5. NPC 회전 로직
-    if (playerRef.current) {
-      const currentAngle = npcRef.current.rotation.y;
-      let targetAngle;
-
-      if (isPlayerNear) {
-        // 플레이어가 가까이 있을 때: 플레이어를 바라봄
-        const npcPos = npcRef.current.position;
-        const playerPos = playerRef.current.position;
-        
-        // Y축만 회전하도록 설정 (좌우 회전만)
-        const direction = new THREE.Vector3();
-        direction.subVectors(playerPos, npcPos);
-        direction.y = 0; // Y축 성분 제거 (위아래 회전 방지)
-        direction.normalize();
-        
-        targetAngle = Math.atan2(direction.x, direction.z);
-      } else {
-        // 플레이어가 멀리 있을 때: 원래 각도로 돌아감
-        targetAngle = initialRotationY.current;
-      }
-      
-      // 각도 차이 계산 (최단 경로로 회전)
-      let angleDiff = targetAngle - currentAngle;
-      if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-      if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-      
-      // 부드러운 회전 (lerp)
-      npcRef.current.rotation.y += angleDiff * 0.1;
-    }
-
-    // 2. 플레이어와의 거리 체크
-    if (playerRef.current) {
-      const npcPos = npcRef.current.position;
-      const playerPos = playerRef.current.position;
-      const distance = npcPos.distanceTo(playerPos);
-      
-      const nearDistance = 8;
-      const wasNear = isPlayerNear;
-      const nowNear = distance < nearDistance;
-      
-      if (wasNear !== nowNear) {
-        setIsPlayerNear(nowNear);
-      }
-    }
-
-    // 3. 애니메이션 관리
-    if (actions && Object.keys(actions).length > 0) {
-      const targetAnim = isPlayerNear ? 'Victory' : 'Idle';
-      
-      if (currentAnim !== targetAnim && actions[targetAnim]) {
-        // 이전 애니메이션 정지
-        if (currentAnim && actions[currentAnim]) {
-          actions[currentAnim].stop();
-        }
-        
-        // 새 애니메이션 시작
-        actions[targetAnim].reset().setLoop(THREE.LoopRepeat).play();
-        setCurrentAnim(targetAnim);
-      }
-    }
-  });
-
-  return (
-    <>
-      <primitive 
-        ref={npcRef} 
-        object={scene} 
-        scale={2} 
-        castShadow 
-        receiveShadow 
-        {...props}
-      />
-      {/* 말풍선 */}
-      {isPlayerNear && (
-        <SpeechBubble position={[position[0], position[1] + 8.5, position[2]]} text="첫번쨰 프로젝트에 오신걸 환영합니다! 🎉" />
-      )}
     </>
   );
 }
@@ -1025,65 +718,6 @@ function PortalBase(props) {
 }
 
 useGLTF.preload('/portalbase.glb');
-
-function PathStone(props) {
-  const { scene } = useGLTF('/resources/Nature-Kit/Models/GLTF-format/path_stone.glb');
-  
-  // 패스스톤의 모든 메시에 그림자 속성 추가
-  useEffect(() => {
-    scene.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-  }, [scene]);
-  
-  return <primitive object={scene} {...props} />;
-}
-
-useGLTF.preload('/resources/Nature-Kit/Models/GLTF-format/path_stone.glb');
-
-function SmallStoneFlatA(props) {
-  const { scene } = useGLTF('/resources/Nature-Kit/Models/GLTF-format/stone_smallFlatA.glb');
-  
-  // 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
-    cloned.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    return cloned;
-  }, [scene]);
-  
-  return <primitive object={clonedScene} {...props} />;
-}
-
-useGLTF.preload('/resources/Nature-Kit/Models/GLTF-format/stone_smallFlatA.glb');
-
-function PalmTree(props) {
-  const fbx = useFBX('/resources/Ultimate Nature Pack - Jun 2019/FBX/PalmTree_4.fbx');
-  
-  // 팜트리 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
-  const clonedTree = useMemo(() => {
-    const cloned = fbx.clone();
-    cloned.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    return cloned;
-  }, [fbx]);
-  
-  return <primitive object={clonedTree} {...props} />;
-}
-
-// FBX 파일은 preload 방식이 다름
-// useFBX.preload('/resources/Ultimate Nature Pack - Jun 2019/FBX/PalmTree_1.fbx');
 
 // RaceFuture 컴포넌트 추가
 function RaceFuture({ onCarRef, characterRef, ...props }) {
@@ -1185,679 +819,6 @@ function RaceFuture({ onCarRef, characterRef, ...props }) {
 }
 useGLTF.preload('/resources/kenney_car-kit/Models/GLB-format/race-future.glb');
 
-// 둥근 모서리를 가진 정육면체 컴포넌트
-function RoundedCube({ position, scale, ...props }) {
-  const geometry = useMemo(() => {
-    // RoundedBoxGeometry를 사용하여 둥근 모서리 정육면체 생성
-    return new THREE.BoxGeometry(1, 1, 1, 2, 2, 2, 0.1); // 마지막 매개변수가 둥근 정도
-  }, []);
-
-  return (
-    <mesh geometry={geometry} position={position} scale={scale} {...props}>
-      <meshStandardMaterial 
-        color="white" 
-        roughness={0.3}
-        metalness={0.1}
-      />
-    </mesh>
-  );
-}
-
-// GitHub Cat 컴포넌트 추가
-function GitHubCat(props) {
-  const { scene } = useGLTF('/githubcat.glb');
-  
-  // GitHub Cat 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
-    cloned.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        // 동상처럼 어두운 회색 재질 적용
-        child.material = new THREE.MeshStandardMaterial({
-          color: '#404040', // 더 어두운 회색
-          roughness: 0.8,
-          metalness: 0.2
-        });
-      }
-    });
-    return cloned;
-  }, [scene]);
-  
-  return <primitive object={clonedScene} {...props} />;
-}
-
-// Mailbox 컴포넌트 추가
-function Mailbox(props) {
-  const { scene } = useGLTF('/mailbox.glb');
-  
-  // Mailbox 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
-    cloned.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        // 동상처럼 어두운 회색 재질 적용
-        child.material = new THREE.MeshStandardMaterial({
-          color: '#404040', // 더 어두운 회색
-          roughness: 0.8,
-          metalness: 0.2
-        });
-      }
-    });
-    return cloned;
-  }, [scene]);
-  
-  return <primitive object={clonedScene} {...props} />;
-}
-
-// GitHub Cat과 RoundedCube를 묶는 그룹 컴포넌트
-function GitHubCatGroup({ position = [0, 0, 0], characterRef, level = 1, ...props }) {
-  const [isPlayerNear, setIsPlayerNear] = useState(false);
-  const [showPortal, setShowPortal] = useState(false);
-  const [portalScale, setPortalScale] = useState(0);
-  const { enter } = useKeyboardControls();
-  const lastEnterState = useRef(false);
-  const portalMaterialRef = useRef();
-  
-  // Enter키 처리 - level에 따라 다른 링크 사용
-  useEffect(() => {
-    if (enter && !lastEnterState.current && showPortal) {
-      // level에 따라 다른 GitHub URL을 새 탭에서 열기
-      const githubUrl = level === 3 
-        ? 'https://github.com/kimkichan-1/kdt-game'  // level3: KDT-Game 프로젝트
-        : 'https://github.com/kimkichan-1';          // level1: 프로필 페이지
-      window.open(githubUrl, '_blank');
-    }
-    lastEnterState.current = enter;
-  }, [enter, isPlayerNear, showPortal, level]);
-  
-  // 플레이어와의 거리 체크 (흰색 사각형 기준) 및 포탈 애니메이션
-  useFrame((state, delta) => {
-    // 포탈 애니메이션 업데이트
-    if (portalMaterialRef.current) {
-      portalMaterialRef.current.uTime = state.clock.getElapsedTime();
-    }
-    
-    if (characterRef?.current) {
-      // 흰색 사각형의 위치 계산 (정육면체 앞 5 유닛)
-      const groupPosition = new THREE.Vector3(...position);
-      const squarePosition = groupPosition.clone().add(new THREE.Vector3(0, 0, 5));
-      
-      const playerPosition = characterRef.current.position;
-      const distance = squarePosition.distanceTo(playerPosition);
-      
-      const maxDistance = 5; // 포탈이 보이기 시작하는 최대 거리
-      const minDistance = 3; // 포탈이 최대 크기가 되는 최소 거리
-      const nearDistance = 3; // Enter키가 작동하는 거리
-      
-      // 거리에 따른 포탈 크기 계산 (0에서 1 사이)
-      const normalizedDistance = Math.max(0, Math.min(1, (distance - minDistance) / (maxDistance - minDistance)));
-      const scale = 1 - normalizedDistance; // 가까울수록 1, 멀수록 0
-      
-      // 포탈 표시 여부 결정
-      const shouldShowPortal = distance < maxDistance;
-      const wasNear = isPlayerNear;
-      const nowNear = distance < nearDistance;
-      
-      if (shouldShowPortal !== showPortal) {
-        setShowPortal(shouldShowPortal);
-      }
-      
-      if (wasNear !== nowNear) {
-        setIsPlayerNear(nowNear);
-      }
-      
-      // 포탈 크기 업데이트 (부드러운 전환)
-      setPortalScale(scale);
-    }
-  });
-  
-  return (
-    <group position={position} {...props}>
-      {/* 둥근 정육면체 (GitHub Cat의 받침대) */}
-      <RoundedCube 
-        position={[0, 2, 0]} 
-        scale={[4, 4, 4]}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* 정육면체 앞 바닥에 흰색 테두리 사각형 */}
-      <mesh position={[0, 0.01, 5]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} receiveShadow>
-        <ringGeometry args={[3, 3.5, 4]} />
-        <meshStandardMaterial color="white" side={THREE.DoubleSide} />
-      </mesh>
-      
-             {/* 포탈 효과 - 플레이어가 가까이 있을 때만 표시 */}
-       {showPortal && (
-         <group position={[0, 0.02, 5]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
-           {/* PortalVortex와 같은 스타일의 포탈 - 거리에 따라 크기 변화 */}
-           <mesh scale={[4.9 * portalScale, 4.9 * portalScale, 1]}>
-             <planeGeometry args={[1, 1]} />
-             <vortexMaterial 
-               ref={portalMaterialRef}
-               transparent={true}
-               opacity={portalScale} // 거리에 따라 투명도도 변화
-               uColorStart={new THREE.Color('#FFFFFF')}  // 흰색
-               uColorEnd={new THREE.Color('#E0E0E0')}    // 밝은 회색
-             />
-           </mesh>
-         </group>
-       )}
-      
-      {/* 정육면체 앞면에 "Github" 텍스트 */}
-      <Text
-        position={[0, 2, 2.1]} // 정육면체 가운데에 위치
-        fontSize={1.2}
-        color="black"
-        anchorX="center"
-        anchorY="middle"
-        rotation={[0, 0, 0]}
-      >
-        Github
-      </Text>
-      
-      {/* GitHub Cat 모델 */}
-      <GitHubCat 
-        position={[0, 6.2, 0]} 
-        scale={[2.3, 2.3, 2.3]} 
-        rotation={[0, 0, 0]}
-        castShadow
-        receiveShadow
-      />
-    </group>
-  );
-}
-
-// Instagram Logo 컴포넌트 추가
-function InstagramLogo(props) {
-  const { scene } = useGLTF('/instagramlogo.glb');
-  
-  // Instagram Logo 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
-    cloned.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        // 원래 색상 유지 (재질 변경하지 않음)
-      }
-    });
-    return cloned;
-  }, [scene]);
-  
-  return <primitive object={clonedScene} {...props} />;
-}
-
-// Mailbox와 RoundedCube를 묶는 그룹 컴포넌트
-function MailboxGroup({ position = [0, 0, 0], characterRef, ...props }) {
-  const [isPlayerNear, setIsPlayerNear] = useState(false);
-  const [showPortal, setShowPortal] = useState(false);
-  const [portalScale, setPortalScale] = useState(0);
-  const { enter } = useKeyboardControls();
-  const lastEnterState = useRef(false);
-  const portalMaterialRef = useRef();
-  
-  // Enter키 처리 - 이메일 주소 복사
-  useEffect(() => {
-    if (enter && !lastEnterState.current && showPortal) {
-      // 이메일 주소를 클립보드에 복사
-      navigator.clipboard.writeText('vxbc52@gmail.com').then(() => {
-        // 복사 완료 팝업 표시
-        showCustomPopup('vxbc52@gmail.com이 복사되었습니다.');
-      }).catch(() => {
-        // 클립보드 복사 실패 시 대체 방법
-        const textArea = document.createElement('textarea');
-        textArea.value = 'vxbc52@gmail.com';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showCustomPopup('vxbc52@gmail.com이 복사되었습니다.');
-      });
-    }
-    lastEnterState.current = enter;
-  }, [enter, isPlayerNear, showPortal]);
-  
-  // 플레이어와의 거리 체크 (흰색 사각형 기준) 및 포탈 애니메이션
-  useFrame((state, delta) => {
-    // 포탈 애니메이션 업데이트
-    if (portalMaterialRef.current) {
-      portalMaterialRef.current.uTime = state.clock.getElapsedTime();
-    }
-    
-    if (characterRef?.current) {
-      // 흰색 사각형의 위치 계산 (정육면체 앞 5 유닛)
-      const groupPosition = new THREE.Vector3(...position);
-      const squarePosition = groupPosition.clone().add(new THREE.Vector3(0, 0, 5));
-      
-      const playerPosition = characterRef.current.position;
-      const distance = squarePosition.distanceTo(playerPosition);
-      
-      const maxDistance = 5; // 포탈이 보이기 시작하는 최대 거리
-      const minDistance = 3; // 포탈이 최대 크기가 되는 최소 거리
-      const nearDistance = 3; // Enter키가 작동하는 거리
-      
-      // 거리에 따른 포탈 크기 계산 (0에서 1 사이)
-      const normalizedDistance = Math.max(0, Math.min(1, (distance - minDistance) / (maxDistance - minDistance)));
-      const scale = 1 - normalizedDistance; // 가까울수록 1, 멀수록 0
-      
-      // 포탈 표시 여부 결정
-      const shouldShowPortal = distance < maxDistance;
-      const wasNear = isPlayerNear;
-      const nowNear = distance < nearDistance;
-      
-      if (shouldShowPortal !== showPortal) {
-        setShowPortal(shouldShowPortal);
-      }
-      
-      if (wasNear !== nowNear) {
-        setIsPlayerNear(nowNear);
-      }
-      
-      // 포탈 크기 업데이트 (부드러운 전환)
-      setPortalScale(scale);
-    }
-  });
-  
-  return (
-    <group position={position} {...props}>
-      {/* 둥근 정육면체 (Mailbox의 받침대) */}
-      <RoundedCube 
-        position={[0, 2, 0]} 
-        scale={[4, 4, 4]}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* 정육면체 앞 바닥에 흰색 테두리 사각형 */}
-      <mesh position={[0, 0.01, 5]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} receiveShadow>
-        <ringGeometry args={[3, 3.5, 4]} />
-        <meshStandardMaterial color="white" side={THREE.DoubleSide} />
-      </mesh>
-      
-      {/* 포탈 효과 - 플레이어가 가까이 있을 때만 표시 */}
-      {showPortal && (
-        <group position={[0, 0.02, 5]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
-          {/* PortalVortex와 같은 스타일의 포탈 - 거리에 따라 크기 변화 */}
-          <mesh scale={[4.9 * portalScale, 4.9 * portalScale, 1]}>
-            <planeGeometry args={[1, 1]} />
-            <vortexMaterial 
-              ref={portalMaterialRef}
-              transparent={true}
-              opacity={portalScale} // 거리에 따라 투명도도 변화
-              uColorStart={new THREE.Color('#FFFFFF')}  // 흰색
-              uColorEnd={new THREE.Color('#E0E0E0')}    // 밝은 회색
-            />
-          </mesh>
-        </group>
-      )}
-      
-      {/* 정육면체 앞면에 "Mail" 텍스트 */}
-      <Text
-        position={[0, 2, 2.1]} // 정육면체 가운데에 위치
-        fontSize={1.2}
-        color="black"
-        anchorX="center"
-        anchorY="middle"
-        rotation={[0, 0, 0]}
-      >
-        Mail
-      </Text>
-      
-      {/* Mailbox 모델 */}
-      <Mailbox 
-        position={[0, 6, 0]} 
-        scale={[2.3, 2.3, 2.3]} 
-        rotation={[0, 0, 0]}
-        castShadow
-        receiveShadow
-      />
-    </group>
-  );
-}
-
-// 공사장 바리게이트 펜스 컴포넌트
-function ConstructionBarrier({ position = [0, 0, 0], ...props }) {
-  return (
-    <group position={position} scale={1.6} {...props}>
-      {/* 바리게이트 지지대들 */}
-      {[-6, -3, 0, 3, 6].map((x, index) => (
-        <mesh key={`support-${index}`} position={[x, 1.5, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.12, 0.12, 3]} />
-          <meshStandardMaterial color="#FFD700" />
-        </mesh>
-      ))}
-      
-      {/* 상단 가로 막대 */}
-      <mesh position={[0, 3.2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[12.5, 0.15, 0.15]} />
-        <meshStandardMaterial color="#FFD700" />
-      </mesh>
-      
-      {/* 중간 가로 막대 */}
-      <mesh position={[0, 2.2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[12.5, 0.15, 0.15]} />
-        <meshStandardMaterial color="#FFD700" />
-      </mesh>
-      
-      {/* 하단 가로 막대 */}
-      <mesh position={[0, 1.2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[12.5, 0.15, 0.15]} />
-        <meshStandardMaterial color="#FFD700" />
-      </mesh>
-      
-      {/* 경고 텍스트 "개발 중" */}
-      <Text
-        position={[0, 2.7, 0.15]}
-        fontSize={0.6}
-        color="black"
-        anchorX="center"
-        anchorY="middle"
-        rotation={[0, 0, 0]}
-        fontWeight="bold"
-      >
-        개발 중
-      </Text>
-      
-      {/* 경고 텍스트 "UNDER CONSTRUCTION" */}
-      <Text
-        position={[0, 2.4, 0.15]}
-        fontSize={0.3}
-        color="black"
-        anchorX="center"
-        anchorY="middle"
-        rotation={[0, 0, 0]}
-        fontWeight="bold"
-      >
-        UNDER CONSTRUCTION
-      </Text>
-      
-      {/* 경고 텍스트 "KEEP OUT" */}
-      <Text
-        position={[0, 2.1, 0.15]}
-        fontSize={0.3}
-        color="red"
-        anchorX="center"
-        anchorY="middle"
-        rotation={[0, 0, 0]}
-        fontWeight="bold"
-      >
-        KEEP OUT
-      </Text>
-      
-      {/* 경고 아이콘들 (느낌표) */}
-      {[-4.5, -1.5, 1.5, 4.5].map((x, index) => (
-        <Text
-          key={`warning-${index}`}
-          position={[x, 2.7, 0.15]}
-          fontSize={0.45}
-          color="red"
-          anchorX="center"
-          anchorY="middle"
-          rotation={[0, 0, 0]}
-          fontWeight="bold"
-        >
-          !
-        </Text>
-      ))}
-    </group>
-  );
-}
-
-// Game Start 버튼 컴포넌트
-function GameStartButton({ position = [0, 0, 0], characterRef, ...props }) {
-  const [isPlayerNear, setIsPlayerNear] = useState(false);
-  const [showPortal, setShowPortal] = useState(false);
-  const [portalScale, setPortalScale] = useState(0);
-  const { enter } = useKeyboardControls();
-  const lastEnterState = useRef(false);
-  const portalMaterialRef = useRef();
-  
-  // Enter키 처리 - 게임 사이트로 이동
-  useEffect(() => {
-    if (enter && !lastEnterState.current && showPortal) {
-      // 게임 사이트를 새 탭에서 열기
-      window.open('https://kdtwebgame.onrender.com/', '_blank');
-    }
-    lastEnterState.current = enter;
-  }, [enter, isPlayerNear, showPortal]);
-  
-  // 플레이어와의 거리 체크 및 포탈 애니메이션
-  useFrame((state, delta) => {
-    // 포탈 애니메이션 업데이트
-    if (portalMaterialRef.current) {
-      portalMaterialRef.current.uTime = state.clock.getElapsedTime();
-    }
-    
-    if (characterRef?.current) {
-      // 흰색 사각형의 위치 계산 (버튼 앞 5 유닛)
-      const groupPosition = new THREE.Vector3(...position);
-      const squarePosition = groupPosition.clone().add(new THREE.Vector3(0, 0, 5));
-      
-      const playerPosition = characterRef.current.position;
-      const distance = squarePosition.distanceTo(playerPosition);
-      
-      const maxDistance = 5; // 포탈이 보이기 시작하는 최대 거리
-      const minDistance = 3; // 포탈이 최대 크기가 되는 최소 거리
-      const nearDistance = 3; // Enter키가 작동하는 거리
-      
-      // 거리에 따른 포탈 크기 계산 (0에서 1 사이)
-      const normalizedDistance = Math.max(0, Math.min(1, (distance - minDistance) / (maxDistance - minDistance)));
-      const scale = 1 - normalizedDistance; // 가까울수록 1, 멀수록 0
-      
-      // 포탈 표시 여부 결정
-      const shouldShowPortal = distance < maxDistance;
-      const wasNear = isPlayerNear;
-      const nowNear = distance < nearDistance;
-      
-      if (shouldShowPortal !== showPortal) {
-        setShowPortal(shouldShowPortal);
-      }
-      
-      if (wasNear !== nowNear) {
-        setIsPlayerNear(nowNear);
-      }
-      
-      // 포탈 크기 업데이트 (부드러운 전환)
-      setPortalScale(scale);
-    }
-  });
-  
-  return (
-    <group position={position} {...props}>
-      {/* 게임 시작 버튼 사각형 */}
-      <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[10, 3, 0.8]} />
-        <meshStandardMaterial 
-          color="#4CAF50" 
-          roughness={0.3}
-          metalness={0.1}
-        />
-      </mesh>
-      
-      {/* 버튼 앞면에 "Game Start" 텍스트 */}
-      <Text
-        position={[0, 1.5, 0.41]} // 버튼 앞면에 위치
-        fontSize={1.2}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        rotation={[0, 0, 0]}
-      >
-        Game Start
-      </Text>
-      
-      {/* 바닥에 흰색 테두리 사각형 */}
-      <mesh position={[0, 0.01, 5]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} receiveShadow>
-        <ringGeometry args={[5, 5.5, 4]} />
-        <meshStandardMaterial color="white" side={THREE.DoubleSide} />
-      </mesh>
-      
-      {/* 포탈 효과 - 플레이어가 가까이 있을 때만 표시 */}
-      {showPortal && (
-        <group position={[0, 0.02, 5]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
-          {/* PortalVortex와 같은 스타일의 포탈 - 거리에 따라 크기 변화 */}
-          <mesh scale={[8.2 * portalScale, 8.2 * portalScale, 1]}>
-            <planeGeometry args={[1, 1]} />
-            <vortexMaterial 
-              ref={portalMaterialRef}
-              transparent={true}
-              opacity={portalScale} // 거리에 따라 투명도도 변화
-              uColorStart={new THREE.Color('#4CAF50')}  // 초록색
-              uColorEnd={new THREE.Color('#81C784')}    // 밝은 초록색
-            />
-          </mesh>
-        </group>
-      )}
-    </group>
-  );
-}
-
-// Instagram Logo와 RoundedCube를 묶는 그룹 컴포넌트
-function InstagramGroup({ position = [0, 0, 0], characterRef, ...props }) {
-  const [isPlayerNear, setIsPlayerNear] = useState(false);
-  const [showPortal, setShowPortal] = useState(false);
-  const [portalScale, setPortalScale] = useState(0);
-  const { enter } = useKeyboardControls();
-  const lastEnterState = useRef(false);
-  const portalMaterialRef = useRef();
-  
-  // Enter키 처리 - Instagram URL 열기
-  useEffect(() => {
-    if (enter && !lastEnterState.current && showPortal) {
-      // Instagram URL을 새 탭에서 열기
-      window.open('https://www.instagram.com/kim_kichan/#', '_blank');
-    }
-    lastEnterState.current = enter;
-  }, [enter, isPlayerNear, showPortal]);
-  
-  // 플레이어와의 거리 체크 (흰색 사각형 기준) 및 포탈 애니메이션
-  useFrame((state, delta) => {
-    // 포탈 애니메이션 업데이트
-    if (portalMaterialRef.current) {
-      portalMaterialRef.current.uTime = state.clock.getElapsedTime();
-    }
-    
-    if (characterRef?.current) {
-      // 흰색 사각형의 위치 계산 (정육면체 앞 5 유닛)
-      const groupPosition = new THREE.Vector3(...position);
-      const squarePosition = groupPosition.clone().add(new THREE.Vector3(0, 0, 5));
-      
-      const playerPosition = characterRef.current.position;
-      const distance = squarePosition.distanceTo(playerPosition);
-      
-      const maxDistance = 5; // 포탈이 보이기 시작하는 최대 거리
-      const minDistance = 3; // 포탈이 최대 크기가 되는 최소 거리
-      const nearDistance = 3; // Enter키가 작동하는 거리
-      
-      // 거리에 따른 포탈 크기 계산 (0에서 1 사이)
-      const normalizedDistance = Math.max(0, Math.min(1, (distance - minDistance) / (maxDistance - minDistance)));
-      const scale = 1 - normalizedDistance; // 가까울수록 1, 멀수록 0
-      
-      // 포탈 표시 여부 결정
-      const shouldShowPortal = distance < maxDistance;
-      const wasNear = isPlayerNear;
-      const nowNear = distance < nearDistance;
-      
-      if (shouldShowPortal !== showPortal) {
-        setShowPortal(shouldShowPortal);
-      }
-      
-      if (wasNear !== nowNear) {
-        setIsPlayerNear(nowNear);
-      }
-      
-      // 포탈 크기 업데이트 (부드러운 전환)
-      setPortalScale(scale);
-    }
-  });
-  
-  return (
-    <group position={position} {...props}>
-      {/* 둥근 정육면체 (Instagram Logo의 받침대) */}
-      <RoundedCube 
-        position={[0, 2, 0]} 
-        scale={[4, 4, 4]}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* 정육면체 앞 바닥에 흰색 테두리 사각형 */}
-      <mesh position={[0, 0.01, 5]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} receiveShadow>
-        <ringGeometry args={[3, 3.5, 4]} />
-        <meshStandardMaterial color="white" side={THREE.DoubleSide} />
-      </mesh>
-      
-      {/* 포탈 효과 - 플레이어가 가까이 있을 때만 표시 */}
-      {showPortal && (
-        <group position={[0, 0.02, 5]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
-          {/* PortalVortex와 같은 스타일의 포탈 - 거리에 따라 크기 변화 */}
-          <mesh scale={[4.9 * portalScale, 4.9 * portalScale, 1]}>
-            <planeGeometry args={[1, 1]} />
-            <vortexMaterial 
-              ref={portalMaterialRef}
-              transparent={true}
-              opacity={portalScale} // 거리에 따라 투명도도 변화
-              uColorStart={new THREE.Color('#FFFFFF')}  // 흰색
-              uColorEnd={new THREE.Color('#E0E0E0')}    // 밝은 회색
-            />
-          </mesh>
-        </group>
-      )}
-      
-      {/* 정육면체 앞면에 "SNS" 텍스트 */}
-      <Text
-        position={[0, 2, 2.1]} // 정육면체 가운데에 위치
-        fontSize={1.2}
-        color="black"
-        anchorX="center"
-        anchorY="middle"
-        rotation={[0, 0, 0]}
-      >
-        SNS
-      </Text>
-      
-      {/* Instagram Logo 모델 */}
-      <InstagramLogo 
-        position={[0, 6.2, 0]} 
-        scale={[6, 6, 6]} 
-        rotation={[Math.PI / 2, 0, 0]}
-        castShadow
-        receiveShadow
-      />
-    </group>
-  );
-}
-
-// Toolbox 컴포넌트 추가
-function Toolbox(props) {
-  const { scene } = useGLTF('/toolbox.glb');
-  
-  // Toolbox 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
-    cloned.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        // 원래 재질 유지 (색상 변경하지 않음)
-      }
-    });
-    return cloned;
-  }, [scene]);
-  
-  return <primitive object={clonedScene} {...props} />;
-}
-
-useGLTF.preload('/githubcat.glb');
-useGLTF.preload('/mailbox.glb');
-useGLTF.preload('/instagramlogo.glb');
-useGLTF.preload('/toolbox.glb');
-
 function Level1({ characterRef }) {
   return (
     <>
@@ -1911,43 +872,6 @@ function Level2({ onCarRef, characterRef }) {
     </>
   );
 }
-
-function GameMap(props) {
-  const { scene } = useGLTF('/GameMap.glb');
-  
-  // GameMap 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
-    cloned.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    return cloned;
-  }, [scene]);
-  
-  return <primitive object={clonedScene} {...props} />;
-}
-
-function GameMap2(props) {
-  const { scene } = useGLTF('/GameMap2.glb');
-  
-  // GameMap2 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
-    cloned.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    return cloned;
-  }, [scene]);
-  
-  return <primitive object={clonedScene} {...props} />;
-}
-
 
 function App() {
   const [gameState, setGameState] = useState('playing_level1');
