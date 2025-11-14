@@ -7,6 +7,7 @@ import './App.css';
 import { useKeyboardControls } from './useKeyboardControls';
 import { PortalVortex } from './PortalVortex';
 import AuthOverlay from './components/auth/AuthOverlay';
+import GameMenu from './components/menu/GameMenu';
 import useAuthStore from './store/useAuthStore';
 
 // 그라데이션 바닥을 위한 셰이더 머티리얼 (그림자 지원)
@@ -167,7 +168,7 @@ function CameraController({ gameState, characterRef }) {
 }
 
 function Model({ characterRef, gameState, setGameState }) {
-  const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/Worker_Male.gltf');
+  const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
   
   const { forward, backward, left, right, shift, e } = useKeyboardControls();
@@ -875,8 +876,19 @@ function Level2({ onCarRef, characterRef }) {
 
 function App() {
   const [gameState, setGameState] = useState('playing_level1');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const characterRef = useRef();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { escape } = useKeyboardControls();
+  const lastEscapeState = useRef(false);
+
+  // ESC 키로 메뉴 토글
+  useEffect(() => {
+    if (escape && !lastEscapeState.current && isAuthenticated) {
+      setIsMenuOpen((prev) => !prev);
+    }
+    lastEscapeState.current = escape;
+  }, [escape, isAuthenticated]);
 
   return (
     <div className="App">
@@ -924,6 +936,11 @@ function App() {
 
       {/* 로그인하지 않은 경우 인증 오버레이 표시 */}
       {!isAuthenticated && <AuthOverlay />}
+
+      {/* 게임 메뉴 (ESC로 열기/닫기) */}
+      {isAuthenticated && (
+        <GameMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      )}
     </div>
   );
 }
