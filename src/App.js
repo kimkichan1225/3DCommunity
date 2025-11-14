@@ -6,6 +6,8 @@ import * as THREE from 'three';
 import './App.css';
 import { useKeyboardControls } from './useKeyboardControls';
 import { PortalVortex } from './PortalVortex';
+import AuthOverlay from './components/auth/AuthOverlay';
+import useAuthStore from './store/useAuthStore';
 
 // 커스텀 팝업 함수
 function showCustomPopup(message) {
@@ -1950,17 +1952,19 @@ function GameMap2(props) {
 function App() {
   const [gameState, setGameState] = useState('playing_level1');
   const characterRef = useRef();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <div className="App">
+      {/* 3D 광장 배경 (항상 렌더링) */}
       <Canvas
         camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
         shadows
       >
         <ambientLight intensity={0.5} />
-        <directionalLight 
-          position={[50, 50, 25]} 
-          intensity={6} 
+        <directionalLight
+          position={[50, 50, 25]}
+          intensity={6}
           castShadow
           shadow-mapSize-width={8192}
           shadow-mapSize-height={8192}
@@ -1980,7 +1984,10 @@ function App() {
         </mesh>
 
         <Suspense fallback={null}>
-          <Model characterRef={characterRef} gameState={gameState} setGameState={setGameState} />
+          {/* 로그인한 경우에만 캐릭터 렌더링 */}
+          {isAuthenticated && (
+            <Model characterRef={characterRef} gameState={gameState} setGameState={setGameState} />
+          )}
           <CameraController gameState={gameState} characterRef={characterRef} />
           <CameraLogger />
           {gameState === 'playing_level2' ? <Level2 onCarRef={(ref) => {
@@ -1990,6 +1997,9 @@ function App() {
           }} characterRef={characterRef} /> : <Level1 characterRef={characterRef} />}
         </Suspense>
       </Canvas>
+
+      {/* 로그인하지 않은 경우 인증 오버레이 표시 */}
+      {!isAuthenticated && <AuthOverlay />}
     </div>
   );
 }
