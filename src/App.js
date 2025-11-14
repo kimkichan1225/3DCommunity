@@ -5,59 +5,7 @@ import { extend } from '@react-three/fiber';
 import * as THREE from 'three';
 import './App.css';
 import { useKeyboardControls } from './useKeyboardControls';
-import { PortalVortex, PortalVortexLevel3 } from './PortalVortex';
-
-// 네비게이션 바 컴포넌트
-function NavigationBar({ isWebMode, onToggleMode }) {
-  const [mouseY, setMouseY] = useState(0);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMouseY(e.clientY);
-    };
-
-    if (!isWebMode) {
-      window.addEventListener('mousemove', handleMouseMove);
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [isWebMode]);
-
-  const shouldShow = isWebMode || mouseY < 80;
-
-  return (
-    <nav
-      className={`navigation-bar ${shouldShow ? 'visible' : 'hidden'}`}
-    >
-      <div className="nav-content">
-        <div className="nav-left">
-          <h1 className="nav-logo">3D Portfolio</h1>
-        </div>
-        <div className="nav-center">
-          <a href="#about" className="nav-link">About</a>
-          <a href="#projects" className="nav-link">Projects</a>
-          <a href="#contact" className="nav-link">Contact</a>
-        </div>
-        <div className="nav-right">
-          <button
-            className={`mode-toggle ${isWebMode ? 'web' : 'game'}`}
-            onClick={onToggleMode}
-            title={isWebMode ? '게임 모드로 전환' : '웹 모드로 전환'}
-          >
-            <span className="toggle-icon">
-              {isWebMode ? '🎮' : '🌐'}
-            </span>
-            <span className="toggle-text">
-              {isWebMode ? 'Game' : 'Web'}
-            </span>
-          </button>
-        </div>
-      </div>
-    </nav>
-  );
-}
+import { PortalVortex } from './PortalVortex';
 
 // 커스텀 팝업 함수
 function showCustomPopup(message) {
@@ -1909,139 +1857,15 @@ useGLTF.preload('/instagramlogo.glb');
 useGLTF.preload('/toolbox.glb');
 
 function Level1({ characterRef }) {
-  // 돌들의 위치와 속성을 배열로 정의
-  const stones = [
-    { position: [-17, 0.1, -7], scale: 8, rotation: [0, 0, 0] },
-    { position: [-22, 0.3, -2], scale: 8, rotation: [0, 0.5, 0] },
-    { position: [-16, 0.25, 2], scale: 8, rotation: [0, -0.3, 0] },
-    { position: [-22, 0.2, 6], scale: 8, rotation: [0, 0.2, 0] },
-    { position: [-16, 0.2, 10], scale: 8, rotation: [0, -0.2, 0] },
-    { position: [-22, 0.15, 14], scale: 8, rotation: [0, 0.1, 0] },
-
-    { position: [23, 0.1, -7], scale: 8, rotation: [0, 0, 0] },
-    { position: [18, 0.1, -2], scale: 8, rotation: [0, 0.5, 0] },
-    { position: [24, 0.15, 2], scale: 8, rotation: [0, -0.3, 0] },
-    { position: [18, 0.1, 6], scale: 8, rotation: [0, 0.2, 0] },
-    { position: [24, 0.1, 10], scale: 8, rotation: [0, -0.2, 0] },
-    { position: [18, 0.1, 14], scale: 8, rotation: [0, 0.1, 0] },
-  ];
-
-  // 팜트리들의 위치와 속성을 배열로 정의
-  const palmTrees = [
-    { position: [-30, 0, -10], scale: 0.05, rotation: [0, 0, 0] },
-    { position: [30, 0, -10], scale: 0.05, rotation: [0, 0, 0] },
-  ];
-
-  // 그라데이션 텍스처 생성
-  const gradientTexture = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const context = canvas.getContext('2d');
-    
-    // 대각선 그라데이션 생성 (왼쪽 위에서 오른쪽 아래로)
-    const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, '#50AA50'); // 훨씬 더 어두운 연두색 시작
-    gradient.addColorStop(1, '#E0FFE0'); // 밝은 연두색 끝
-    
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, 1);
-    
-    return texture;
-  }, []);
-
   return (
     <>
       <Sky />
       <PortalBase position={portalPosition} scale={20} castShadow receiveShadow />
       <PortalVortex position={[-19.7, 8, -22]} scale={[7, 9.8, 1]} castShadow receiveShadow />
-      
-      {/* Level3 Portal */}
-      <PortalBase position={portalLevel3Position} scale={20} castShadow receiveShadow />
-      <PortalVortexLevel3 position={[20.3, 8, -22]} scale={[7, 9.8, 1]} castShadow receiveShadow />
-      
-      {/* Path stones leading to the portal */}
-      <PathStone position={[-22, 0.2, -13]} scale={7} rotation={[0, -0.2, 0]} castShadow receiveShadow />
-      
-      {/* Small stones scattered around the level */}
-      {stones.map((stone, index) => (
-        <SmallStoneFlatA 
-          key={index} 
-          position={stone.position} 
-          scale={stone.scale} 
-          rotation={stone.rotation}
-          castShadow
-          receiveShadow
-        />
-      ))}
 
-      {/* Palm trees scattered around the level */}
-      {palmTrees.map((tree, index) => (
-        <PalmTree 
-          key={index} 
-          position={tree.position} 
-          scale={tree.scale} 
-          rotation={tree.rotation}
-          castShadow
-          receiveShadow
-        />
-      ))}
-
-      {/* NPC Character */}
-      <NPCCharacter position={[-27, 0, -8]} playerRef={characterRef} />
-      
-      {/* GitHub Cat 그룹 (둥근 정육면체 + GitHub Cat) */}
-      <GitHubCatGroup 
-        position={[-6, 0.2, 20]}
-        characterRef={characterRef}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* Mailbox 그룹 (둥근 정육면체 + Mailbox) */}
-      <MailboxGroup 
-        position={[0, 0.2, 20]}
-        characterRef={characterRef}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* Instagram 그룹 (둥근 정육면체 + Instagram Logo) */}
-      <InstagramGroup 
-        position={[6, 0.2, 20]}
-        characterRef={characterRef}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* 도구상자 추가 */}
-      <Toolbox 
-        position={[-12, 1.2, 25]} 
-        scale={[1.5, 1.5, 1.5]} 
-        rotation={[0, Math.PI / 4, 0]}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* 숨겨진 텍스트로 프리로드 - 화면 밖에 배치 */}
-      <Text
-        position={[1000, 1000, 1000]}
-        fontSize={0.4}
-        color="black"
-        visible={false}
-      >
-        첫번쨰 프로젝트에 오신걸 환영합니다! 🎉
-      </Text>
-      
-      {/* Floor with gradient green color */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[500, 500]} />
-        <meshStandardMaterial map={gradientTexture} />
+        <meshStandardMaterial color="#90EE90" />
       </mesh>
     </>
   );
@@ -2122,134 +1946,17 @@ function GameMap2(props) {
   return <primitive object={clonedScene} {...props} />;
 }
 
-useGLTF.preload('/GameMap.glb');
-useGLTF.preload('/GameMap2.glb');
-
-function Level3({ characterRef }) {
-  // Map1.png 텍스처 로드
-  const map1Texture = useMemo(() => {
-    const loader = new THREE.TextureLoader();
-    const texture = loader.load('/Map1.png');
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, 1);
-    return texture;
-  }, []);
-
-  return (
-    <>
-      <Sky />
-      
-      {/* GameMap.glb 모델 렌더링 - 크기와 각도 조절 가능 */}
-      <GameMap 
-        position={[60, 0, -50]} 
-        scale={[1, 1, 1]}  // X, Y, Z 각각 크기 조절 가능
-        rotation={[0, Math.PI / 2, 0]}  // Y축으로 45도 회전
-        castShadow
-        receiveShadow
-      />
-      
-      {/* GameMap2.glb 모델 렌더링 - 크기와 각도 조절 가능 */}
-      <GameMap2 
-        position={[-60, -2.2, -50]} 
-        scale={[0.8, 0.8, 0.8]}  // X, Y, Z 각각 크기 조절 가능
-        rotation={[0, Math.PI / 2, 0]}  // 회전 없음
-        castShadow
-        receiveShadow
-      />
-      
-      {/* Map1.png 텍스처를 GameMap 밑에 배치 */}
-      <mesh rotation={[-Math.PI / 2, 0, Math.PI / 2]} position={[56, 0.01, -50]} receiveShadow>
-        <planeGeometry args={[81, 81]} />
-        <meshStandardMaterial map={map1Texture} />
-      </mesh>
-      
-      {/* Level1의 GitHub Cat 그룹 복사 - Level3에 배치 */}
-      <GitHubCatGroup 
-        position={[15, 0.2, 0]}
-        characterRef={characterRef}
-        level={3}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* Game Start 버튼 - 게임 사이트로 이동 */}
-      <GameStartButton 
-        position={[25, 0.2, 0]}
-        characterRef={characterRef}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* 공사장 바리게이트 펜스 - 개발 중 표시 */}
-      <ConstructionBarrier 
-        position={[-35, 0, -10]}
-        castShadow
-        receiveShadow
-      />
-      
-      {/* Level1로 가는 포탈 - Level3 포탈과 똑같은 색상과 모양 */}
-      <PortalBase position={portalLevel3ToLevel1Position} scale={20} castShadow receiveShadow />
-      <PortalVortexLevel3 position={[0.3, 8, 22]} scale={[7, 9.8, 1]} castShadow receiveShadow />
-      
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[500, 500]} />
-        <meshStandardMaterial color="#FFE4B5" />
-      </mesh>
-    </>
-  );
-}
 
 function App() {
-  const [gameState, setGameState] = useState('playing_level1'); // playing_level1, entering_portal, playing_level2
+  const [gameState, setGameState] = useState('playing_level1');
   const characterRef = useRef();
-  const [isWebMode, setIsWebMode] = useState(true); // 웹/게임 모드 상태 - 웹 모드로 시작
-
-  const toggleMode = () => {
-    setIsWebMode(!isWebMode);
-  };
 
   return (
     <div className="App">
-      <NavigationBar isWebMode={isWebMode} onToggleMode={toggleMode} />
-
-      {isWebMode ? (
-        // 웹 모드: 포트폴리오 웹사이트
-        <div className="web-mode-content">
-          <section id="about" className="section">
-            <h2>About Me</h2>
-            <p>3D 인터랙티브 포트폴리오에 오신 것을 환영합니다!</p>
-            <p>우측 상단의 토글 버튼을 눌러 게임 모드로 전환하여 3D 세계를 탐험해보세요.</p>
-          </section>
-          <section id="projects" className="section">
-            <h2>Projects</h2>
-            <div className="projects-grid">
-              <div className="project-card">
-                <h3>프로젝트 1</h3>
-                <p>프로젝트 설명...</p>
-              </div>
-              <div className="project-card">
-                <h3>프로젝트 2</h3>
-                <p>프로젝트 설명...</p>
-              </div>
-              <div className="project-card">
-                <h3>프로젝트 3</h3>
-                <p>프로젝트 설명...</p>
-              </div>
-            </div>
-          </section>
-          <section id="contact" className="section">
-            <h2>Contact</h2>
-            <p>이메일: your-email@example.com</p>
-            <p>GitHub: github.com/yourusername</p>
-          </section>
-        </div>
-      ) : (
-        // 게임 모드: 3D 게임
-        <Canvas 
-          camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
-          shadows
-        >
+      <Canvas
+        camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
+        shadows
+      >
         <ambientLight intensity={0.5} />
         <directionalLight 
           position={[50, 50, 25]} 
@@ -2280,11 +1987,9 @@ function App() {
             if (characterRef.current?.handleSetCarRef) {
               characterRef.current.handleSetCarRef(ref);
             }
-          }} characterRef={characterRef} /> : 
-           gameState === 'playing_level3' ? <Level3 characterRef={characterRef} /> : <Level1 characterRef={characterRef} />}
+          }} characterRef={characterRef} /> : <Level1 characterRef={characterRef} />}
         </Suspense>
-        </Canvas>
-      )}
+      </Canvas>
     </div>
   );
 }
