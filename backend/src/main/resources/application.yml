@@ -39,7 +39,7 @@ server:
 
 # JWT 설정
 jwt:
-  secret: 3d-community-secret-key-please-change-this-in-production-environment-for-security
+  secret: M2RDb21tdW5pdHlTZWNyZXRLZXlQbGVhc2VDaGFuZ2VUaGlzSW5Qcm9kdWN0aW9uRW52aXJvbm1lbnRGb3JTZWN1cml0eQ==
   expiration: 86400000 # 24시간 (밀리초)
 
 # 로깅 설정
