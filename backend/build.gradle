@@ -35,8 +35,7 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 
     // Database
-    runtimeOnly 'com.h2database:h2' // 개발용 H2 데이터베이스
-    runtimeOnly 'com.mysql:mysql-connector-j' // 프로덕션용 MySQL
+    runtimeOnly 'org.postgresql:postgresql' // PostgreSQL
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'

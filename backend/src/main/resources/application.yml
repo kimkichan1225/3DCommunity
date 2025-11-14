@@ -2,69 +2,43 @@ spring:
   application:
     name: 3d-community-backend
 
-  # 데이터베이스 설정 (개발환경: H2, 프로덕션: MySQL)
+  # 데이터베이스 설정 (PostgreSQL)
   datasource:
-    url: jdbc:h2:mem:communitydb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-
-  # H2 콘솔 설정 (개발용)
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/community_db}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
 
   # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${DB_DDL_AUTO:update}
+    show-sql: ${DB_SHOW_SQL:true}
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   # CORS 설정
   web:
     cors:
-      allowed-origins: http://localhost:3000
+      allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
       allowed-methods: GET,POST,PUT,DELETE,OPTIONS
       allowed-headers: "*"
       allow-credentials: true
 
 # 서버 포트
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 # JWT 설정
 jwt:
-  secret: M2RDb21tdW5pdHlTZWNyZXRLZXlQbGVhc2VDaGFuZ2VUaGlzSW5Qcm9kdWN0aW9uRW52aXJvbm1lbnRGb3JTZWN1cml0eQ==
-  expiration: 86400000 # 24시간 (밀리초)
+  secret: ${JWT_SECRET:3d-community-secret-key-please-change-this-in-production-environment-for-security}
+  expiration: ${JWT_EXPIRATION:86400000} # 24시간 (밀리초)
 
 # 로깅 설정
 logging:
   level:
-    com.community: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
-
----
-# 프로덕션 프로파일
-spring:
-  config:
-    activate:
-      on-profile: prod
-
-  datasource:
-    url: jdbc:mysql://localhost:3306/community_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:password}
-
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+    com.community: ${LOG_LEVEL:DEBUG}
+    org.springframework.web: ${LOG_LEVEL:DEBUG}
+    org.springframework.security: ${LOG_LEVEL:DEBUG}
