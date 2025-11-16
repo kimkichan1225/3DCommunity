@@ -9,6 +9,7 @@ import { PortalVortex } from './PortalVortex';
 import AuthOverlay from './components/auth/AuthOverlay';
 import GameMenu from './components/menu/GameMenu';
 import useAuthStore from './store/useAuthStore';
+import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
 
 // 그라데이션 바닥을 위한 셰이더 머티리얼 (그림자 지원)
 const GradientFloorMaterial = shaderMaterial(
@@ -196,6 +197,7 @@ function Model({ characterRef, gameState, setGameState }) {
   // 안전한 참조를 위한 useRef
   const safeCharacterRef = useRef();
   const safeCarRef = useRef();
+  const rigidBodyRef = useRef(); // Rapier RigidBody 참조
   
   // 발걸음 소리 로드 및 재생 함수
   useEffect(() => {
@@ -515,9 +517,9 @@ function Model({ characterRef, gameState, setGameState }) {
     const isPlaying = gameState === 'playing_level1' || gameState === 'playing_level2';
     if (!isPlaying) return;
 
-    const speed = shift ? 0.3 : 0.1;
+    const speed = shift ? 3 : 2; // 물리 기반 속도 (더 빠르게)
     const direction = new THREE.Vector3();
-    
+
     if (forward) direction.z -= 1;
     if (backward) direction.z += 1;
     if (left) direction.x -= 1;
@@ -525,12 +527,23 @@ function Model({ characterRef, gameState, setGameState }) {
 
     if (direction.length() > 0) {
       direction.normalize();
+
+      // 회전 처리
       const targetAngle = Math.atan2(direction.x, direction.z);
       const targetQuaternion = new THREE.Quaternion();
       targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
       currentCharacter.quaternion.slerp(targetQuaternion, 0.25);
-      currentCharacter.position.add(direction.multiplyScalar(speed));
-      
+
+      // 물리 기반 이동 (setLinvel 사용)
+      if (rigidBodyRef.current) {
+        const currentVel = rigidBodyRef.current.linvel();
+        rigidBodyRef.current.setLinvel({
+          x: direction.x * speed,
+          y: currentVel.y, // Y축은 중력 유지
+          z: direction.z * speed
+        });
+      }
+
       // 발걸음 소리 재생
       if (!isInCar && (currentAnimation === 'Walk' || currentAnimation === 'Run')) {
         const currentTime = Date.now();
@@ -538,6 +551,12 @@ function Model({ characterRef, gameState, setGameState }) {
           playStepSound();
           lastStepTimeRef.current = currentTime;
         }
+      }
+    } else {
+      // 정지 시 속도 0
+      if (rigidBodyRef.current) {
+        const currentVel = rigidBodyRef.current.linvel();
+        rigidBodyRef.current.setLinvel({ x: 0, y: currentVel.y, z: 0 });
       }
     }
 
@@ -687,16 +706,24 @@ function Model({ characterRef, gameState, setGameState }) {
   });
 
   return (
-    <>
-    <primitive 
-      ref={characterRef} 
-      object={scene} 
-      scale={2} 
-      castShadow 
-      receiveShadow 
+    <RigidBody
+      ref={rigidBodyRef}
+      type="dynamic"
+      colliders="ball"
+      mass={1}
+      linearDamping={0.5}
+      enabledRotations={[false, true, false]} // Y축 회전만 허용
+      position={[0, 2, 0]} // 시작 위치
+    >
+      <primitive
+        ref={characterRef}
+        object={scene}
+        scale={2}
+        castShadow
+        receiveShadow
         visible={!isInCar} // 자동차 탑승 시 투명하게
       />
-    </>
+    </RigidBody>
   );
 }
 
@@ -820,7 +847,7 @@ function RaceFuture({ onCarRef, characterRef, ...props }) {
 }
 useGLTF.preload('/resources/kenney_car-kit/Models/GLB-format/race-future.glb');
 
-// PublicSquare 맵 컴포넌트
+// PublicSquare 맵 컴포넌트 (물리 충돌 포함)
 function PublicSquare(props) {
   const { scene } = useGLTF('/resources/Map/PublicSquare.glb');
 
@@ -835,7 +862,11 @@ function PublicSquare(props) {
     return cloned;
   }, [scene]);
 
-  return <primitive object={clonedScene} {...props} />;
+  return (
+    <RigidBody type="fixed" colliders="trimesh">
+      <primitive object={clonedScene} {...props} />
+    </RigidBody>
+  );
 }
 
 useGLTF.preload('/resources/Map/PublicSquare.glb');
@@ -944,17 +975,19 @@ function App() {
         </mesh>
 
         <Suspense fallback={null}>
-          {/* 로그인한 경우에만 캐릭터 렌더링 */}
-          {isAuthenticated && (
-            <Model characterRef={characterRef} gameState={gameState} setGameState={setGameState} />
-          )}
-          <CameraController gameState={gameState} characterRef={characterRef} />
-          <CameraLogger />
-          {gameState === 'playing_level2' ? <Level2 onCarRef={(ref) => {
-            if (characterRef.current?.handleSetCarRef) {
-              characterRef.current.handleSetCarRef(ref);
-            }
-          }} characterRef={characterRef} /> : <Level1 characterRef={characterRef} />}
+          <Physics gravity={[0, -9.81, 0]} debug>
+            {/* 로그인한 경우에만 캐릭터 렌더링 */}
+            {isAuthenticated && (
+              <Model characterRef={characterRef} gameState={gameState} setGameState={setGameState} />
+            )}
+            <CameraController gameState={gameState} characterRef={characterRef} />
+            <CameraLogger />
+            {gameState === 'playing_level2' ? <Level2 onCarRef={(ref) => {
+              if (characterRef.current?.handleSetCarRef) {
+                characterRef.current.handleSetCarRef(ref);
+              }
+            }} characterRef={characterRef} /> : <Level1 characterRef={characterRef} />}
+          </Physics>
         </Suspense>
       </Canvas>
 
