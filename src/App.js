@@ -341,9 +341,17 @@ function Model({ characterRef, gameState, setGameState }) {
     if (currentAnimation !== animToPlay) {
       const oldAction = actions[currentAnimation];
       const newAction = actions[animToPlay];
-      
+
       if (oldAction) oldAction.fadeOut(0.5);
-      if (newAction) newAction.reset().fadeIn(0.5).play();
+      if (newAction) {
+        newAction.reset().fadeIn(0.5).play();
+        // 애니메이션 재생 속도 조정
+        if (animToPlay === 'Walk') {
+          newAction.timeScale = 1.4; // 걷기 애니메이션 1.5배 빠르게
+        } else if (animToPlay === 'Run') {
+          newAction.timeScale = 1.3; // 뛰기 애니메이션 1.3배 빠르게
+        }
+      }
 
       setCurrentAnimation(animToPlay);
       
@@ -518,7 +526,7 @@ function Model({ characterRef, gameState, setGameState }) {
     const isPlaying = gameState === 'playing_level1' || gameState === 'playing_level2';
     if (!isPlaying) return;
 
-    const speed = shift ? 3 : 2; // 물리 기반 속도 (더 빠르게)
+    const speed = shift ? 15 : 6; // 물리 기반 속도 (걷기: 3, 뛰기: 5)
     const direction = new THREE.Vector3();
 
     if (forward) direction.z -= 1;
