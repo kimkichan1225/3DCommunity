@@ -820,10 +820,34 @@ function RaceFuture({ onCarRef, characterRef, ...props }) {
 }
 useGLTF.preload('/resources/kenney_car-kit/Models/GLB-format/race-future.glb');
 
+// PublicSquare 맵 컴포넌트
+function PublicSquare(props) {
+  const { scene } = useGLTF('/resources/Map/PublicSquare.glb');
+
+  const clonedScene = useMemo(() => {
+    const cloned = scene.clone();
+    cloned.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    return cloned;
+  }, [scene]);
+
+  return <primitive object={clonedScene} {...props} />;
+}
+
+useGLTF.preload('/resources/Map/PublicSquare.glb');
+
 function Level1({ characterRef }) {
   return (
     <>
       <Sky />
+
+      {/* PublicSquare 맵 추가 */}
+      <PublicSquare position={[0, 0, 0]} scale={1} />
+
       <PortalBase position={portalPosition} scale={20} castShadow receiveShadow />
       <PortalVortex position={[-19.7, 8, -22]} scale={[7, 9.8, 1]} castShadow receiveShadow />
 
