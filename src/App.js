@@ -532,7 +532,7 @@ function Model({ characterRef, gameState, setGameState }) {
     const isPlaying = gameState === 'playing_level1' || gameState === 'playing_level2';
     if (!isPlaying) return;
 
-    const speed = shift ? 15 : 6; // 물리 기반 속도 (걷기: 3, 뛰기: 5)
+    const speed = shift ? 18 : 8; // 물리 기반 속도 (걷기: 3, 뛰기: 5)
     const direction = new THREE.Vector3();
 
     if (forward) direction.z -= 1;
@@ -571,14 +571,14 @@ function Model({ characterRef, gameState, setGameState }) {
         });
       }
 
-      // 발걸음 소리 재생
-      if (!isInCar && (currentAnimation === 'Walk' || currentAnimation === 'Run')) {
-        const currentTime = Date.now();
-        if (currentTime - lastStepTimeRef.current > stepIntervalRef.current * 1000) {
-          playStepSound();
-          lastStepTimeRef.current = currentTime;
-        }
-      }
+      // 발걸음 소리 재생 (비활성화)
+      // if (!isInCar && (currentAnimation === 'Walk' || currentAnimation === 'Run')) {
+      //   const currentTime = Date.now();
+      //   if (currentTime - lastStepTimeRef.current > stepIntervalRef.current * 1000) {
+      //     playStepSound();
+      //     lastStepTimeRef.current = currentTime;
+      //   }
+      // }
     } else {
       // 정지 시 속도 0
       if (rigidBodyRef.current) {
@@ -1012,7 +1012,7 @@ function App() {
         </mesh>
 
         <Suspense fallback={null}>
-          <Physics gravity={[0, -9.81, 0]} debug>
+          <Physics gravity={[0, -40, 0]} debug>
             {/* 로그인한 경우에만 캐릭터 렌더링 */}
             {isAuthenticated && (
               <Model characterRef={characterRef} gameState={gameState} setGameState={setGameState} />
