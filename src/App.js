@@ -117,31 +117,34 @@ function CameraController({ gameState, characterRef }) {
   });
 
   useFrame((state, delta) => {
-    if (!characterRef.current || !characterRef.current.position) return;
+    if (!characterRef.current) return;
+
+    // 월드 position 가져오기
+    const worldPosition = new THREE.Vector3();
+    characterRef.current.getWorldPosition(worldPosition);
 
     if (gameState === 'entering_portal') {
-      const characterPosition = characterRef.current.position;
-      const targetPosition = characterPosition.clone().add(new THREE.Vector3(0, 3, 5));
+      const targetPosition = worldPosition.clone().add(new THREE.Vector3(0, 3, 5));
       camera.position.lerp(targetPosition, delta * 2.0);
-      camera.lookAt(characterPosition);
+      camera.lookAt(worldPosition);
       return;
     }
 
     if (gameState === 'playing_level1' || gameState === 'playing_level2') {
       let targetPosition;
       let currentTargetType = 'character';
-      
+
       // 자동차에 탑승한 상태인지 확인하고 타겟 위치 결정
-      if (characterRef.current?.isInCar && 
+      if (characterRef.current?.isInCar &&
           characterRef.current?.safeCarRef?.current) {
-        // 자동차에 탑승한 경우: 캐릭터 위치 사용 (자동차와 동기화됨)
-        targetPosition = characterRef.current.position;
+        // 자동차에 탑승한 경우: 월드 위치 사용
+        targetPosition = worldPosition;
         currentTargetType = 'car';
-        
+
         // 자동차 상태 확인 완료
       } else {
-        // 일반 상태: 캐릭터 위치 사용
-        targetPosition = characterRef.current.position;
+        // 일반 상태: 월드 위치 사용
+        targetPosition = worldPosition;
         currentTargetType = 'character';
       }
       
@@ -495,10 +498,15 @@ function Model({ characterRef, gameState, setGameState }) {
   useFrame((state, delta) => {
     // 자동차 상호작용 처리
     handleCarInteraction();
-    
+
     // characterRef.current 손실 시 safeCharacterRef.current 사용
     const currentCharacter = characterRef.current || safeCharacterRef.current;
     if (!currentCharacter) return;
+
+    // characterRef의 로컬 position을 (0,0,0)으로 유지 (RigidBody 중심에 위치)
+    if (characterRef.current) {
+      characterRef.current.position.set(0, 0, 0);
+    }
 
     if (gameState === 'entering_portal') {
       const portalCenter = portalPosition.clone();
