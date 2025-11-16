@@ -198,6 +198,7 @@ function Model({ characterRef, gameState, setGameState }) {
   const safeCharacterRef = useRef();
   const safeCarRef = useRef();
   const rigidBodyRef = useRef(); // Rapier RigidBody 참조
+  const currentRotationRef = useRef(new THREE.Quaternion()); // 현재 회전 저장
   
   // 발걸음 소리 로드 및 재생 함수
   useEffect(() => {
@@ -528,11 +529,23 @@ function Model({ characterRef, gameState, setGameState }) {
     if (direction.length() > 0) {
       direction.normalize();
 
-      // 회전 처리
+      // 회전 처리 - 부드럽게 회전
       const targetAngle = Math.atan2(direction.x, direction.z);
       const targetQuaternion = new THREE.Quaternion();
       targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
-      currentCharacter.quaternion.slerp(targetQuaternion, 0.25);
+
+      // 현재 회전에서 목표 회전으로 부드럽게 보간 (slerp)
+      currentRotationRef.current.slerp(targetQuaternion, 0.25);
+
+      if (rigidBodyRef.current) {
+        // 보간된 회전을 RigidBody에 적용
+        rigidBodyRef.current.setRotation({
+          x: currentRotationRef.current.x,
+          y: currentRotationRef.current.y,
+          z: currentRotationRef.current.z,
+          w: currentRotationRef.current.w
+        }, true);
+      }
 
       // 물리 기반 이동 (setLinvel 사용)
       if (rigidBodyRef.current) {
