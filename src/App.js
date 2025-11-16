@@ -11,65 +11,63 @@ import GameMenu from './components/menu/GameMenu';
 import useAuthStore from './store/useAuthStore';
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
 
-// 그라데이션 바닥을 위한 셰이더 머티리얼 (그림자 지원)
-const GradientFloorMaterial = shaderMaterial(
+// 찰랑거리는 물 효과를 위한 셰이더 머티리얼
+const WaterMaterial = shaderMaterial(
   // Uniforms
   {
-    uColorStart: new THREE.Color('#90EE90'), // 연두색 시작
-    uColorEnd: new THREE.Color('#E0FFE0'),   // 훨씬 더 밝은 연두색 끝
+    uTime: 0,
+    uWaterColor: new THREE.Color('#D0F0FF'), // 매우 밝은 하늘색
+    uWaterColorDeep: new THREE.Color('#D0F0FF'), // 매우 밝은 하늘색 (통일)
   },
   // Vertex Shader
   `
-  #include <common>
-  #include <shadowmap_pars_vertex>
-  
-  varying vec4 vScreenPosition;
+  uniform float uTime;
   varying vec3 vWorldPosition;
-  
+  varying float vElevation;
+  varying vec3 vNormal;
+
   void main() {
     vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+
+    // 물결 효과 (여러 개의 사인파 조합)
+    float wave1 = sin(worldPosition.x * 0.1 + uTime * 0.5) * 0.3;
+    float wave2 = sin(worldPosition.z * 0.15 + uTime * 0.7) * 0.2;
+    float wave3 = sin((worldPosition.x + worldPosition.z) * 0.08 + uTime * 0.3) * 0.25;
+
+    vElevation = wave1 + wave2 + wave3;
+    worldPosition.y += vElevation;
+
     vWorldPosition = worldPosition.xyz;
-    vec4 mvPosition = viewMatrix * worldPosition;
-    gl_Position = projectionMatrix * mvPosition;
-    
-    // 스크린 좌표를 varying으로 전달
-    vScreenPosition = gl_Position;
-    
-    #include <shadowmap_vertex>
+    vNormal = vec3(0.0, 1.0, 0.0); // 항상 위를 향하도록 (어두운 선 제거)
+
+    gl_Position = projectionMatrix * viewMatrix * worldPosition;
   }
   `,
   // Fragment Shader
   `
-  #include <common>
-  #include <packing>
-  #include <lights_pars_begin>
-  #include <shadowmap_pars_fragment>
-  
-  uniform vec3 uColorStart;
-  uniform vec3 uColorEnd;
-  varying vec4 vScreenPosition;
+  uniform vec3 uWaterColor;
+  uniform vec3 uWaterColorDeep;
+  uniform float uTime;
   varying vec3 vWorldPosition;
+  varying float vElevation;
+  varying vec3 vNormal;
 
   void main() {
-    // 스크린 좌표를 0-1 범위로 정규화
-    vec2 screenUV = (vScreenPosition.xy / vScreenPosition.w) * 0.5 + 0.5;
-    
-    // 화면 기준 오른쪽 아래로 갈수록 밝아지는 그라데이션
-    float gradient = (screenUV.x + (1.0 - screenUV.y)) * 0.5;
-    vec3 baseColor = mix(uColorStart, uColorEnd, gradient);
-    
-    // 그림자 계산
-    float shadow = getShadow(directionalShadowMap[0], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, vDirectionalShadowCoord[0]);
-    
-    // 그림자를 기본 색상에 적용
-    vec3 finalColor = baseColor * (0.3 + 0.7 * shadow);
-    
+    // 하늘색 기본 색상
+    vec3 baseColor = uWaterColor;
+
+    // 부드러운 물 반짝임 효과
+    float sparkle = sin(vWorldPosition.x * 0.5 + uTime * 0.5) + sin(vWorldPosition.z * 0.3 + uTime * 0.7);
+    sparkle = sparkle * 0.03 + 0.97; // 더 미세한 반짝임
+
+    vec3 finalColor = baseColor * sparkle;
+
     gl_FragColor = vec4(finalColor, 1.0);
   }
   `
 );
 
-extend({ GradientFloorMaterial });
+extend({ WaterMaterial });
 
 // 하늘을 위한 컴포넌트
 function Sky() {
@@ -893,6 +891,15 @@ function PublicSquare(props) {
 useGLTF.preload('/resources/Map/PublicSquare.glb');
 
 function Level1({ characterRef }) {
+  const waterRef = useRef();
+
+  // 물 애니메이션
+  useFrame((state) => {
+    if (waterRef.current) {
+      waterRef.current.uTime = state.clock.elapsedTime;
+    }
+  });
+
   return (
     <>
       <Sky />
@@ -903,9 +910,10 @@ function Level1({ characterRef }) {
       <PortalBase position={portalPosition} scale={20} castShadow receiveShadow />
       <PortalVortex position={[-19.7, 8, -22]} scale={[7, 9.8, 1]} castShadow receiveShadow />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[500, 500]} />
-        <meshStandardMaterial color="#90EE90" />
+      {/* 찰랑거리는 물 바닥 */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
+        <planeGeometry args={[500, 500, 100, 100]} />
+        <waterMaterial ref={waterRef} side={THREE.DoubleSide} />
       </mesh>
     </>
   );
