@@ -13,7 +13,19 @@
       "Bash(npm start)",
       "Bash(powershell -Command \"Stop-Process -Id 10792 -Force\")",
       "Bash(git remote set-url:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(nul)",
+      "Bash(git remote:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nSimplify to 3D game only: remove web mode, Level3, and decorative elements\n\n- Removed all web mode components and navigation\n- Removed Level3 portal and map entirely\n- Simplified Level1 to only Sky, Portal to Level2, and floor\n- Kept Level2 with car system intact\n- Simplified App.css to basic container styles\n- Changed character to BaseCharacter.gltf\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(npm install)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(rd /s /q node_modules)",
+      "Bash(npm ci:*)",
+      "Bash(git rm:*)",
+      "Bash(gradle wrapper)",
+      "Bash(java:*)",
+      "Bash(mvn spring-boot:run:*)"
     ],
     "deny": [],
     "ask": []
