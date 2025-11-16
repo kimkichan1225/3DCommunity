@@ -12,6 +12,9 @@ This is a **3D Community Platform** - a location-based social metaverse built wi
 
 ### Frontend (React + Three.js)
 ```bash
+# Install dependencies
+npm install
+
 # Start development server (http://localhost:3000)
 npm start
 
@@ -20,6 +23,11 @@ npm run build
 
 # Run tests
 npm test
+
+# Clean install (if issues with node_modules)
+rd /s /q node_modules    # Windows
+rm -rf node_modules      # Linux/Mac
+npm ci
 ```
 
 ### Backend (Spring Boot)
@@ -27,17 +35,25 @@ npm test
 # Navigate to backend directory
 cd backend
 
-# Run with Maven (if pom.xml exists)
-./mvnw spring-boot:run
+# Run with Maven (both pom.xml and build.gradle exist)
+./mvnw spring-boot:run       # Linux/Mac
+mvnw.cmd spring-boot:run      # Windows
 
-# Run with Gradle (if build.gradle exists)
-./gradlew bootRun
+# Run with Gradle (recommended - includes WebSocket support)
+./gradlew bootRun             # Linux/Mac
+gradlew.bat bootRun           # Windows
 
 # Run with IntelliJ IDEA
 # Open CommunityApplication.java and click Run
+
+# Build JAR file
+./gradlew build               # Gradle
+./mvnw package                # Maven
 ```
 
 Backend server runs on `http://localhost:8080`
+
+**Note**: Both Maven and Gradle configurations exist. Gradle includes additional WebSocket dependencies for planned real-time features.
 
 ### H2 Database Console (Development)
 - URL: `http://localhost:8080/h2-console`
@@ -181,7 +197,8 @@ spring:
 Assets in `public/` directory:
 - **Characters**: `resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf`
 - **Vehicles**: `resources/kenney_car-kit/Models/GLB-format/race-future.glb`
-- **Environment**: Custom portal models (`portalbase.glb`)
+- **Environment**: Custom portal models (`portalbase.glb`), Nature-Kit models, Medieval Builder Pack
+- **Map Tiles**: `resources/kaykit_medieval_builder_pack_1.0/Models/tiles/square/gltf/square_forest.gltf.glb`
 - **Textures**: Level textures (e.g., `level2map.png`)
 
 All models loaded with `useGLTF()` and preloaded with `useGLTF.preload()`.
@@ -209,6 +226,7 @@ useEffect(() => {
 - Green gradient floor
 - Sky component
 - Portal to Level2 (position: `[-20, 7.5, -20]`)
+- PublicSquare map feature (recent addition - see `SquareForestTile.js`)
 - Characters spawn here after login
 
 **Level2** (`src/App.js` - `Level2` component)
@@ -335,6 +353,16 @@ Location: `src/App.js` - `Model` component's `useFrame`
 2. Call from component with error handling
 3. Update Zustand store if needed for global state
 
+### Adding New Map Elements
+1. Place 3D model in `public/resources/[asset-pack]/`
+2. Create component following pattern in `SquareForestTile.js`:
+   ```javascript
+   const { scene } = useGLTF('/path/to/model.glb');
+   return <primitive object={scene} {...props} />;
+   ```
+3. Add to Level1 or Level2 component with position props
+4. Preload with `useGLTF.preload('/path/to/model.glb')`
+
 ## Git Commit Conventions
 
 This project uses commit prefixes:
@@ -358,13 +386,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - Profile and Settings in ESC menu are placeholders
 
 **Planned Features** (from README):
-- WebSocket real-time communication
+- WebSocket real-time communication (backend dependency already added in Gradle)
 - Chat system
 - Friend management
 - GPS-based room creation
 - Mini-game system
 - Character customization shop
-- Payment integration
+- Payment integration (PortOne/Toss Payments/Kakao Pay)
+- Social login (Google, Kakao)
 
 ## Performance Considerations
 
