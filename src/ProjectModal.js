@@ -73,6 +73,14 @@ export function ProjectModal({ project, onClose }) {
             >
               문제해결 사례
             </button>
+            {(project.report || project.reports) && (
+              <button
+                className={`tab-button ${activeTab === 'report' ? 'active' : ''}`}
+                onClick={() => setActiveTab('report')}
+              >
+                보고서
+              </button>
+            )}
           </div>
 
           {/* Tab Content */}
@@ -120,6 +128,57 @@ export function ProjectModal({ project, onClose }) {
                     <li key={index}>{detail}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {activeTab === 'report' && project.reports && (
+              <div className="modal-report">
+                <h3>프로젝트 문서</h3>
+                <div className="reports-grid">
+                  {project.reports.map((report, index) => (
+                    <div key={index} className="report-item">
+                      <h4>{report.title}</h4>
+                      <div className="pdf-container-small">
+                        <iframe
+                          src={report.file}
+                          title={report.title}
+                          className="pdf-viewer"
+                        />
+                      </div>
+                      <a
+                        href={report.file}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="download-link-small"
+                      >
+                        📄 {report.title} 다운로드
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'report' && project.report && !project.reports && (
+              <div className="modal-report">
+                <h3>프로젝트 보고서</h3>
+                <div className="pdf-container">
+                  <iframe
+                    src={project.report}
+                    title="프로젝트 보고서"
+                    className="pdf-viewer"
+                  />
+                </div>
+                <div className="report-download">
+                  <a
+                    href={project.report}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="download-link"
+                  >
+                    📄 PDF 다운로드
+                  </a>
+                </div>
               </div>
             )}
           </div>
