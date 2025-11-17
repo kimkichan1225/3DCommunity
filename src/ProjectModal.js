@@ -202,7 +202,7 @@ export function ProjectModal({ project, onClose }) {
                   rel="noopener noreferrer"
                   className="modal-link demo-link"
                 >
-                  Live Demo
+                  {project.demo.includes('releases/download') ? 'Download Game' : 'Live Demo'}
                 </a>
               )}
             </div>
