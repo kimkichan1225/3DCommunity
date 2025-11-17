@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './ProjectModal.css';
 
 export function ProjectModal({ project, onClose }) {
+  const [activeTab, setActiveTab] = useState('overview');
+
   useEffect(() => {
     // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
@@ -51,16 +53,76 @@ export function ProjectModal({ project, onClose }) {
 
           <p className="modal-description">{project.description}</p>
 
-          {project.details && (
-            <div className="modal-details">
-              <h3>주요 기능</h3>
-              <ul>
-                {project.details.map((detail, index) => (
-                  <li key={index}>{detail}</li>
+          {/* Navigation Tabs */}
+          <div className="modal-tabs">
+            <button
+              className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+              onClick={() => setActiveTab('overview')}
+            >
+              개요
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'achievements' ? 'active' : ''}`}
+              onClick={() => setActiveTab('achievements')}
+            >
+              성과
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'challenges' ? 'active' : ''}`}
+              onClick={() => setActiveTab('challenges')}
+            >
+              문제해결 사례
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="tab-content">
+            {activeTab === 'overview' && project.overview && (
+              <div className="modal-details">
+                <h3>프로젝트 개요</h3>
+                <ul>
+                  {project.overview.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {activeTab === 'achievements' && project.achievements && (
+              <div className="modal-details">
+                <h3>주요 성과</h3>
+                <ul>
+                  {project.achievements.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {activeTab === 'challenges' && project.challenges && (
+              <div className="modal-details">
+                <h3>문제해결 사례</h3>
+                {project.challenges.map((challenge, index) => (
+                  <div key={index} className="challenge-item">
+                    <h4>{challenge.title}</h4>
+                    <p>{challenge.description}</p>
+                  </div>
                 ))}
-              </ul>
-            </div>
-          )}
+              </div>
+            )}
+
+            {/* Fallback for old data structure */}
+            {activeTab === 'overview' && !project.overview && project.details && (
+              <div className="modal-details">
+                <h3>주요 기능</h3>
+                <ul>
+                  {project.details.map((detail, index) => (
+                    <li key={index}>{detail}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
 
           {(project.github || project.demo) && (
             <div className="modal-links">

@@ -121,7 +121,42 @@
   font-size: 1.1rem;
   line-height: 1.8;
   color: #495057;
+  margin-bottom: 1.5rem;
+}
+
+/* Navigation Tabs */
+.modal-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
   margin-bottom: 2rem;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s;
+  border-bottom: 3px solid transparent;
+}
+
+.tab-button:hover {
+  color: #495057;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.tab-button.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.tab-content {
+  min-height: 200px;
 }
 
 .modal-details {
@@ -154,6 +189,27 @@
   left: 0;
   color: #667eea;
   font-weight: bold;
+}
+
+/* Challenge Items */
+.challenge-item {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+}
+
+.challenge-item h4 {
+  color: #2c3e50;
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+}
+
+.challenge-item p {
+  color: #495057;
+  line-height: 1.6;
+  margin: 0;
 }
 
 .modal-links {
