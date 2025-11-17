@@ -65,3 +65,228 @@
   border-radius: 6px;
   font-weight: 600;
 }
+
+/* 다크 모드 스타일 */
+.dark-mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-right: 1rem;
+}
+
+.dark-mode-toggle:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.dark-mode-toggle:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.dark-mode-toggle .toggle-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+/* 다크 모드 전역 스타일 */
+.dark-mode {
+  --primary-blue: #7B9FFF;
+  --secondary-purple: #9D7BC9;
+  --light-gray: #1a1a1a;
+  --dark-text: #e0e0e0;
+  --gradient-bg: linear-gradient(135deg, #2a1f3d 0%, #1f2f4d 50%, #1a3a5f 100%);
+}
+
+.dark-mode .navigation-bar {
+  background: rgba(26, 26, 26, 0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .nav-logo {
+  color: #e0e0e0;
+}
+
+.dark-mode .nav-link {
+  color: #b0b0b0;
+}
+
+.dark-mode .nav-link:hover {
+  color: #7B9FFF;
+}
+
+.dark-mode .dark-mode-toggle {
+  background: #2a2a2a;
+  border-color: #404040;
+}
+
+.dark-mode .dark-mode-toggle:hover {
+  background: #333333;
+}
+
+.dark-mode .mode-toggle {
+  background: #2a2a2a;
+  border-color: #404040;
+  color: #e0e0e0;
+}
+
+.dark-mode .mode-toggle:hover {
+  background: #333333;
+}
+
+.dark-mode .web-mode-content {
+  background: #1a1a1a;
+}
+
+.dark-mode .section {
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4 {
+  color: #e0e0e0;
+}
+
+.dark-mode p {
+  color: #b0b0b0;
+}
+
+.dark-mode .highlight {
+  background: linear-gradient(135deg, #9D7BC9 0%, #7B9FFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark-mode .project-card {
+  background: #252525;
+  border: 1px solid #404040;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .project-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 24px rgba(123, 159, 255, 0.2);
+  border-color: #7B9FFF;
+}
+
+.dark-mode .project-card h3 {
+  color: #e0e0e0;
+}
+
+.dark-mode .project-card p {
+  color: #999;
+}
+
+.dark-mode .tech-tag {
+  background: #2a2a2a;
+  color: #7B9FFF;
+  border: 1px solid #404040;
+}
+
+.dark-mode .particle {
+  background: radial-gradient(circle, rgba(123, 159, 255, 0.8) 0%, rgba(123, 159, 255, 0.4) 40%, transparent 70%);
+  box-shadow: 0 0 20px rgba(123, 159, 255, 0.6), 0 0 40px rgba(123, 159, 255, 0.3);
+}
+
+.dark-mode .contact-link {
+  color: #b0b0b0;
+  background: #252525;
+  border: 2px solid #404040;
+}
+
+.dark-mode .contact-link:hover {
+  color: #7B9FFF;
+  border-color: #7B9FFF;
+  background: #2a2a2a;
+  box-shadow: 0 8px 24px rgba(123, 159, 255, 0.2);
+}
+
+.dark-mode .play-game-button {
+  background: linear-gradient(135deg, #9D7BC9 0%, #7B9FFF 100%);
+}
+
+.dark-mode .play-game-button:hover {
+  box-shadow: 0 8px 24px rgba(123, 159, 255, 0.3);
+}
+
+/* About 섹션 다크 모드 */
+.dark-mode #about {
+  background: #1a1a1a !important;
+}
+
+.dark-mode .profile-image-container {
+  border-color: #404040;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode #about h3 {
+  color: #e0e0e0;
+}
+
+.dark-mode #about p {
+  color: #b0b0b0 !important;
+}
+
+/* Projects 섹션 다크 모드 */
+.dark-mode #projects {
+  background: #1a1a1a;
+}
+
+.dark-mode #projects h2 {
+  color: #e0e0e0;
+}
+
+.dark-mode .project-card-title {
+  color: #e0e0e0;
+}
+
+.dark-mode .project-description {
+  color: #999;
+}
+
+.dark-mode .project-image {
+  opacity: 0.9;
+}
+
+.dark-mode .project-card:hover .project-image {
+  opacity: 1;
+}
+
+/* Contact 섹션 다크 모드 */
+.dark-mode #contact {
+  background: #1a1a1a;
+}
+
+.dark-mode #contact h2 {
+  color: #e0e0e0;
+}
+
+.dark-mode #contact p {
+  color: #b0b0b0;
+}
+
+.dark-mode .contact-link i {
+  color: #7B9FFF;
+}
+
+.dark-mode .contact-link span {
+  color: #b0b0b0;
+}
+
+/* 핵심 역량 카드 다크 모드 */
+.dark-mode div[style*="rgba(91, 127, 255, 0.05)"] {
+  background: rgba(123, 159, 255, 0.08) !important;
+}
