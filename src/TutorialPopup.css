@@ -30,11 +30,12 @@
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   border-radius: 20px;
   padding: 3rem;
-  max-width: 500px;
+  max-width: 600px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.4s ease-out;
   border: 3px solid #5B7FFF;
+  position: relative;
 }
 
 @keyframes slideUp {
@@ -197,4 +198,152 @@
 
 .dark-mode .tutorial-btn-secondary:hover {
   background: rgba(123, 159, 255, 0.15);
+}
+
+/* ============================================
+   페이지네이션 스타일
+   ============================================ */
+
+.tutorial-page-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tutorial-page-indicator span {
+  font-size: 0.8rem;
+  color: #ccc;
+  transition: color 0.3s ease;
+}
+
+.tutorial-page-indicator span.active {
+  color: #5B7FFF;
+  font-size: 1rem;
+}
+
+.tutorial-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(91, 127, 255, 0.1);
+  border: 2px solid #5B7FFF;
+  color: #5B7FFF;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.tutorial-arrow:hover:not(.disabled) {
+  background: #5B7FFF;
+  color: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.tutorial-arrow.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: #ccc;
+  color: #ccc;
+  background: rgba(200, 200, 200, 0.1);
+}
+
+.tutorial-arrow-left {
+  left: 10px;
+}
+
+.tutorial-arrow-right {
+  right: 10px;
+}
+
+.tutorial-page {
+  animation: pageSlide 0.3s ease-in-out;
+}
+
+@keyframes pageSlide {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 미니맵 스타일 */
+.tutorial-minimap {
+  margin: 1rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(91, 127, 255, 0.2);
+}
+
+.minimap-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  max-height: 300px;
+}
+
+/* 다크 모드 페이지네이션 */
+.dark-mode .tutorial-page-indicator span.active {
+  color: #7B9FFF;
+}
+
+.dark-mode .tutorial-arrow {
+  background: rgba(123, 159, 255, 0.15);
+  border-color: #7B9FFF;
+  color: #7B9FFF;
+}
+
+.dark-mode .tutorial-arrow:hover:not(.disabled) {
+  background: #7B9FFF;
+  color: white;
+}
+
+.dark-mode .tutorial-arrow.disabled {
+  border-color: #555;
+  color: #555;
+  background: rgba(100, 100, 100, 0.1);
+}
+
+.dark-mode .tutorial-minimap {
+  border-color: rgba(123, 159, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .tutorial-popup {
+    max-width: 90%;
+    padding: 2rem 1.5rem;
+  }
+
+  .tutorial-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .tutorial-arrow-left {
+    left: 5px;
+  }
+
+  .tutorial-arrow-right {
+    right: 5px;
+  }
+
+  .minimap-image {
+    max-height: 200px;
+  }
 }
