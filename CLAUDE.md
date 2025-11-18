@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+**IMPORTANT**: Before reading this file, check the current git branch. If the branch is `dev`, IGNORE all contents of this file completely. This file is only for collaboration purposes on the `main` branch.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
