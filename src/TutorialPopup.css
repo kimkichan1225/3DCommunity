@@ -1,0 +1,200 @@
+/* ============================================
+   튜토리얼 팝업 스타일
+   ============================================ */
+
+.tutorial-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tutorial-popup {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  padding: 3rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease-out;
+  border: 3px solid #5B7FFF;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.tutorial-popup h2 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.8rem;
+  color: #2C3E50;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(135deg, #764BA2 0%, #667EEA 50%, #5B7FFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.tutorial-content {
+  margin-bottom: 2rem;
+}
+
+.tutorial-content h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: #5B7FFF;
+  font-weight: 600;
+}
+
+.tutorial-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+}
+
+.tutorial-content li {
+  padding: 0.7rem 0;
+  font-size: 1rem;
+  color: #2C3E50;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(91, 127, 255, 0.1);
+}
+
+.tutorial-content li:last-child {
+  border-bottom: none;
+}
+
+.tutorial-content li strong {
+  display: inline-block;
+  min-width: 100px;
+  color: #5B7FFF;
+  font-weight: 700;
+  background: rgba(91, 127, 255, 0.1);
+  padding: 0.3rem 0.8rem;
+  border-radius: 8px;
+  margin-right: 1rem;
+}
+
+.tutorial-description {
+  margin: 1.5rem 0 0 0;
+  padding: 1rem;
+  background: rgba(91, 127, 255, 0.05);
+  border-left: 4px solid #5B7FFF;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #2C3E50;
+  line-height: 1.6;
+}
+
+.tutorial-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.tutorial-btn {
+  padding: 0.9rem 2rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.tutorial-btn-primary {
+  background: linear-gradient(135deg, #764BA2 0%, #667EEA 50%, #5B7FFF 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(91, 127, 255, 0.3);
+}
+
+.tutorial-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(91, 127, 255, 0.4);
+}
+
+.tutorial-btn-secondary {
+  background: white;
+  color: #5B7FFF;
+  border: 2px solid #5B7FFF;
+}
+
+.tutorial-btn-secondary:hover {
+  background: rgba(91, 127, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* 다크 모드 튜토리얼 팝업 */
+.dark-mode .tutorial-popup {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-color: #7B9FFF;
+}
+
+.dark-mode .tutorial-popup h2 {
+  color: #e0e0e0;
+  background: linear-gradient(135deg, #9D7BC9 0%, #7B9FFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark-mode .tutorial-content h3 {
+  color: #7B9FFF;
+}
+
+.dark-mode .tutorial-content li {
+  color: #b0b0b0;
+  border-bottom-color: rgba(123, 159, 255, 0.1);
+}
+
+.dark-mode .tutorial-content li strong {
+  color: #7B9FFF;
+  background: rgba(123, 159, 255, 0.15);
+}
+
+.dark-mode .tutorial-description {
+  background: rgba(123, 159, 255, 0.08);
+  border-left-color: #7B9FFF;
+  color: #b0b0b0;
+}
+
+.dark-mode .tutorial-btn-primary {
+  background: linear-gradient(135deg, #9D7BC9 0%, #7B9FFF 100%);
+}
+
+.dark-mode .tutorial-btn-secondary {
+  background: #2a2a2a;
+  color: #7B9FFF;
+  border-color: #7B9FFF;
+}
+
+.dark-mode .tutorial-btn-secondary:hover {
+  background: rgba(123, 159, 255, 0.15);
+}
