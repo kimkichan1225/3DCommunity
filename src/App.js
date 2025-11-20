@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import './App.css';
 import { useKeyboardControls } from './useKeyboardControls';
 import { Physics, RigidBody, CapsuleCollider } from '@react-three/rapier';
+import LandingPage from './components/LandingPage';
 
 // 하늘을 위한 컴포넌트
 function Sky() {
@@ -255,12 +256,22 @@ function Level1Map(props) {
   // Level1Map 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
   const clonedScene = useMemo(() => {
     const cloned = scene.clone();
+
+    // GLB 파일 내부 구조 확인
+    console.log('=== PublicSquare.glb 구조 ===');
     cloned.traverse((child) => {
+      console.log(`- ${child.name} (type: ${child.type})`);
+      if (child.name === 'MainCamera') {
+        console.log('  ✅ MainCamera 발견!', child);
+      }
+
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
       }
     });
+    console.log('===========================');
+
     return cloned;
   }, [scene]);
 
@@ -293,9 +304,27 @@ function Level1({ characterRef }) {
 
 function App() {
   const characterRef = useRef();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
+
+  const handleLogin = () => {
+    // TODO: 실제 로그인 로직 구현
+    console.log('로그인 버튼 클릭');
+    setIsLoggedIn(true);
+    setShowLanding(false);
+  };
+
+  const handleRegister = () => {
+    // TODO: 실제 회원가입 로직 구현
+    console.log('회원가입 버튼 클릭');
+    // 임시로 바로 로그인 상태로 전환
+    setIsLoggedIn(true);
+    setShowLanding(false);
+  };
 
   return (
     <div className="App">
+      {/* 3D 배경 (항상 렌더링) */}
       <Canvas
         camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
         shadows
@@ -324,13 +353,23 @@ function App() {
 
         <Suspense fallback={null}>
           <Physics gravity={[0, -40, 0]} debug>
-            <Model characterRef={characterRef} />
-            <CameraController characterRef={characterRef} />
-            <CameraLogger />
+            {/* 로그인 후에만 캐릭터 표시 */}
+            {isLoggedIn && (
+              <>
+                <Model characterRef={characterRef} />
+                <CameraController characterRef={characterRef} />
+                <CameraLogger />
+              </>
+            )}
             <Level1 characterRef={characterRef} />
           </Physics>
         </Suspense>
       </Canvas>
+
+      {/* 랜딩 페이지 오버레이 */}
+      {showLanding && (
+        <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
+      )}
     </div>
   );
 }
