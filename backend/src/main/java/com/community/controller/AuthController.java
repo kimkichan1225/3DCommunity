@@ -37,9 +37,10 @@ public class AuthController {
             AuthResponse response = authService.login(request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            e.printStackTrace(); // 콘솔에 에러 출력
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                     AuthResponse.builder()
-                            .message("이메일 또는 비밀번호가 올바르지 않습니다.")
+                            .message(e.getMessage())
                             .build()
             );
         }

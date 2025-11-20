@@ -13,7 +13,15 @@
       "Bash(npm start)",
       "Bash(powershell -Command \"Stop-Process -Id 10792 -Force\")",
       "Bash(git remote set-url:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(dir:*)",
+      "Bash(copy:*)",
+      "Bash(powershell:*)",
+      "Bash(npm install:*)",
+      "Bash(del \"C:\\Users\\vxbc5\\Desktop\\KDT\\3번째 프로젝트 커뮤니티\\MetaPlaza\\src\\ProjectModal.js\" \"C:\\Users\\vxbc5\\Desktop\\KDT\\3번째 프로젝트 커뮤니티\\MetaPlaza\\src\\TypingAnimation.js\" \"C:\\Users\\vxbc5\\Desktop\\KDT\\3번째 프로젝트 커뮤니티\\MetaPlaza\\src\\useScrollAnimation.js\" \"C:\\Users\\vxbc5\\Desktop\\KDT\\3번째 프로젝트 커뮤니티\\MetaPlaza\\src\\ProjectModal.css\")",
+      "Bash(rm:*)",
+      "Bash(temp_header.txt)",
+      "Bash(temp_footer.txt)"
     ],
     "deny": [],
     "ask": []
