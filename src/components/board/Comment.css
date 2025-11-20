@@ -1,0 +1,155 @@
+.comments-container {
+  margin-top: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.comment-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 30px;
+  flex-shrink: 0;
+}
+
+.comment-input-wrapper textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.comment-input-wrapper textarea:focus {
+  outline: none;
+  border-color: #8b5cf6;
+}
+
+.comment-input-wrapper button {
+  align-self: flex-end;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.comment-input-wrapper button:hover {
+  transform: translateY(-2px);
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.comment-item {
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.comment-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+.comment-date {
+  color: #999;
+}
+
+.comment-content {
+  color: #333;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-comment-like, .btn-reply {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-comment-like:hover {
+  background: #fff5f5;
+  border-color: #ff6b6b;
+}
+
+.btn-comment-like.liked {
+  background: #ff6b6b;
+  color: white;
+  border-color: #ff6b6b;
+}
+
+.btn-reply:hover {
+  background: #f0e6ff;
+  border-color: #8b5cf6;
+}
+
+.reply-input-wrapper {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.reply-input-wrapper input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.reply-input-wrapper button {
+  padding: 8px 16px;
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.replies {
+  margin-top: 12px;
+  padding-left: 20px;
+  border-left: 2px solid #e0e0e0;
+}
+
+.reply-item {
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
