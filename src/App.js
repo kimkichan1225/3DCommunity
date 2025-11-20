@@ -41,6 +41,7 @@ function CameraLogger() {
 function CameraController({ characterRef, mainCameraRef, isLoggedIn }) {
   const { camera } = useThree();
   const cameraOffset = new THREE.Vector3(-0.00, 28.35, 19.76); // 고정된 카메라 오프셋
+  const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
     // 로그인 후: 캐릭터를 따라감
@@ -49,17 +50,17 @@ function CameraController({ characterRef, mainCameraRef, isLoggedIn }) {
       const worldPosition = new THREE.Vector3();
       characterRef.current.getWorldPosition(worldPosition);
 
-      // 타겟 위치 설정
-      const targetPosition = worldPosition;
+      // 타겟 위치를 부드럽게 보간 (떨림 방지)
+      targetPositionRef.current.lerp(worldPosition, delta * 10.0);
 
       // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
-      const targetCameraPosition = targetPosition.clone().add(cameraOffset);
+      const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
-      // 부드러운 카메라 이동
-      camera.position.lerp(targetCameraPosition, delta * 5.0);
+      // 부드러운 카메라 이동 (속도 감소)
+      camera.position.lerp(targetCameraPosition, delta * 3.0);
 
       // 타겟을 바라보도록 설정
-      camera.lookAt(targetPosition);
+      camera.lookAt(targetPositionRef.current);
     }
     // 로그인 전: MainCamera를 따라감
     else if (!isLoggedIn && mainCameraRef.current) {
@@ -67,17 +68,17 @@ function CameraController({ characterRef, mainCameraRef, isLoggedIn }) {
       const worldPosition = new THREE.Vector3();
       mainCameraRef.current.getWorldPosition(worldPosition);
 
-      // 타겟 위치 설정
-      const targetPosition = worldPosition;
+      // 타겟 위치를 부드럽게 보간 (떨림 방지)
+      targetPositionRef.current.lerp(worldPosition, delta * 10.0);
 
       // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
-      const targetCameraPosition = targetPosition.clone().add(cameraOffset);
+      const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
-      // 부드러운 카메라 이동
-      camera.position.lerp(targetCameraPosition, delta * 5.0);
+      // 부드러운 카메라 이동 (속도 감소)
+      camera.position.lerp(targetCameraPosition, delta * 3);
 
       // 타겟을 바라보도록 설정
-      camera.lookAt(targetPosition);
+      camera.lookAt(targetPositionRef.current);
     }
   });
 
@@ -161,6 +162,11 @@ function Model({ characterRef }) {
           child.receiveShadow = true;
         }
       });
+    }
+
+    // characterRef를 modelGroupRef로 설정 (카메라가 추적할 수 있도록)
+    if (modelGroupRef.current) {
+      characterRef.current = modelGroupRef.current;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -248,9 +254,11 @@ function Model({ characterRef }) {
         type="dynamic"
         colliders={false}
         mass={1}
-        linearDamping={0.5}
+        linearDamping={2.0} // 증가: 더 빠르게 감속 (떨림 방지)
+        angularDamping={1.0} // 회전 감쇠 추가
         enabledRotations={[false, false, false]} // 물리적 회전 완전 잠금
         position={[0, 2, 0]} // 시작 위치
+        lockRotations={true} // 회전 완전 잠금
       >
         <CapsuleCollider args={[2, 1.3]} position={[0, 3.2, 0]} />
       </RigidBody>
