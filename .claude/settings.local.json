@@ -17,7 +17,11 @@
       "Bash(dir:*)",
       "Bash(copy:*)",
       "Bash(powershell:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(del \"C:\\Users\\vxbc5\\Desktop\\KDT\\3번째 프로젝트 커뮤니티\\MetaPlaza\\src\\ProjectModal.js\" \"C:\\Users\\vxbc5\\Desktop\\KDT\\3번째 프로젝트 커뮤니티\\MetaPlaza\\src\\TypingAnimation.js\" \"C:\\Users\\vxbc5\\Desktop\\KDT\\3번째 프로젝트 커뮤니티\\MetaPlaza\\src\\useScrollAnimation.js\" \"C:\\Users\\vxbc5\\Desktop\\KDT\\3번째 프로젝트 커뮤니티\\MetaPlaza\\src\\ProjectModal.css\")",
+      "Bash(rm:*)",
+      "Bash(temp_header.txt)",
+      "Bash(temp_footer.txt)"
     ],
     "deny": [],
     "ask": []
