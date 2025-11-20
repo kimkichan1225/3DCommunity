@@ -4,417 +4,467 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **3D Community Platform** - a location-based social metaverse built with React, Three.js, and Spring Boot. Users authenticate, spawn as 3D characters in a virtual plaza, and interact with other players in real-time. The platform features GPS-based room creation, real-time chat, mini-games, and character customization.
+**MetaPlaza** is a location-based 3D social metaverse platform built with React, Three.js, and Spring Boot. The platform allows users to meet and interact in virtual spaces that are connected to real-world locations.
 
-**Key Concept**: The main screen is a 3D plaza that serves as both the login backdrop and the main gameplay area after authentication.
+### Current Development Status
+
+This project is currently in **early development phase**. The frontend is being built with React and Three.js, while the backend (Spring Boot) integration is planned for future implementation.
+
+**Currently Implemented:**
+- Basic 3D scene with Three.js and React Three Fiber
+- Single character control system with walk/run animations
+- Simple 3D plaza environment (PublicSquare.glb)
+- NPC character with speech bubble interaction
+- Keyboard-based character movement (WASD + Shift)
+
+**Planned Features (from README.md):**
+- Spring Boot backend with JWT authentication
+- Real-time multiplayer with WebSocket/Socket.io
+- Location-based room creation and discovery
+- Character customization system
+- Mini-games system
+- Shop and payment integration
+- Friend system and real-time chat
+- Mobile touch controls
+
+## Technology Stack
+
+### Frontend (Currently Implemented)
+- **React 19.1.1**: UI framework
+- **Three.js 0.179.1**: 3D graphics engine
+- **React Three Fiber 9.3.0**: React renderer for Three.js
+- **React Three Drei 10.7.4**: Helper utilities for R3F
+- **React Three Rapier**: Physics engine for 3D interactions
+
+### Backend (Planned)
+- **Spring Boot 3.x**: Main backend framework
+- **Spring Security + JWT**: Authentication
+- **Spring Data JPA**: Database ORM
+- **WebSocket / Socket.io**: Real-time communication
+- **MySQL / PostgreSQL**: Database
+- **Redis**: Caching and session management
+
+### Location Services (Planned)
+- **Kakao Maps API / Google Maps API**: Map services
+- **Geolocation API**: GPS location tracking
+- **Turf.js**: Geospatial calculations
 
 ## Development Commands
 
-### Frontend (React + Three.js)
+### Start Development Server
 ```bash
-# Install dependencies
-npm install
-
-# Start development server (http://localhost:3000)
 npm start
-
-# Build for production
-npm run build
-
-# Run tests
-npm test
-
-# Clean install (if issues with node_modules)
-rd /s /q node_modules    # Windows
-rm -rf node_modules      # Linux/Mac
-npm ci
 ```
+Runs the app in development mode on `http://localhost:3000`
 
-### Backend (Spring Boot)
+### Build Production
 ```bash
-# Navigate to backend directory
-cd backend
+npm run build
+```
+Creates an optimized production build in the `build/` folder
 
-# Run with Maven (both pom.xml and build.gradle exist)
-./mvnw spring-boot:run       # Linux/Mac
-mvnw.cmd spring-boot:run      # Windows
+### Run Tests
+```bash
+npm test
+```
+Launches the test runner in interactive watch mode
 
-# Run with Gradle (recommended - includes WebSocket support)
-./gradlew bootRun             # Linux/Mac
-gradlew.bat bootRun           # Windows
+### Deploy to Netlify
+```bash
+netlify deploy --prod
+```
+Deploys the production build to Netlify
 
-# Run with IntelliJ IDEA
-# Open CommunityApplication.java and click Run
+## Current File Structure
 
-# Build JAR file
-./gradlew build               # Gradle
-./mvnw package                # Maven
+```
+MetaPlaza/
+├── public/
+│   ├── resources/
+│   │   └── GameView/
+│   │       ├── PublicSquare.glb        # Main plaza 3D model
+│   │       ├── Worker.glb              # NPC character model
+│   │       ├── OldClassy.glb          # Character model
+│   │       └── Suit.glb               # Character model
+│   └── sounds/                         # Audio files (planned)
+├── src/
+│   ├── App.js                          # Main application component
+│   ├── App.css                         # Main styles
+│   ├── useKeyboardControls.js          # Keyboard input hook
+│   ├── PortalVortex.js                # Portal shader (not currently used)
+│   ├── index.js                        # React entry point
+│   └── index.css                       # Global styles
+├── CLAUDE.md                           # This file
+├── README.md                           # Project documentation
+├── netlify.toml                        # Netlify deployment config
+└── package.json                        # Dependencies and scripts
 ```
 
-Backend server runs on `http://localhost:8080`
+## Core Components (src/App.js)
 
-**Note**: Both Maven and Gradle configurations exist. Gradle includes additional WebSocket dependencies for planned real-time features.
-
-### H2 Database Console (Development)
-- URL: `http://localhost:8080/h2-console`
-- JDBC URL: `jdbc:h2:mem:communitydb`
-- Username: `sa`
-- Password: (empty)
-
-## Core Architecture
-
-### Project Transformation
-This codebase evolved from a 3D portfolio game to a social metaverse platform. Recent major changes include:
-- Removed Level3 and decorative portfolio elements (GitHubCat, Mailbox, Instagram, NPCs)
-- Simplified to Level1 (Plaza) and Level2 (Car racing area)
-- Added JWT authentication with Spring Boot backend
-- Integrated ESC menu system with logout functionality
-- Changed character model to BaseCharacter.gltf
-
-### Authentication Flow
-
-**Frontend State Management** (`src/store/useAuthStore.js`)
-- Uses Zustand for global auth state
-- Manages user, token, and isAuthenticated status
-- Integrates with `authService.js` for API calls
-
-**Backend JWT Authentication** (`backend/`)
-- Spring Security + JWT tokens (24-hour expiration)
-- BCrypt password hashing
-- CORS configured for `http://localhost:3000`
-- **CRITICAL**: JWT secret in `application.yml` must be Base64-encoded
-
-**UI Flow**:
-1. Unauthenticated: `AuthOverlay` displays over 3D plaza
-2. Login/Register: Forms submit to Spring Boot API
-3. Authenticated: Overlay disappears, character spawns in plaza
-4. ESC key: Opens `GameMenu` with logout, profile, settings
-
-### Game State Management
-
-States controlled in `App.js`:
-- `playing_level1`: Main 3D plaza (default)
-- `entering_portal`: Transition when entering Level2 portal
-- `playing_level2`: Urban racing area with drivable car
-- `entering_portal_back_to_level1`: Returning to plaza
-
-State transitions happen via distance-based portal collision detection.
-
-### Key System Components
-
-**Character System** (`src/App.js` - `Model` component)
-- Model: `/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf`
-- Animations: Idle, Walk, Run (controlled by `useAnimations`)
-- Movement: Direct position manipulation (not physics-based)
-  - Walk speed: ~0.1 units
-  - Run speed (Shift): ~0.3 units
-- Rotation: Smooth lerp to movement direction
-- Only spawns when `isAuthenticated === true`
-
-**Vehicle System** (Level 2 - `RaceFuture` component)
-- Front-wheel steering, rear-wheel drive
-- Enter/exit with 'E' key
-- Wheel animations: front wheels steer, all wheels rotate
-- Speed: gradual acceleration with max ~0.3 units
-- Character becomes invisible when in car
-
-**Camera System** (`CameraController` component)
-- Fixed offset: `(-0.00, 28.35, 19.76)` relative to character/vehicle
-- Smooth tracking with lerp (delta * 5.0 normal, delta * 2.0 portal transitions)
-- Automatically follows car when character enters vehicle
-- Uses `useThree()` hook to access Three.js camera
-
-**Portal System**
-- Visual: `PortalVortex` component with custom GLSL shader
-- Physical: `PortalBase` component (3D model)
-- Collision: Distance-based detection (radius: 2 units)
-- Positions defined as constants in `App.js`:
-  - `portalPosition`: Plaza to Level2
-  - `portalLevel2ToLevel1Position`: Level2 back to Plaza
-
-**ESC Menu System** (`src/components/menu/GameMenu.jsx`)
-- Opens/closes with ESC key
-- Purple gradient theme matching auth UI
-- Buttons: Logout (functional), Profile (placeholder), Settings (placeholder)
-- Only visible when authenticated
-
-### Input Handling
-
-**Keyboard Controls** (`src/useKeyboardControls.js`)
-- WASD / Arrow Keys: Character movement
-- Shift: Sprint modifier
-- E: Car interaction (Level2 only)
-- Enter: UI interactions
-- Escape: Toggle menu
-- C: Camera debug logging
-
-State tracking uses `useState` with keydown/keyup events.
-
-## Backend Architecture
-
-### Spring Boot Structure
-
-**Authentication** (`backend/src/main/java/com/community/`)
-- `controller/AuthController.java`: `/api/auth/register`, `/api/auth/login`, `/api/auth/test`
-- `service/AuthService.java`: Business logic for registration and login
-- `security/JwtTokenProvider.java`: JWT token generation and validation
-- `security/JwtAuthenticationFilter.java`: Request interceptor for token validation
-- `config/SecurityConfig.java`: CORS and security rules
-
-**User Management**
-- `model/User.java`: JPA entity implementing `UserDetails`
-- `repository/UserRepository.java`: Spring Data JPA repository
-- `dto/`: Request/response DTOs (RegisterRequest, LoginRequest, AuthResponse, UserDto)
-
-**Security Configuration** (`application.yml`)
-```yaml
-jwt:
-  secret: [Base64-encoded-string]  # MUST be Base64, no hyphens or special chars
-  expiration: 86400000  # 24 hours in milliseconds
-
-spring:
-  datasource:
-    url: jdbc:h2:mem:communitydb  # Dev: H2 in-memory
-    # url: jdbc:mysql://localhost:3306/community_db  # Prod: MySQL
-```
-
-**CORS Setup**: Allows `http://localhost:3000` with credentials
-
-## Custom Shaders
-
-**GradientFloorMaterial** (`src/App.js`)
-- Green gradient floor using custom shader
-- Supports Three.js shadow mapping
-- Colors: `#90EE90` (light green) → `#E0FFE0` (lighter green)
-
-**VortexMaterial** (`src/PortalVortex.js`)
-- Time-based swirling portal effect
-- Uses polar coordinates for rotation
-- Animated via `uTime` uniform in `useFrame`
-
-## 3D Asset Organization
-
-Assets in `public/` directory:
-- **Characters**: `resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf`
-- **Vehicles**: `resources/kenney_car-kit/Models/GLB-format/race-future.glb`
-- **Environment**: Custom portal models (`portalbase.glb`), Nature-Kit models, Medieval Builder Pack
-- **Map Tiles**: `resources/kaykit_medieval_builder_pack_1.0/Models/tiles/square/gltf/square_forest.gltf.glb`
-- **Textures**: Level textures (e.g., `level2map.png`)
-
-All models loaded with `useGLTF()` and preloaded with `useGLTF.preload()`.
-
-**Model Loading Pattern**:
+### Sky Component
+Simple sky sphere with light blue color:
 ```javascript
-const { scene, animations } = useGLTF('/path/to/model.gltf');
-const { actions } = useAnimations(animations, ref);
-
-// Enable shadows
-useEffect(() => {
-  scene.traverse((child) => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
-}, [scene]);
-```
-
-## Level Structure
-
-**Level1** (`src/App.js` - `Level1` component)
-- Main 3D plaza
-- Green gradient floor
-- Sky component
-- Portal to Level2 (position: `[-20, 7.5, -20]`)
-- PublicSquare map feature (recent addition - see `SquareForestTile.js`)
-- Characters spawn here after login
-
-**Level2** (`src/App.js` - `Level2` component)
-- Urban racing environment
-- Drivable car (`RaceFuture`)
-- Textured floor (`level2map.png`)
-- Return portal to Level1 (position: `[0, 7.5, 23.5]`)
-
-## Component Patterns
-
-**Authentication Conditional Rendering**:
-```javascript
-// In App.js
-{!isAuthenticated && <AuthOverlay />}
-{isAuthenticated && (
-  <Model characterRef={characterRef} gameState={gameState} setGameState={setGameState} />
-)}
-{isAuthenticated && <GameMenu isOpen={isMenuOpen} onClose={...} />}
-```
-
-**Portal Collision Detection**:
-```javascript
-// In Model component's useFrame
-const characterPos = characterRef.current.position.clone();
-const portalPos = portalPosition.clone();
-characterPos.y = 0;  // Ignore height
-portalPos.y = 0;
-const distance = characterPos.distanceTo(portalPos);
-if (distance < portalRadius) {
-  setGameState('entering_portal');
+function Sky() {
+  return (
+    <mesh>
+      <sphereGeometry args={[400, 32, 32]} />
+      <meshBasicMaterial color="#87CEFA" side={THREE.BackSide} />
+    </mesh>
+  );
 }
 ```
 
-**Smooth Camera Tracking**:
+### CameraLogger Component
+Debug utility that logs camera position and rotation when 'C' key is pressed.
+
+### CameraController Component
+Manages camera movement following the character:
+- Fixed offset camera: `(-0.00, 28.35, 19.76)`
+- Smooth lerp-based tracking: `delta * 5.0`
+- Always looks at character position
+
+### Model Component (Main Character)
+Player-controlled character with animations:
+- **Model**: `Worker_Male.gltf` from Ultimate Animated Character Pack
+- **Animations**: Idle, Walk, Run
+- **Movement**:
+  - Walk speed: ~8 units/sec
+  - Run speed: ~18 units/sec (with Shift key)
+- **Physics**: CapsuleCollider (radius: 1, height: 2.5)
+- **Controls**: WASD for movement, Shift for sprint
+- **Audio**: Footstep sounds (Step2.wav, step2.mp3) - currently commented out
+
+### SpeechBubble Component
+3D speech bubble that appears above NPCs:
+- Uses Three.js shapes for rounded rectangle background
+- Displays text using `@react-three/drei` Text component
+- Auto-scales based on text length
+
+### NPCCharacter Component
+Non-player character with interaction:
+- **Model**: `OldClassy_Male.gltf`
+- **Animation**: Idle animation only
+- **Interaction**: Shows speech bubble when player is within 6 units
+- **Message**: "첫번쨰 프로젝트에 오신걸 환영합니다! 🎉"
+- **Position**: Configurable via props
+
+### Level1Map Component
+Main 3D environment:
+- **Model**: `/resources/GameView/PublicSquare.glb`
+- **Physics**: Fixed RigidBody with trimesh collider
+- **Scale**: 1.0
+- **Features**: Shadow casting and receiving enabled
+
+### Level1 Component
+Main scene composition:
 ```javascript
-// In CameraController's useFrame
-const targetPosition = characterRef.current.position.clone().add(cameraOffset);
-camera.position.lerp(targetPosition, delta * 5.0);
-camera.lookAt(characterRef.current.position);
-```
-
-## Important Coordinates
-
-Camera offset: `(-0.00, 28.35, 19.76)`
-
-Portal positions:
-- Level1 → Level2: `(-20, 7.5, -20)`
-- Level2 → Level1: `(0, 7.5, 23.5)`
-- Portal radius: `2` units
-
-Character spawn positions:
-- Level1: `(0, 0, 0)` (default)
-- Level2: `(0, 0, 10)` after portal transition
-
-## Backend API Endpoints
-
-### Authentication
-```
-POST   /api/auth/register  - Register new user
-POST   /api/auth/login     - Login and receive JWT token
-GET    /api/auth/test      - Test endpoint (no auth required)
-```
-
-**Register Request**:
-```json
-{
-  "username": "testuser",
-  "email": "test@example.com",
-  "password": "password123"
+function Level1({ characterRef }) {
+  return (
+    <>
+      <Sky />
+      <Level1Map position={[0, 0, 0]} scale={1.0} />
+      <NPCCharacter position={[0, 0, 0]} playerRef={characterRef} />
+    </>
+  );
 }
 ```
 
-**Login Request**:
-```json
-{
-  "email": "test@example.com",
-  "password": "password123"
+### App Component
+Root component structure:
+```javascript
+function App() {
+  const characterRef = useRef();
+
+  return (
+    <div className="App">
+      <Canvas camera={{ position: [-0.00, 28.35, 19.76] }} shadows>
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[50, 50, 25]} intensity={6} castShadow />
+        <Suspense fallback={null}>
+          <Physics gravity={[0, -40, 0]} debug>
+            <Model characterRef={characterRef} />
+            <CameraController characterRef={characterRef} />
+            <CameraLogger />
+            <Level1 characterRef={characterRef} />
+          </Physics>
+        </Suspense>
+      </Canvas>
+    </div>
+  );
 }
 ```
 
-**Login Response**:
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 1,
-    "username": "testuser",
-    "email": "test@example.com",
-    "role": "ROLE_USER",
-    "createdAt": "2025-01-01T00:00:00"
-  },
-  "message": "로그인 성공"
+## Custom Hooks
+
+### useKeyboardControls (`src/useKeyboardControls.js`)
+Custom hook for keyboard input handling:
+- Tracks key states: forward, backward, left, right, shift, log, e, enter
+- Uses event listeners for keydown/keyup
+- Returns object with boolean values for each key state
+
+**Usage:**
+```javascript
+const { forward, backward, left, right, shift } = useKeyboardControls();
+```
+
+## Input Controls
+
+| Key | Function |
+|-----|----------|
+| `W` / `↑` | Move forward |
+| `S` / `↓` | Move backward |
+| `A` / `←` | Move left |
+| `D` / `→` | Move right |
+| `Shift` | Sprint (hold with movement keys) |
+| `C` | Log camera position/rotation (debug) |
+| `E` | Interact (planned) |
+| `Enter` | Chat input (planned) |
+
+## 3D Asset Management
+
+### Model Loading Pattern
+All 3D models use `useGLTF` hook with cloning for instancing:
+```javascript
+function MyModel(props) {
+  const { scene } = useGLTF('/path/to/model.glb');
+
+  const clonedScene = useMemo(() => {
+    const cloned = scene.clone();
+    cloned.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    return cloned;
+  }, [scene]);
+
+  return <primitive object={clonedScene} {...props} />;
+}
+
+useGLTF.preload('/path/to/model.glb');
+```
+
+### Current 3D Assets
+- **PublicSquare.glb**: Main plaza environment
+- **Worker.glb** / **OldClassy.glb**: Character models (GLTF with animations)
+- **Suit.glb**: Additional character model (planned usage)
+
+## Physics System
+
+Uses `@react-three/rapier` for physics:
+- **Gravity**: `[0, -40, 0]`
+- **Character Collider**: CapsuleCollider (radius: 1, height: 2.5)
+- **Environment Collider**: Fixed RigidBody with trimesh
+- **Debug Mode**: Currently enabled (shows collision shapes)
+
+## Animation System
+
+Character animations managed via `useAnimations` hook:
+- **Idle**: Default standing animation
+- **Walk**: Walking animation (activated when moving without Shift)
+- **Run**: Running animation (activated when moving with Shift)
+- **Transition**: 0.5 second fade between animations
+
+```javascript
+const { animations, scene } = useGLTF('/character.gltf');
+const { actions } = useAnimations(animations, characterRef);
+
+// Play animation
+actions['Walk']?.fadeIn(0.5).play();
+// Stop previous animation
+actions['Idle']?.fadeOut(0.5).stop();
+```
+
+## Lighting and Shadows
+
+### Light Setup
+- **Ambient Light**: Intensity 0.5 (general illumination)
+- **Directional Light**:
+  - Position: `[50, 50, 25]`
+  - Intensity: 6
+  - Shadow enabled: true
+  - Shadow map size: 8192 x 8192
+  - Shadow camera range: 500 units in all directions
+  - Shadow bias: -0.0001
+  - Shadow normal bias: 0.02
+  - Shadow radius: 4 (soft shadows)
+- **Sun Visual**: Yellow sphere at `[50, 50, 25]`
+
+### Shadow Settings
+All meshes should have:
+```javascript
+child.castShadow = true;
+child.receiveShadow = true;
+```
+
+## Styling (src/App.css)
+
+Minimal CSS for canvas container:
+```css
+.App {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
 }
 ```
+
+## Future Development Roadmap
+
+Based on README.md, upcoming features to implement:
+
+### Phase 1: Backend Integration
+1. Set up Spring Boot project structure
+2. Implement JWT authentication endpoints
+3. Create User entity and repository
+4. Set up MySQL/PostgreSQL database
+
+### Phase 2: Real-time Multiplayer
+1. Integrate Socket.io or WebSocket
+2. Implement character position synchronization
+3. Show other players' characters in real-time
+4. Add username display above characters
+
+### Phase 3: Location Services
+1. Integrate Kakao Maps or Google Maps API
+2. Implement GPS location tracking
+3. Create location-based room system
+4. Add proximity-based room visibility
+
+### Phase 4: Social Features
+1. Real-time chat system
+2. Friend system (add/remove/list)
+3. User profile pages
+4. Social interaction animations
+
+### Phase 5: Character System
+1. Character customization UI
+2. Clothing/accessory system
+3. Shop implementation
+4. Payment integration (PortOne)
+
+### Phase 6: Mini-games
+1. Game room creation system
+2. Multiple mini-game types
+3. Spectator mode
+4. Game state synchronization
+
+### Phase 7: Mobile Support
+1. Touch-based virtual joystick
+2. Responsive UI
+3. Mobile-optimized 3D rendering
+4. Touch interaction system
 
 ## Common Development Tasks
 
-### Adding New 3D Assets
-1. Place `.gltf` or `.glb` file in `public/resources/[category]/`
-2. Load with `useGLTF('/path/to/model.gltf')`
-3. Enable shadows via `traverse()` in `useEffect()`
-4. Add `useGLTF.preload()` call after component definition
+### Adding a New 3D Model
+1. Place `.glb` file in `public/resources/GameView/`
+2. Create component function following the model loading pattern
+3. Add `useGLTF.preload()` call after component
+4. Add component to Level1 or create new level
 
 ### Modifying Character Movement
-Location: `src/App.js` - `Model` component's `useFrame`
-- Walk speed: Adjust multiplier in `direction.multiplyScalar(speed)`
-- Run speed: Controlled by `shift` modifier
-- Rotation: Adjust `lerp` factor in `characterRef.current.rotation.y += angleDiff * delta * 3.0`
+Movement logic is in `Model` component's `useFrame`:
+- **Walk Speed**: Line ~220, currently `8`
+- **Run Speed**: Line ~220, currently `18`
+- **Rotation Speed**: `delta * 3.0`
 
-### Adding Portal Transitions
-1. Define portal position constant (e.g., `const newPortalPosition = new THREE.Vector3(...)`)
-2. Add collision detection in `Model` component's `useFrame`
-3. Create new game state (e.g., `'entering_new_level'`)
-4. Add portal visuals: `<PortalVortex>` and `<PortalBase>`
+### Adding New Animations
+1. Ensure animation exists in GLTF file
+2. Add animation name to actions object
+3. Trigger with `actions['AnimationName']?.fadeIn(0.5).play()`
+4. Stop previous with `fadeOut(0.5).stop()`
 
-### Backend: Adding New API Endpoints
-1. Create DTO in `backend/src/main/java/com/community/dto/`
-2. Add method in service layer (`service/`)
-3. Create controller endpoint (`controller/`)
-4. Update security config if endpoint needs authentication
-
-### Frontend: Connecting to New API
-1. Add method in appropriate service file (`src/services/`)
-2. Call from component with error handling
-3. Update Zustand store if needed for global state
-
-### Adding New Map Elements
-1. Place 3D model in `public/resources/[asset-pack]/`
-2. Create component following pattern in `SquareForestTile.js`:
-   ```javascript
-   const { scene } = useGLTF('/path/to/model.glb');
-   return <primitive object={scene} {...props} />;
-   ```
-3. Add to Level1 or Level2 component with position props
-4. Preload with `useGLTF.preload('/path/to/model.glb')`
-
-## Git Commit Conventions
-
-This project uses commit prefixes:
-- `feat(kim):` - New features
-- `fix(kim):` - Bug fixes
-- `refactor:` - Code restructuring
-- `docs:` - Documentation changes
-
-All commits end with:
+### Changing Camera Position
+Camera offset defined in `CameraController`:
+```javascript
+const cameraOffset = new THREE.Vector3(-0.00, 28.35, 19.76);
 ```
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Adjust Y value for height, Z value for distance.
 
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
+### Adding NPC Interactions
+1. Create new component based on `NPCCharacter`
+2. Add distance checking logic in `useFrame`
+3. Use `SpeechBubble` component for dialogue
+4. Add interaction logic with `enter` key from `useKeyboardControls`
 
-## Known Issues & Future Plans
-
-**Current Limitations**:
-- No physics engine (movement is direct position manipulation)
-- Single-player only (multiplayer infrastructure not yet implemented)
-- Profile and Settings in ESC menu are placeholders
-
-**Planned Features** (from README):
-- WebSocket real-time communication (backend dependency already added in Gradle)
-- Chat system
-- Friend management
-- GPS-based room creation
-- Mini-game system
-- Character customization shop
-- Payment integration (PortOne/Toss Payments/Kakao Pay)
-- Social login (Google, Kakao)
+### Debugging
+- Press `C` to log camera position and rotation
+- Enable Rapier debug mode to see collision shapes
+- Check browser console for errors
+- Use React DevTools for component inspection
 
 ## Performance Considerations
 
-- Shadow maps can be performance-intensive (currently optimized settings)
 - Use `useMemo()` for cloned 3D models
-- Preload all assets with `useGLTF.preload()`
-- Consider adding LOD (Level of Detail) for complex models in the future
+- Preload GLTF models with `useGLTF.preload()`
+- Shadow maps are performance-intensive (currently 8192x8192)
+- Consider reducing shadow map size for better performance
+- Use LOD (Level of Detail) for complex models in future
+- Implement frustum culling for off-screen objects
 
-## Troubleshooting
+## Security Notes (For Future Backend)
 
-**Backend won't start**:
-- Check Java version (requires JDK 17+)
-- Verify `application.yml` JWT secret is Base64-encoded
-- Check if port 8080 is already in use
+When implementing backend features:
+- Always validate user input
+- Use parameterized queries to prevent SQL injection
+- Implement rate limiting for API endpoints
+- Sanitize user-generated content (chat messages)
+- Use HTTPS in production
+- Store passwords with BCrypt
+- Implement proper JWT token expiration and refresh
+- Validate location data to prevent spoofing
 
-**Frontend authentication fails**:
-- Ensure backend is running on `http://localhost:8080`
-- Check browser console for CORS errors
-- Verify `.env` has correct `REACT_APP_API_URL`
+## Known Issues
 
-**Character doesn't spawn after login**:
-- Check `isAuthenticated` state in React DevTools
-- Verify JWT token is stored in localStorage
-- Check browser console for errors in `Model` component
+1. Audio system is currently commented out (footstep sounds)
+2. Physics debug mode is enabled (shows collision shapes)
+3. No mobile touch controls yet
+4. No backend integration
+5. Single player only (no multiplayer)
+
+## Dependencies
+
+Key packages in `package.json`:
+```json
+{
+  "react": "^19.1.1",
+  "react-dom": "^19.1.1",
+  "three": "^0.179.1",
+  "@react-three/fiber": "^9.3.0",
+  "@react-three/drei": "^10.7.4",
+  "@react-three/rapier": "^latest"
+}
+```
+
+## Deployment
+
+### Netlify Configuration
+See `netlify.toml` for deployment settings:
+- Build command: `npm run build`
+- Publish directory: `build`
+- SPA redirect rules configured
+
+### Environment Variables (Future)
+When backend is ready, add `.env`:
+```env
+REACT_APP_API_URL=http://localhost:8080
+REACT_APP_SOCKET_URL=http://localhost:8080
+REACT_APP_MAP_API_KEY=your_key_here
+```
+
+## Git Repository
+
+- GitHub: https://github.com/kimkichan1225/3DCommunity
+- Main branch: `main`
+
+## Contact
+
+- GitHub: [@kimkichan1225](https://github.com/kimkichan1225)
+- Email: vxbc52@gmail.com
+
+---
+
+**Note**: This project is under active development. The CLAUDE.md file will be updated as new features are implemented.

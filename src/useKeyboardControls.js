@@ -20,7 +20,6 @@ export const useKeyboardControls = () => {
     log: false, // Add log state
     e: false,
     enter: false,
-    escape: false,
   });
 
   useEffect(() => {
@@ -29,7 +28,6 @@ export const useKeyboardControls = () => {
       if (key === 'shift') setControls((c) => ({ ...c, shift: true }));
       if (key === 'c') setControls((c) => ({ ...c, log: true }));
       if (key === 'enter') setControls((c) => ({ ...c, enter: true }));
-      if (key === 'escape') setControls((c) => ({ ...c, escape: true }));
       const action = keyActionMap[key];
       if (action) setControls((c) => ({ ...c, [action]: true }));
     };
@@ -39,7 +37,6 @@ export const useKeyboardControls = () => {
       if (key === 'shift') setControls((c) => ({ ...c, shift: false }));
       if (key === 'c') setControls((c) => ({ ...c, log: false }));
       if (key === 'enter') setControls((c) => ({ ...c, enter: false }));
-      if (key === 'escape') setControls((c) => ({ ...c, escape: false }));
       const action = keyActionMap[key];
       if (action) setControls((c) => ({ ...c, [action]: false }));
     };
