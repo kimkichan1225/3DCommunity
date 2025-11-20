@@ -87,7 +87,7 @@ function CameraController({ characterRef, mainCameraRef, isLoggedIn }) {
 function Model({ characterRef }) {
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
-  
+
   const { forward, backward, left, right, shift } = useKeyboardControls();
   const [currentAnimation, setCurrentAnimation] = useState('none');
 
@@ -99,7 +99,8 @@ function Model({ characterRef }) {
   // 안전한 참조를 위한 useRef
   const safeCharacterRef = useRef();
   const rigidBodyRef = useRef(); // Rapier RigidBody 참조
-  const currentRotationRef = useRef(new THREE.Quaternion()); // 현재 회전 저장
+  const currentRotationRef = useRef(new THREE.Quaternion()); // 현재 회전 저장 (모델용)
+  const modelGroupRef = useRef(); // 캐릭터 모델 그룹 참조
   
   // 발걸음 소리 로드 및 재생 함수
   useEffect(() => {
@@ -188,8 +189,7 @@ function Model({ characterRef }) {
   }, [forward, backward, left, right, shift, actions, currentAnimation]);
 
   useFrame((state, delta) => {
-    const currentCharacter = characterRef.current || safeCharacterRef.current;
-    if (!currentCharacter) return;
+    if (!rigidBodyRef.current || !modelGroupRef.current) return;
 
     const speed = shift ? 18 : 8; // 물리 기반 속도 (걷기: 8, 뛰기: 18)
     const direction = new THREE.Vector3();
@@ -202,7 +202,7 @@ function Model({ characterRef }) {
     if (direction.length() > 0) {
       direction.normalize();
 
-      // 회전 처리 - 부드럽게 회전
+      // 회전 처리 - 부드럽게 회전 (모델만)
       const targetAngle = Math.atan2(direction.x, direction.z);
       const targetQuaternion = new THREE.Quaternion();
       targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
@@ -210,25 +210,13 @@ function Model({ characterRef }) {
       // 현재 회전에서 목표 회전으로 부드럽게 보간 (slerp)
       currentRotationRef.current.slerp(targetQuaternion, 0.25);
 
-      if (rigidBodyRef.current) {
-        // 보간된 회전을 RigidBody에 적용
-        rigidBodyRef.current.setRotation({
-          x: currentRotationRef.current.x,
-          y: currentRotationRef.current.y,
-          z: currentRotationRef.current.z,
-          w: currentRotationRef.current.w
-        }, true);
-      }
-
       // 물리 기반 이동 (setLinvel 사용)
-      if (rigidBodyRef.current) {
-        const currentVel = rigidBodyRef.current.linvel();
-        rigidBodyRef.current.setLinvel({
-          x: direction.x * speed,
-          y: currentVel.y, // Y축은 중력 유지
-          z: direction.z * speed
-        });
-      }
+      const currentVel = rigidBodyRef.current.linvel();
+      rigidBodyRef.current.setLinvel({
+        x: direction.x * speed,
+        y: currentVel.y, // Y축은 중력 유지
+        z: direction.z * speed
+      });
 
       // 발걸음 소리 재생
       if (currentAnimation === 'Walk' || currentAnimation === 'Run') {
@@ -240,32 +228,44 @@ function Model({ characterRef }) {
       }
     } else {
       // 정지 시 속도 0
-      if (rigidBodyRef.current) {
-        const currentVel = rigidBodyRef.current.linvel();
-        rigidBodyRef.current.setLinvel({ x: 0, y: currentVel.y, z: 0 });
-      }
+      const currentVel = rigidBodyRef.current.linvel();
+      rigidBodyRef.current.setLinvel({ x: 0, y: currentVel.y, z: 0 });
     }
+
+    // RigidBody의 위치를 모델에 동기화
+    const rbPosition = rigidBodyRef.current.translation();
+    modelGroupRef.current.position.set(rbPosition.x, rbPosition.y, rbPosition.z);
+
+    // 모델의 회전은 입력에 의한 회전만 적용
+    modelGroupRef.current.quaternion.copy(currentRotationRef.current);
   });
 
   return (
-    <RigidBody
-      ref={rigidBodyRef}
-      type="dynamic"
-      colliders={false}
-      mass={1}
-      linearDamping={0.5}
-      enabledRotations={[false, true, false]} // Y축 회전만 허용
-      position={[0, 2, 0]} // 시작 위치
-    >
-      <CapsuleCollider args={[2, 1.3]} position={[0, 3.2, 0]} />
-      <primitive
-        ref={characterRef}
-        object={scene}
-        scale={2}
-        castShadow
-        receiveShadow
-      />
-    </RigidBody>
+    <>
+      {/* 물리 충돌용 RigidBody (보이지 않음) */}
+      <RigidBody
+        ref={rigidBodyRef}
+        type="dynamic"
+        colliders={false}
+        mass={1}
+        linearDamping={0.5}
+        enabledRotations={[false, false, false]} // 물리적 회전 완전 잠금
+        position={[0, 2, 0]} // 시작 위치
+      >
+        <CapsuleCollider args={[2, 1.3]} position={[0, 3.2, 0]} />
+      </RigidBody>
+
+      {/* 캐릭터 모델 (RigidBody와 분리) */}
+      <group ref={modelGroupRef}>
+        <primitive
+          ref={characterRef}
+          object={scene}
+          scale={2}
+          castShadow
+          receiveShadow
+        />
+      </group>
+    </>
   );
 }
 
