@@ -259,6 +259,7 @@ function Model({ characterRef }) {
         enabledRotations={[false, false, false]} // 물리적 회전 완전 잠금
         position={[0, 2, 0]} // 시작 위치
         lockRotations={true} // 회전 완전 잠금
+        canSleep={false} // 절대 sleep 상태로 전환되지 않음 (플레이어 캐릭터용)
       >
         <CapsuleCollider args={[2, 1.3]} position={[0, 3.2, 0]} />
       </RigidBody>
