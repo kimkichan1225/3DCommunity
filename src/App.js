@@ -38,28 +38,47 @@ function CameraLogger() {
 
 
 
-function CameraController({ characterRef }) {
+function CameraController({ characterRef, mainCameraRef, isLoggedIn }) {
   const { camera } = useThree();
   const cameraOffset = new THREE.Vector3(-0.00, 28.35, 19.76); // 고정된 카메라 오프셋
 
   useFrame((state, delta) => {
-    if (!characterRef.current) return;
+    // 로그인 후: 캐릭터를 따라감
+    if (isLoggedIn && characterRef.current) {
+      // 월드 position 가져오기
+      const worldPosition = new THREE.Vector3();
+      characterRef.current.getWorldPosition(worldPosition);
 
-    // 월드 position 가져오기
-    const worldPosition = new THREE.Vector3();
-    characterRef.current.getWorldPosition(worldPosition);
+      // 타겟 위치 설정
+      const targetPosition = worldPosition;
 
-    // 타겟 위치 설정
-    const targetPosition = worldPosition;
+      // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
+      const targetCameraPosition = targetPosition.clone().add(cameraOffset);
 
-    // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
-    const targetCameraPosition = targetPosition.clone().add(cameraOffset);
+      // 부드러운 카메라 이동
+      camera.position.lerp(targetCameraPosition, delta * 5.0);
 
-    // 부드러운 카메라 이동
-    camera.position.lerp(targetCameraPosition, delta * 5.0);
+      // 타겟을 바라보도록 설정
+      camera.lookAt(targetPosition);
+    }
+    // 로그인 전: MainCamera를 따라감
+    else if (!isLoggedIn && mainCameraRef.current) {
+      // MainCamera의 월드 position 가져오기
+      const worldPosition = new THREE.Vector3();
+      mainCameraRef.current.getWorldPosition(worldPosition);
 
-    // 타겟을 바라보도록 설정
-    camera.lookAt(targetPosition);
+      // 타겟 위치 설정
+      const targetPosition = worldPosition;
+
+      // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
+      const targetCameraPosition = targetPosition.clone().add(cameraOffset);
+
+      // 부드러운 카메라 이동
+      camera.position.lerp(targetCameraPosition, delta * 5.0);
+
+      // 타겟을 바라보도록 설정
+      camera.lookAt(targetPosition);
+    }
   });
 
   return null;
@@ -250,19 +269,20 @@ function Model({ characterRef }) {
   );
 }
 
-function Level1Map(props) {
+function Level1Map({ mainCameraRef, ...props }) {
   const { scene } = useGLTF('/resources/GameView/PublicSquare.glb');
 
   // Level1Map 모델을 복사해서 각 인스턴스가 독립적으로 작동하도록 함
   const clonedScene = useMemo(() => {
     const cloned = scene.clone();
 
-    // GLB 파일 내부 구조 확인
-    console.log('=== PublicSquare.glb 구조 ===');
+    // MainCamera 찾기
     cloned.traverse((child) => {
-      console.log(`- ${child.name} (type: ${child.type})`);
       if (child.name === 'MainCamera') {
-        console.log('  ✅ MainCamera 발견!', child);
+        console.log('✅ MainCamera 발견 및 ref 저장!', child);
+        if (mainCameraRef) {
+          mainCameraRef.current = child;
+        }
       }
 
       if (child.isMesh) {
@@ -270,10 +290,9 @@ function Level1Map(props) {
         child.receiveShadow = true;
       }
     });
-    console.log('===========================');
 
     return cloned;
-  }, [scene]);
+  }, [scene, mainCameraRef]);
 
   return (
     <RigidBody type="fixed" colliders="trimesh">
@@ -285,13 +304,14 @@ function Level1Map(props) {
 useGLTF.preload('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
 useGLTF.preload('/resources/GameView/PublicSquare.glb');
 
-function Level1({ characterRef }) {
+function Level1({ characterRef, mainCameraRef }) {
   return (
     <>
       <Sky />
 
       {/* Level1 Map */}
       <Level1Map
+        mainCameraRef={mainCameraRef}
         position={[0, 0, 0]}
         scale={1.0}
         rotation={[0, 0, 0]}
@@ -304,6 +324,7 @@ function Level1({ characterRef }) {
 
 function App() {
   const characterRef = useRef();
+  const mainCameraRef = useRef();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
 
@@ -357,11 +378,16 @@ function App() {
             {isLoggedIn && (
               <>
                 <Model characterRef={characterRef} />
-                <CameraController characterRef={characterRef} />
                 <CameraLogger />
               </>
             )}
-            <Level1 characterRef={characterRef} />
+            {/* CameraController는 항상 렌더링 (로그인 전: MainCamera, 로그인 후: Character) */}
+            <CameraController
+              characterRef={characterRef}
+              mainCameraRef={mainCameraRef}
+              isLoggedIn={isLoggedIn}
+            />
+            <Level1 characterRef={characterRef} mainCameraRef={mainCameraRef} />
           </Physics>
         </Suspense>
       </Canvas>
