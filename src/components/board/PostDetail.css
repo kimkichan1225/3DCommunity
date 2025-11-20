@@ -1,0 +1,114 @@
+.post-detail-container {
+  width: 95%;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.btn-back {
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+
+.btn-back:hover {
+  background: #e0e0e0;
+}
+
+.post-detail-header {
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+  flex-shrink: 0;
+}
+
+.post-detail-header h1 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.post-info {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: #666;
+}
+
+.post-info .author {
+  font-weight: 600;
+  color: #8b5cf6;
+}
+
+.post-content {
+  min-height: 200px;
+  padding: 20px 0;
+  line-height: 1.8;
+  color: #333;
+  font-size: 16px;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+}
+
+.post-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px 0;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 30px;
+  flex-shrink: 0;
+}
+
+.btn-like, .btn-report {
+  padding: 10px 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-like:hover {
+  background: #fff5f5;
+  border-color: #ff6b6b;
+}
+
+.btn-like.liked {
+  background: #ff6b6b;
+  color: white;
+  border-color: #ff6b6b;
+}
+
+.btn-report:hover {
+  background: #fff9e6;
+  border-color: #ffa500;
+}
+
+.comments-section {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.comments-section h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  color: #333;
+  flex-shrink: 0;
+}

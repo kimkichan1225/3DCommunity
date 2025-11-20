@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import './App.css';
 import { useKeyboardControls } from './useKeyboardControls';
 import { Physics, RigidBody, CapsuleCollider } from '@react-three/rapier';
+import BoardList from './components/board/BoardList';
 
 // 하늘을 위한 컴포넌트
 function Sky() {
@@ -293,9 +294,69 @@ function Level1({ characterRef }) {
 
 function App() {
   const characterRef = useRef();
+  const [showBoard, setShowBoard] = useState(false);
 
   return (
     <div className="App">
+      {/* 게시판 토글 버튼 */}
+      <button
+        onClick={() => setShowBoard(!showBoard)}
+        style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          padding: '12px',
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '50%',
+          fontSize: '24px',
+          width: '50px',
+          height: '50px',
+          cursor: 'pointer',
+          zIndex: 999,
+          boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        📋
+      </button>
+
+      {/* 게시판 */}
+      {showBoard && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 998,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            boxSizing: 'border-box'
+          }}
+          onClick={() => setShowBoard(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '80%',
+              height: '90%',
+              overflow: 'auto',
+              borderRadius: '12px'
+            }}
+          >
+            <BoardList />
+          </div>
+        </div>
+      )}
+
       <Canvas
         camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
         shadows
