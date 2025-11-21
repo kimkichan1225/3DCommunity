@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import './LandingPage.css';
+import AuthModal from './AuthModal';
 
-function LandingPage({ onLogin, onRegister }) {
+function LandingPage({ onLoginSuccess }) {
   const [showButtons, setShowButtons] = useState(false);
+  const [authModal, setAuthModal] = useState(null); // 'login' | 'register' | null
 
   const handleClick = () => {
-    if (!showButtons) {
+    if (!showButtons && !authModal) {
       setShowButtons(true);
     }
+  };
+
+  const handleAuthSuccess = (user) => {
+    setAuthModal(null);
+    onLoginSuccess(user);
   };
 
   return (
@@ -19,20 +26,20 @@ function LandingPage({ onLogin, onRegister }) {
         </div>
 
         {/* 버튼 표시 전: Click to Start */}
-        {!showButtons && (
+        {!showButtons && !authModal && (
           <div className="click-to-start">
             <p className="start-text">Click to Start</p>
           </div>
         )}
 
         {/* 버튼 표시 후: 로그인/회원가입 버튼 */}
-        {showButtons && (
+        {showButtons && !authModal && (
           <div className="button-container">
             <button
               className="btn btn-primary"
               onClick={(e) => {
                 e.stopPropagation();
-                onLogin();
+                setAuthModal('login');
               }}
             >
               로그인
@@ -41,7 +48,7 @@ function LandingPage({ onLogin, onRegister }) {
               className="btn btn-secondary"
               onClick={(e) => {
                 e.stopPropagation();
-                onRegister();
+                setAuthModal('register');
               }}
             >
               회원가입
@@ -49,6 +56,15 @@ function LandingPage({ onLogin, onRegister }) {
           </div>
         )}
       </div>
+
+      {/* 인증 모달 */}
+      {authModal && (
+        <AuthModal
+          mode={authModal}
+          onClose={() => setAuthModal(null)}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
     </div>
   );
 }

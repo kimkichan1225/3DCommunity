@@ -23,7 +23,8 @@ public class JwtTokenProvider {
     private Long expiration;
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        // 일반 문자열을 UTF-8 바이트로 변환 (Base64 디코딩 대신)
+        byte[] keyBytes = secret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
