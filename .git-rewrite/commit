@@ -1,0 +1,6 @@
+tree daa47056e3f52da896e9e2a6ca5e8588327df094
+parent 29ff7d9228960a02160f95eee4f506cf941d81dc
+author kimkichan-1 <20201536@daejin.ac.kr> 1761265765 +0900
+committer kimkichan-1 <20201536@daejin.ac.kr> 1761265765 +0900
+
+Fix Netlify build: Add CI=false to netlify.toml

@@ -1,0 +1,1 @@
+Fix Netlify build: Add CI=false to netlify.toml
