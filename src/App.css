@@ -4,3 +4,64 @@
   position: relative;
   overflow: hidden;
 }
+
+/* Mapbox container behind the Three.js canvas */
+.map-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Three.js canvas overlayed on top of the map */
+.three-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none; /* keep keyboard controls but ignore mouse by default */
+}
+
+/* When map is full-screen, bring it to front and hide 3D overlay */
+.map-container.map-full {
+  /* keep map behind the three.js overlay so 3D character remains visible */
+  z-index: 0;
+}
+
+/* Top-right toggle button */
+.map-toggle-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.map-back-button {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 11;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.map-token-warning {
+  position: absolute;
+  top: 60px;
+  right: 12px;
+  z-index: 12;
+  background: rgba(255,69,0,0.95);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+}
