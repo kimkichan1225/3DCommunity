@@ -2,12 +2,12 @@ spring:
   application:
     name: 3d-community-backend
 
-  # 데이터베이스 설정 (PostgreSQL)
+  # 데이터베이스 설정 (PostgreSQL - Supabase Transaction Pooler)
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/community_db}
+    url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:password}
+    username: postgres.krnevmhwahnxiqvyrjeu
+    password: "!Q@W#E$R!"
 
   # JPA 설정
   jpa:

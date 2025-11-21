@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/3Dcommu.iml" filepath="$PROJECT_DIR$/.idea/3Dcommu.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/community-backend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/community-backend.main.iml" />
     </modules>
   </component>
 </project>

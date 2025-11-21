@@ -56,8 +56,8 @@ const PostDetail = ({ post, onBack }) => {
       <div className="post-detail-header">
         <h1>{post.title}</h1>
         <div className="post-info">
-          <span className="author">{post.author}</span>
-          <span className="date">{post.createdAt}</span>
+          <span className="author">{post.authorName}</span>
+          <span className="date">{new Date(post.createdAt).toLocaleString('ko-KR')}</span>
           <span>조회 {post.viewCount}</span>
         </div>
       </div>
