@@ -166,6 +166,7 @@ cd backend
 REACT_APP_API_URL=http://localhost:8080
 REACT_APP_SOCKET_URL=http://localhost:8080
 REACT_APP_MAP_API_KEY=your_map_api_key
+REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
 ```
 
 백엔드 `application.yml`:
