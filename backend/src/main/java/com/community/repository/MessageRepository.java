@@ -1,0 +1,38 @@
+package com.community.repository;
+
+import com.community.model.Message;
+import com.community.model.Message.MessageType;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface MessageRepository extends JpaRepository<Message, Long> {
+
+    // 광장 채팅 조회 (최근순)
+    List<Message> findByMessageTypeAndIsDeletedOrderByCreatedAtDesc(MessageType messageType, Boolean isDeleted, Pageable pageable);
+
+    // 로컬 방 채팅 조회 (최근순)
+    List<Message> findByMessageTypeAndRoomIdAndIsDeletedOrderByCreatedAtDesc(MessageType messageType, Long roomId, Boolean isDeleted, Pageable pageable);
+
+    // DM 조회 (두 사용자 간 대화, 최근순)
+    @Query("SELECT m FROM Message m WHERE m.messageType = 'DM' AND m.isDeleted = false AND ((m.sender.id = :userId1 AND m.receiver.id = :userId2) OR (m.sender.id = :userId2 AND m.receiver.id = :userId1)) ORDER BY m.createdAt DESC")
+    List<Message> findDMBetweenUsers(@Param("userId1") Long userId1, @Param("userId2") Long userId2, Pageable pageable);
+
+    // 특정 시간 이후 메시지 조회 (실시간 업데이트용)
+    @Query("SELECT m FROM Message m WHERE m.messageType = :messageType AND m.roomId = :roomId AND m.createdAt > :since AND m.isDeleted = false ORDER BY m.createdAt ASC")
+    List<Message> findRecentMessagesInRoom(@Param("messageType") MessageType messageType, @Param("roomId") Long roomId, @Param("since") LocalDateTime since);
+
+    // 광장 최근 메시지 조회
+    @Query("SELECT m FROM Message m WHERE m.messageType = 'PLAZA' AND m.createdAt > :since AND m.isDeleted = false ORDER BY m.createdAt ASC")
+    List<Message> findRecentPlazaMessages(@Param("since") LocalDateTime since);
+
+    // 사용자의 읽지 않은 DM 개수
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.messageType = 'DM' AND m.receiver.id = :userId AND m.createdAt > :lastCheckTime AND m.isDeleted = false")
+    Long countUnreadDMs(@Param("userId") Long userId, @Param("lastCheckTime") LocalDateTime lastCheckTime);
+}

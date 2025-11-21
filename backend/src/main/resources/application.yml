@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: 3d-community-backend
+
+  # 데이터베이스 설정 (PostgreSQL - Supabase Transaction Pooler)
+  datasource:
+    url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
+    driver-class-name: org.postgresql.Driver
+    username: postgres.krnevmhwahnxiqvyrjeu
+    password: "!Q@W#E$R!"
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: ${DB_DDL_AUTO:update}
+    show-sql: ${DB_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # CORS 설정
+  web:
+    cors:
+      allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+
+# 서버 포트
+server:
+  port: ${SERVER_PORT:8080}
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:3d-community-secret-key-please-change-this-in-production-environment-for-security}
+  expiration: ${JWT_EXPIRATION:86400000} # 24시간 (밀리초)
+
+# 로깅 설정
+logging:
+  level:
+    com.community: ${LOG_LEVEL:DEBUG}
+    org.springframework.web: ${LOG_LEVEL:DEBUG}
+    org.springframework.security: ${LOG_LEVEL:DEBUG}
