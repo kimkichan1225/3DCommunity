@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
 import './App.css';
-import Mapbox3D from './components/Mapbox3D';
+import Map3DRenderer from './components/Map3DRenderer';
 import { useKeyboardControls } from './useKeyboardControls';
 import { Physics, RigidBody, CapsuleCollider } from '@react-three/rapier';
 import LandingPage from './components/LandingPage';
@@ -336,95 +336,12 @@ function App() {
   const mainCameraRef = useRef();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
-  const [mapHelpers, setMapHelpers] = useState(null);
-  const [initialPosition, setInitialPosition] = useState(null);
   const [isMapFull, setIsMapFull] = useState(false);
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
-  // Map가 준비되면 호출됩니다. mapbox의 projection helper를 받아와
-  // 현재 위치(geolocation)를 Three.js 월드 좌표로 변환해 캐릭터 초기 위치를 설정합니다.
-  const handleMapReady = ({ map, project }) => {
-    setMapHelpers({ map, project });
-
-    // Try to get browser geolocation; fallback to map center
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lng = pos.coords.longitude;
-          const lat = pos.coords.latitude;
-
-          try {
-            const center = map.getCenter();
-            const centerMerc = project([center.lng, center.lat], 0);
-            const userMerc = project([lng, lat], 0);
-
-            // Convert mercator units difference to meters
-            const unitsPerMeter = userMerc.meterInMercatorCoordinateUnits || 1;
-            const dx = (userMerc.translateX - centerMerc.translateX) / unitsPerMeter;
-            const dz = (userMerc.translateY - centerMerc.translateY) / unitsPerMeter;
-
-            // Mapbox의 Y increases northwards; Three.js Z forward is negative, adjust sign if needed
-            const threeX = dx;
-            const threeY = 2; // 약간 띄워서 시작
-            const threeZ = -dz;
-
-            setInitialPosition([threeX, threeY, threeZ]);
-            console.log('Initial character position (Three.js):', [threeX, threeY, threeZ]);
-          } catch (e) {
-            console.warn('map projection failed', e);
-          }
-        },
-        (err) => {
-          console.warn('Geolocation denied or unavailable, using map center', err);
-          // use map center as fallback
-          const threeX = 0;
-          const threeY = 2;
-          const threeZ = 0;
-          setInitialPosition([threeX, threeY, threeZ]);
-        }
-      );
-    } else {
-      console.warn('Geolocation not supported, using map center');
-      setInitialPosition([0, 2, 0]);
-    }
-  };
-
   const toggleMapFull = (e) => {
     e && e.stopPropagation();
-    // Only toggle the boolean; Mapbox3D will mount when isMapFull becomes true
     setIsMapFull((v) => !v);
-  };
-
-  // Helper: request geolocation and set initialPosition using provided project helper
-  const requestGeolocationAndSet = (project, map) => {
-    if (!project || !map) return;
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lng = pos.coords.longitude;
-          const lat = pos.coords.latitude;
-          try {
-            const center = map.getCenter();
-            const centerMerc = project([center.lng, center.lat], 0);
-            const userMerc = project([lng, lat], 0);
-            const unitsPerMeter = userMerc.meterInMercatorCoordinateUnits || 1;
-            const dx = (userMerc.translateX - centerMerc.translateX) / unitsPerMeter;
-            const dz = (userMerc.translateY - centerMerc.translateY) / unitsPerMeter;
-            const threeX = dx;
-            const threeY = 2;
-            const threeZ = -dz;
-            setInitialPosition([threeX, threeY, threeZ]);
-            console.log('Initial character position (from toggle):', [threeX, threeY, threeZ]);
-          } catch (e) {
-            console.warn('map projection failed', e);
-          }
-        },
-        (err) => {
-          console.warn('Geolocation denied/unavailable when opening map', err);
-        }
-      );
-    }
   };
 
   const handleLogin = () => {
@@ -444,9 +361,9 @@ function App() {
 
   return (
     <div className="App">
-      {/* Mapbox 배경 및 Three.js 오버레이 */}
+      {/* Map3DRenderer - 현재 위치 기반 Mapbox 지도 + 3D 캐릭터 */}
       {isMapFull && (
-        <Mapbox3D onMapReady={handleMapReady} isFull={isMapFull} />
+        <Map3DRenderer />
       )}
 
       {/* Map 토글 버튼 (우측 상단) */}
@@ -494,7 +411,7 @@ function App() {
             {/* 로그인 후에만 캐릭터 표시 */}
             {isLoggedIn && (
               <>
-                <Model characterRef={characterRef} initialPosition={initialPosition} />
+                <Model characterRef={characterRef} />
                 <CameraLogger />
               </>
             )}
