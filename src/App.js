@@ -7,6 +7,9 @@ import Mapbox3D from './components/Mapbox3D';
 import { useKeyboardControls } from './useKeyboardControls';
 import { Physics, RigidBody, CapsuleCollider } from '@react-three/rapier';
 import LandingPage from './components/LandingPage';
+import BoardModal from './components/BoardModal';
+import MenuModal from './components/MenuModal';
+import { MdForum } from 'react-icons/md';
 
 // 하늘을 위한 컴포넌트
 function Sky() {
@@ -86,7 +89,7 @@ function CameraController({ characterRef, mainCameraRef, isLoggedIn }) {
   return null;
 }
 
-function Model({ characterRef, initialPosition }) {
+function Model({ characterRef, initialPosition, isMovementDisabled }) {
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
 
@@ -196,6 +199,13 @@ function Model({ characterRef, initialPosition }) {
 
   useFrame((state, delta) => {
     if (!rigidBodyRef.current || !modelGroupRef.current) return;
+
+    // 모달이 열려있으면 이동 비활성화
+    if (isMovementDisabled) {
+      // 속도를 0으로 설정하여 정지
+      rigidBodyRef.current.setLinvel({ x: 0, y: rigidBodyRef.current.linvel().y, z: 0 }, true);
+      return;
+    }
 
     const speed = shift ? 18 : 8; // 물리 기반 속도 (걷기: 8, 뛰기: 18)
     const direction = new THREE.Vector3();
@@ -339,7 +349,12 @@ function App() {
   const [mapHelpers, setMapHelpers] = useState(null);
   const [initialPosition, setInitialPosition] = useState(null);
   const [isMapFull, setIsMapFull] = useState(false);
+  const [showBoardModal, setShowBoardModal] = useState(false);
+  const [showMenuModal, setShowMenuModal] = useState(false);
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
+
+  // 모달이 열려있는지 확인
+  const isAnyModalOpen = showBoardModal || showMenuModal || showLanding;
 
   // Map가 준비되면 호출됩니다. mapbox의 projection helper를 받아와
   // 현재 위치(geolocation)를 Three.js 월드 좌표로 변환해 캐릭터 초기 위치를 설정합니다.
@@ -433,6 +448,23 @@ function App() {
     setShowLanding(false);
   };
 
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setShowLanding(true);
+  };
+
+  // ESC 키 이벤트 핸들러
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isLoggedIn && !showLanding) {
+        setShowMenuModal((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLoggedIn, showLanding]);
+
   return (
     <div className="App">
       {/* Mapbox 배경 및 Three.js 오버레이 */}
@@ -444,6 +476,16 @@ function App() {
       <button className="map-toggle-button" onClick={toggleMapFull}>
         {isMapFull ? 'Close Map' : 'Open Map'}
       </button>
+
+      {/* 게시판 버튼 (로그인한 사용자만 표시) */}
+      {isLoggedIn && (
+        <button className="board-toggle-button" onClick={(e) => {
+          e.stopPropagation();
+          setShowBoardModal(true);
+        }}>
+          <MdForum />
+        </button>
+      )}
 
       {/* Token warning if user opens map but token missing */}
       {isMapFull && !mapboxToken && (
@@ -485,7 +527,11 @@ function App() {
             {/* 로그인 후에만 캐릭터 표시 */}
             {isLoggedIn && (
               <>
-                <Model characterRef={characterRef} initialPosition={initialPosition} />
+                <Model
+                  characterRef={characterRef}
+                  initialPosition={initialPosition}
+                  isMovementDisabled={isAnyModalOpen}
+                />
                 <CameraLogger />
               </>
             )}
@@ -509,6 +555,19 @@ function App() {
       {/* 맵 전체화면일 때 뒤로가기 버튼 (왼쪽 상단) */}
       {isMapFull && (
         <button className="map-back-button" onClick={toggleMapFull}>Back</button>
+      )}
+
+      {/* 게시판 모달 */}
+      {showBoardModal && (
+        <BoardModal onClose={() => setShowBoardModal(false)} />
+      )}
+
+      {/* ESC 메뉴 모달 */}
+      {showMenuModal && (
+        <MenuModal
+          onClose={() => setShowMenuModal(false)}
+          onLogout={handleLogout}
+        />
       )}
     </div>
   );

@@ -12,6 +12,7 @@ function AuthModal({ mode, onClose, onSuccess }) {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -49,14 +50,10 @@ function AuthModal({ mode, onClose, onSuccess }) {
         await authService.register({
           email: formData.email,
           password: formData.password,
-          nickname: formData.nickname
+          username: formData.nickname
         });
-        // 회원가입 성공 후 자동 로그인
-        const response = await authService.login({
-          email: formData.email,
-          password: formData.password
-        });
-        onSuccess(response.user);
+        // 회원가입 성공 시 성공 메시지 모달 표시 (자동 로그인 제거)
+        setShowSuccessModal(true);
       }
     } catch (err) {
       setError(err.response?.data?.message || '오류가 발생했습니다.');
@@ -65,16 +62,37 @@ function AuthModal({ mode, onClose, onSuccess }) {
     }
   };
 
+  // 회원가입 성공 모달 확인 버튼 핸들러
+  const handleSuccessConfirm = () => {
+    setShowSuccessModal(false);
+    onClose(); // 초기 화면으로 복귀 (로그인하지 않은 상태)
+  };
+
   return (
     <div className="auth-modal-overlay" onClick={onClose}>
       <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
         <button className="auth-modal-close" onClick={onClose}>×</button>
 
-        <h2 className="auth-modal-title">
-          {isLogin ? '로그인' : '회원가입'}
-        </h2>
+        {/* 회원가입 성공 메시지 모달 */}
+        {showSuccessModal ? (
+          <div className="success-message-container">
+            <div className="success-icon">✓</div>
+            <h2 className="success-title">회원가입 완료!</h2>
+            <p className="success-message">
+              회원가입이 성공적으로 완료되었습니다.<br />
+              로그인 후 서비스를 이용하실 수 있습니다.
+            </p>
+            <button className="success-confirm-btn" onClick={handleSuccessConfirm}>
+              확인
+            </button>
+          </div>
+        ) : (
+          <>
+            <h2 className="auth-modal-title">
+              {isLogin ? '로그인' : '회원가입'}
+            </h2>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+            <form onSubmit={handleSubmit} className="auth-form">
           {!isLogin && (
             <div className="form-group">
               <label>닉네임</label>
@@ -147,6 +165,8 @@ function AuthModal({ mode, onClose, onSuccess }) {
             </p>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );
