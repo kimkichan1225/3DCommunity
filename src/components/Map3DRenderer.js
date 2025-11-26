@@ -8,7 +8,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 /**
  * Map3DRenderer - Pokemon GO 스타일 AR 지도
  * Mapbox 지도 위에 Three.js 3D 캐릭터 오버레이
- * 현재 위치 기반 지도 표시 + WASD로 캐릭터 이동
+ * 현재 위치 기반 지도 표시 + WASD(또는 터치)로 캐릭터 이동
+ * 모바일 디바이스 방향 센서 지원
  */
 
 // Mapbox token 설정
@@ -32,6 +33,9 @@ export default function Map3DRenderer() {
   // 지도 관련
   const userLocationRef = useRef(null);
   const mapCenterRef = useRef(null);
+  
+  // AR 레이더
+  const radarCanvasRef = useRef(null);
   
   // 상태
   const [currentAnimation, setCurrentAnimation] = useState('Idle');
@@ -104,6 +108,7 @@ export default function Map3DRenderer() {
       }
     }
   }, [currentAnimation, playStepSound]);
+
 
   // 캐릭터 로드
   const loadCharacter = useCallback(async (scene) => {
@@ -274,7 +279,7 @@ export default function Map3DRenderer() {
       canvas.style.width = '100%';
       canvas.style.height = '100%';
       canvas.style.pointerEvents = 'none';
-      canvas.style.zIndex = '10';
+      canvas.style.zIndex = '-1';
       mapContainer.current.appendChild(canvas);
       canvasRef.current = canvas;
 
@@ -381,6 +386,56 @@ export default function Map3DRenderer() {
     };
   }, [loadCharacter, updateCharacterMovement, updateAnimation]);
 
+  useEffect(() => {
+    const drawRadar = () => {
+      const canvas = radarCanvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const size = 150;
+      
+      // 배경 투명도
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.fillRect(0, 0, size, size);
+      
+      // 레이더 원
+      ctx.strokeStyle = 'rgba(0, 255, 100, 0.5)';
+      ctx.lineWidth = 1;
+      for (let r = 1; r <= 3; r++) {
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, (size / 2) * (r / 3), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      // 십자가
+      ctx.strokeStyle = 'rgba(0, 255, 100, 0.3)';
+      ctx.beginPath();
+      ctx.moveTo(size / 2, 0);
+      ctx.lineTo(size / 2, size);
+      ctx.moveTo(0, size / 2);
+      ctx.lineTo(size, size / 2);
+      ctx.stroke();
+      
+      // 플레이어 위치 (중앙)
+      ctx.fillStyle = 'rgba(0, 255, 100, 1)';
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 방향 표시
+      ctx.strokeStyle = 'rgba(0, 255, 100, 1)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(size / 2, size / 2);
+      ctx.lineTo(size / 2, size / 2 - 30);
+      ctx.stroke();
+    };
+
+    drawRadar();
+    const interval = setInterval(drawRadar, 100);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div
       ref={mapContainer}
@@ -392,7 +447,8 @@ export default function Map3DRenderer() {
         bottom: 0,
         width: '100%',
         height: '100%',
-        zIndex: 100
+        zIndex: 100,
+        overflow: 'hidden'
       }}
     />
   );
