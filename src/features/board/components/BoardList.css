@@ -1,0 +1,130 @@
+/* 게시글 목록 */
+.board-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 헤더 */
+.board-list-header {
+  display: flex;
+  background: #f0f0f0;
+  border-bottom: 2px solid #ccc;
+  font-weight: bold;
+  padding: 12px 0;
+  text-align: center;
+  color: #333;
+}
+
+.board-list-col-no {
+  width: 10%;
+}
+
+.board-list-col-title {
+  width: 40%;
+  text-align: left;
+  padding-left: 20px;
+}
+
+.board-list-col-author {
+  width: 20%;
+}
+
+.board-list-col-views {
+  width: 15%;
+}
+
+.board-list-col-likes {
+  width: 15%;
+}
+
+/* 바디 */
+.board-list-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.board-list-row {
+  display: flex;
+  padding: 14px 0;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-align: center;
+  align-items: center;
+}
+
+.board-list-row:hover {
+  background: #f9f9f9;
+}
+
+.board-list-row .board-list-col-no {
+  color: #999;
+  font-size: 14px;
+}
+
+.board-list-row .board-list-col-title {
+  font-weight: 500;
+  color: #333;
+  text-align: left;
+  padding-left: 20px;
+}
+
+.board-list-row .board-list-col-title:hover {
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.board-list-row .board-list-col-author {
+  color: #666;
+  font-size: 14px;
+}
+
+.board-list-row .board-list-col-views,
+.board-list-row .board-list-col-likes {
+  color: #888;
+  font-size: 14px;
+}
+
+/* 로딩 상태 */
+.board-list-loading,
+.board-list-error,
+.board-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.board-list-loading p {
+  color: #666;
+  font-size: 16px;
+}
+
+.board-list-error p {
+  color: #dc3545;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.board-list-error button {
+  padding: 10px 24px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.board-list-error button:hover {
+  background: #0056b3;
+}
+
+.board-list-empty p {
+  color: #999;
+  font-size: 16px;
+}

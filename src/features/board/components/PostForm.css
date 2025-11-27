@@ -1,0 +1,171 @@
+/* 글쓰기 폼 오버레이 */
+.post-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+}
+
+/* 글쓰기 폼 모달 */
+.post-form-modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* 헤더 */
+.post-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  border-bottom: 2px solid #e0e0e0;
+  background: #f8f9fa;
+  border-radius: 12px 12px 0 0;
+}
+
+.post-form-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #333;
+}
+
+.post-form-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: #e0e0e0;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.post-form-close:hover {
+  background: #d0d0d0;
+  color: #333;
+}
+
+/* 폼 */
+.post-form {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.post-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.post-form-title-input {
+  padding: 14px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  transition: border-color 0.2s;
+}
+
+.post-form-title-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.post-form-content-input {
+  padding: 14px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.post-form-content-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.post-form-image-input {
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.post-form-image-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* 에러 메시지 */
+.post-form-error {
+  color: #dc3545;
+  font-size: 14px;
+  text-align: center;
+  padding: 10px;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 6px;
+}
+
+/* 액션 버튼 */
+.post-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 10px;
+}
+
+.post-form-cancel,
+.post-form-submit {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.post-form-cancel {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.post-form-cancel:hover {
+  background: #d0d0d0;
+}
+
+.post-form-submit {
+  background: #007bff;
+  color: white;
+}
+
+.post-form-submit:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.post-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
