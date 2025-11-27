@@ -14,8 +14,11 @@ function SettingModal({ onClose }) {
     },
     sound: {
       master: 70,
+      masterEnabled: true,
       effects: 80,
-      music: 60
+      effectsEnabled: true,
+      music: 60,
+      musicEnabled: true
     },
     other: {
       language: 'ko',
@@ -125,11 +128,21 @@ function SettingModal({ onClose }) {
             <div className="setting-section">
               <h3 className="setting-section-title">사운드 설정</h3>
 
-              <div className="setting-item">
-                <label className="setting-label">
-                  마스터 볼륨
-                  <span className="setting-value">{settings.sound.master}%</span>
-                </label>
+              <div className="setting-item sound-item">
+                <div className="sound-header">
+                  <label className="setting-label">
+                    마스터 볼륨
+                    <span className="setting-value">{settings.sound.master}%</span>
+                  </label>
+                  <label className="setting-toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.sound.masterEnabled}
+                      onChange={(e) => handleSettingChange('sound', 'masterEnabled', e.target.checked)}
+                    />
+                    <span className="setting-toggle-slider"></span>
+                  </label>
+                </div>
                 <input
                   type="range"
                   className="setting-slider"
@@ -137,14 +150,25 @@ function SettingModal({ onClose }) {
                   max="100"
                   value={settings.sound.master}
                   onChange={(e) => handleSettingChange('sound', 'master', parseInt(e.target.value))}
+                  disabled={!settings.sound.masterEnabled}
                 />
               </div>
 
-              <div className="setting-item">
-                <label className="setting-label">
-                  효과음 볼륨
-                  <span className="setting-value">{settings.sound.effects}%</span>
-                </label>
+              <div className="setting-item sound-item">
+                <div className="sound-header">
+                  <label className="setting-label">
+                    효과음 볼륨
+                    <span className="setting-value">{settings.sound.effects}%</span>
+                  </label>
+                  <label className="setting-toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.sound.effectsEnabled}
+                      onChange={(e) => handleSettingChange('sound', 'effectsEnabled', e.target.checked)}
+                    />
+                    <span className="setting-toggle-slider"></span>
+                  </label>
+                </div>
                 <input
                   type="range"
                   className="setting-slider"
@@ -152,14 +176,25 @@ function SettingModal({ onClose }) {
                   max="100"
                   value={settings.sound.effects}
                   onChange={(e) => handleSettingChange('sound', 'effects', parseInt(e.target.value))}
+                  disabled={!settings.sound.effectsEnabled}
                 />
               </div>
 
-              <div className="setting-item">
-                <label className="setting-label">
-                  배경음악 볼륨
-                  <span className="setting-value">{settings.sound.music}%</span>
-                </label>
+              <div className="setting-item sound-item">
+                <div className="sound-header">
+                  <label className="setting-label">
+                    배경음악 볼륨
+                    <span className="setting-value">{settings.sound.music}%</span>
+                  </label>
+                  <label className="setting-toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.sound.musicEnabled}
+                      onChange={(e) => handleSettingChange('sound', 'musicEnabled', e.target.checked)}
+                    />
+                    <span className="setting-toggle-slider"></span>
+                  </label>
+                </div>
                 <input
                   type="range"
                   className="setting-slider"
@@ -167,6 +202,7 @@ function SettingModal({ onClose }) {
                   max="100"
                   value={settings.sound.music}
                   onChange={(e) => handleSettingChange('sound', 'music', parseInt(e.target.value))}
+                  disabled={!settings.sound.musicEnabled}
                 />
               </div>
             </div>
