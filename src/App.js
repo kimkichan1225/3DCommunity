@@ -290,12 +290,14 @@ function Model({ characterRef, initialPosition, isMovementDisabled, username }) 
         {username && (
           <Billboard position={[0, 7, 0]} follow={true} lockX={false} lockY={false} lockZ={false}>
             <Text
-              fontSize={0.5}
+              fontSize={0.6}
               color="white"
               anchorX="center"
               anchorY="middle"
-              outlineWidth={0.02}
+              outlineWidth={0.05}
               outlineColor="black"
+              outlineOpacity={1}
+              fontWeight="bold"
             >
               {username}
             </Text>
