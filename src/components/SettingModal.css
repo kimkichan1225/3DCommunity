@@ -150,6 +150,17 @@
   margin-bottom: 24px;
 }
 
+/* 토글 스위치가 있는 항목은 가로 배치 */
+.setting-item:has(.setting-toggle) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.setting-item:has(.setting-toggle) .setting-label {
+  margin-bottom: 0;
+}
+
 .setting-label {
   display: flex;
   justify-content: space-between;
