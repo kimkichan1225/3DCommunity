@@ -495,6 +495,13 @@ function App() {
         <Mapbox3D onMapReady={handleMapReady} isFull={isMapFull} />
       )}
 
+      {/* 프로필 아이콘 (좌측 상단, 로그인한 사용자만 표시) */}
+      {isLoggedIn && (
+        <button className="profile-icon-button" onClick={() => setShowProfileModal(true)} title="프로필">
+          <img src="/resources/Icon/Profile-icon.png" alt="Profile" />
+        </button>
+      )}
+
       {/* 아이콘 메뉴 (로그인한 사용자만 표시) */}
       {isLoggedIn && (
         <div className={`icon-menu-container ${isMenuExpanded ? 'expanded' : ''}`}>
@@ -522,12 +529,6 @@ function App() {
             </button>
             <button className="icon-button" onClick={() => console.log('친구목록')} title="친구목록">
               <img src="/resources/Icon/Friend-icon.png" alt="Friend" />
-            </button>
-            <button className="icon-button" onClick={(e) => {
-              e.stopPropagation();
-              setShowProfileModal(true);
-            }} title="프로필">
-              <img src="/resources/Icon/Profile-icon.png" alt="Profile" />
             </button>
             <button className="icon-button" onClick={() => setShowMenuModal(true)} title="설정">
               <img src="/resources/Icon/Setting-icon.png" alt="Setting" />
