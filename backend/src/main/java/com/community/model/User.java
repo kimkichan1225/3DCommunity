@@ -34,8 +34,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String role = "ROLE_USER";
+    private Role role = Role.ROLE_USER;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -57,7 +58,7 @@ public class User implements UserDetails {
     // UserDetails 인터페이스 구현
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role));
+        return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
     @Override

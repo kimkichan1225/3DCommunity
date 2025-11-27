@@ -1,6 +1,7 @@
 package com.community.service;
 
 import com.community.dto.*;
+import com.community.model.Role;
 import com.community.model.User;
 import com.community.repository.UserRepository;
 import com.community.security.JwtTokenProvider;
@@ -35,7 +36,7 @@ public class AuthService {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role("ROLE_USER")
+                .role(Role.ROLE_USER)
                 .build();
 
         userRepository.save(user);

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import './AuthModal.css';
 
 function AuthModal({ mode, onClose, onSuccess }) {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(mode === 'login');
   const [formData, setFormData] = useState({
     email: '',
@@ -34,7 +36,13 @@ function AuthModal({ mode, onClose, onSuccess }) {
           email: formData.email,
           password: formData.password
         });
-        onSuccess(response.user);
+
+        // role 기반 리다이렉트
+        if (response.user.role === 'ROLE_DEVELOPER') {
+          navigate('/admin');
+        } else {
+          onSuccess(response.user);
+        }
       } else {
         // 회원가입
         if (formData.password !== formData.confirmPassword) {

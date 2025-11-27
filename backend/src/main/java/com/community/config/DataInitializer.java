@@ -1,6 +1,7 @@
 package com.community.config;
 
 import com.community.model.Board;
+import com.community.model.Role;
 import com.community.model.User;
 import com.community.repository.BoardRepository;
 import com.community.repository.UserRepository;
@@ -36,10 +37,22 @@ public class DataInitializer implements CommandLineRunner {
                     .username("테스트유저")
                     .email("test@test.com")
                     .password(passwordEncoder.encode("test1234"))
-                    .role("ROLE_USER")
+                    .role(Role.ROLE_USER)
                     .build();
             userRepository.save(testUser);
             System.out.println("테스트 계정 생성 완료: test@test.com / test1234");
+        }
+
+        // 관리자 계정 생성
+        if (!userRepository.existsByEmail("admin@admin.com")) {
+            User adminUser = User.builder()
+                    .username("관리자")
+                    .email("admin@admin.com")
+                    .password(passwordEncoder.encode("admin1234"))
+                    .role(Role.ROLE_DEVELOPER)
+                    .build();
+            userRepository.save(adminUser);
+            System.out.println("관리자 계정 생성 완료: admin@admin.com / admin1234");
         }
     }
 }
