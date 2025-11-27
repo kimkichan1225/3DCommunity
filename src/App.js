@@ -1,6 +1,6 @@
 import React, { Suspense, useRef, useEffect, useState, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations } from '@react-three/drei';
+import { useGLTF, useAnimations, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import './App.css';
 import Mapbox3D from './components/Mapbox3D';
@@ -9,7 +9,9 @@ import { Physics, RigidBody, CapsuleCollider } from '@react-three/rapier';
 import LandingPage from './components/LandingPage';
 import BoardModal from './components/BoardModal';
 import MenuModal from './components/MenuModal';
+import ProfileModal from './components/ProfileModal';
 import { MdForum } from 'react-icons/md';
+import { FaUser } from 'react-icons/fa';
 
 // 하늘을 위한 컴포넌트
 function Sky() {
@@ -89,7 +91,7 @@ function CameraController({ characterRef, mainCameraRef, isLoggedIn }) {
   return null;
 }
 
-function Model({ characterRef, initialPosition, isMovementDisabled }) {
+function Model({ characterRef, initialPosition, isMovementDisabled, username }) {
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
 
@@ -283,6 +285,22 @@ function Model({ characterRef, initialPosition, isMovementDisabled }) {
           castShadow
           receiveShadow
         />
+
+        {/* 닉네임 표시 (캐릭터 머리 위) - 3D Text with Billboard */}
+        {username && (
+          <Billboard position={[0, 7, 0]} follow={true} lockX={false} lockY={false} lockZ={false}>
+            <Text
+              fontSize={0.5}
+              color="white"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.02}
+              outlineColor="black"
+            >
+              {username}
+            </Text>
+          </Billboard>
+        )}
       </group>
     </>
   );
@@ -351,11 +369,13 @@ function App() {
   const [isMapFull, setIsMapFull] = useState(false);
   const [showBoardModal, setShowBoardModal] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [username, setUsername] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
-  const isAnyModalOpen = showBoardModal || showMenuModal || showLanding;
+  const isAnyModalOpen = showBoardModal || showMenuModal || showProfileModal || showLanding;
 
   // Map가 준비되면 호출됩니다. mapbox의 projection helper를 받아와
   // 현재 위치(geolocation)를 Three.js 월드 좌표로 변환해 캐릭터 초기 위치를 설정합니다.
@@ -447,11 +467,13 @@ function App() {
     console.log('로그인 성공:', user);
     setIsLoggedIn(true);
     setShowLanding(false);
+    setUsername(user.username || 'Guest');
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setShowLanding(true);
+    setUsername('');
   };
 
   // ESC 키 이벤트 핸들러
@@ -501,7 +523,10 @@ function App() {
             <button className="icon-button" onClick={() => console.log('친구목록')} title="친구목록">
               <img src="/resources/Icon/Friend-icon.png" alt="Friend" />
             </button>
-            <button className="icon-button" onClick={() => console.log('프로필')} title="프로필">
+            <button className="icon-button" onClick={(e) => {
+              e.stopPropagation();
+              setShowProfileModal(true);
+            }} title="프로필">
               <img src="/resources/Icon/Profile-icon.png" alt="Profile" />
             </button>
             <button className="icon-button" onClick={() => setShowMenuModal(true)} title="설정">
@@ -568,6 +593,7 @@ function App() {
                   characterRef={characterRef}
                   initialPosition={initialPosition}
                   isMovementDisabled={isAnyModalOpen}
+                  username={username}
                 />
                 <CameraLogger />
               </>
@@ -605,6 +631,11 @@ function App() {
           onClose={() => setShowMenuModal(false)}
           onLogout={handleLogout}
         />
+      )}
+
+      {/* 프로필 모달 */}
+      {showProfileModal && (
+        <ProfileModal onClose={() => setShowProfileModal(false)} />
       )}
     </div>
   );
