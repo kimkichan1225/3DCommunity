@@ -247,6 +247,16 @@
   box-shadow: 0 8px 24px rgba(107, 114, 128, 0.4);
 }
 
+.logout-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.logout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+}
+
 /* 스크롤바 스타일링 */
 .profile-modal::-webkit-scrollbar {
   width: 8px;

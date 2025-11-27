@@ -8,8 +8,8 @@ import { useKeyboardControls } from './useKeyboardControls';
 import { Physics, RigidBody, CapsuleCollider } from '@react-three/rapier';
 import LandingPage from './components/LandingPage';
 import BoardModal from './components/BoardModal';
-import MenuModal from './components/MenuModal';
 import ProfileModal from './components/ProfileModal';
+import SettingModal from './components/SettingModal';
 import { MdForum } from 'react-icons/md';
 import { FaUser } from 'react-icons/fa';
 
@@ -290,12 +290,14 @@ function Model({ characterRef, initialPosition, isMovementDisabled, username }) 
         {username && (
           <Billboard position={[0, 7, 0]} follow={true} lockX={false} lockY={false} lockZ={false}>
             <Text
-              fontSize={0.5}
+              fontSize={0.6}
               color="white"
               anchorX="center"
               anchorY="middle"
-              outlineWidth={0.02}
+              outlineWidth={0.05}
               outlineColor="black"
+              outlineOpacity={1}
+              fontWeight="bold"
             >
               {username}
             </Text>
@@ -368,14 +370,14 @@ function App() {
   const [initialPosition, setInitialPosition] = useState(null);
   const [isMapFull, setIsMapFull] = useState(false);
   const [showBoardModal, setShowBoardModal] = useState(false);
-  const [showMenuModal, setShowMenuModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showSettingModal, setShowSettingModal] = useState(false);
   const [username, setUsername] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
-  const isAnyModalOpen = showBoardModal || showMenuModal || showProfileModal || showLanding;
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
 
   // Map가 준비되면 호출됩니다. mapbox의 projection helper를 받아와
   // 현재 위치(geolocation)를 Three.js 월드 좌표로 변환해 캐릭터 초기 위치를 설정합니다.
@@ -476,23 +478,19 @@ function App() {
     setUsername('');
   };
 
-  // ESC 키 이벤트 핸들러
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isLoggedIn && !showLanding) {
-        setShowMenuModal((prev) => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLoggedIn, showLanding]);
 
   return (
     <div className="App">
       {/* Mapbox 배경 및 Three.js 오버레이 */}
       {isMapFull && (
         <Mapbox3D onMapReady={handleMapReady} isFull={isMapFull} />
+      )}
+
+      {/* 프로필 아이콘 (좌측 상단, 로그인한 사용자만 표시) */}
+      {isLoggedIn && (
+        <button className="profile-icon-button" onClick={() => setShowProfileModal(true)} title="프로필">
+          <img src="/resources/Icon/Profile-icon.png" alt="Profile" />
+        </button>
       )}
 
       {/* 아이콘 메뉴 (로그인한 사용자만 표시) */}
@@ -523,13 +521,7 @@ function App() {
             <button className="icon-button" onClick={() => console.log('친구목록')} title="친구목록">
               <img src="/resources/Icon/Friend-icon.png" alt="Friend" />
             </button>
-            <button className="icon-button" onClick={(e) => {
-              e.stopPropagation();
-              setShowProfileModal(true);
-            }} title="프로필">
-              <img src="/resources/Icon/Profile-icon.png" alt="Profile" />
-            </button>
-            <button className="icon-button" onClick={() => setShowMenuModal(true)} title="설정">
+            <button className="icon-button" onClick={() => setShowSettingModal(true)} title="설정">
               <img src="/resources/Icon/Setting-icon.png" alt="Setting" />
             </button>
             <button className="icon-button" onClick={() => console.log('상점')} title="상점">
@@ -625,17 +617,17 @@ function App() {
         <BoardModal onClose={() => setShowBoardModal(false)} />
       )}
 
-      {/* ESC 메뉴 모달 */}
-      {showMenuModal && (
-        <MenuModal
-          onClose={() => setShowMenuModal(false)}
+      {/* 프로필 모달 */}
+      {showProfileModal && (
+        <ProfileModal
+          onClose={() => setShowProfileModal(false)}
           onLogout={handleLogout}
         />
       )}
 
-      {/* 프로필 모달 */}
-      {showProfileModal && (
-        <ProfileModal onClose={() => setShowProfileModal(false)} />
+      {/* 설정 모달 */}
+      {showSettingModal && (
+        <SettingModal onClose={() => setShowSettingModal(false)} />
       )}
     </div>
   );
