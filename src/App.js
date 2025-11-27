@@ -487,16 +487,6 @@ function App() {
             />
           </button>
 
-          {/* 항상 보이는 아이콘들 (게시판, 지도) */}
-          <div className="primary-icons">
-            <button className="icon-button" onClick={() => setShowBoardModal(true)} title="게시판">
-              <img src="/resources/Icon/Board-icon.png" alt="Board" />
-            </button>
-            <button className="icon-button" onClick={toggleMapFull} title="지도">
-              <img src="/resources/Icon/Map-icon.png" alt="Map" />
-            </button>
-          </div>
-
           {/* 확장 시 보이는 아이콘들 */}
           {isMenuExpanded && (
             <div className="secondary-icons">
@@ -523,6 +513,16 @@ function App() {
               </button>
             </div>
           )}
+
+          {/* 항상 보이는 아이콘들 (게시판, 지도) */}
+          <div className="primary-icons">
+            <button className="icon-button" onClick={() => setShowBoardModal(true)} title="게시판">
+              <img src="/resources/Icon/Board-icon.png" alt="Board" />
+            </button>
+            <button className="icon-button" onClick={toggleMapFull} title="지도">
+              <img src="/resources/Icon/Map-icon.png" alt="Map" />
+            </button>
+          </div>
         </div>
       )}
 
