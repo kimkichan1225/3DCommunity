@@ -4,7 +4,7 @@ import './ProfileModal.css';
 import authService from '../services/authService';
 import profileService from '../services/profileService';
 
-function ProfileModal({ onClose }) {
+function ProfileModal({ onClose, onLogout }) {
   const [userData, setUserData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,6 +81,13 @@ function ProfileModal({ onClose }) {
       profileImage: userData.profileImage || ''
     });
     setIsEditing(false);
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('로그아웃하시겠습니까?')) {
+      onLogout();
+      onClose();
+    }
   };
 
   const handleImageUpload = async (e) => {
@@ -234,10 +241,15 @@ function ProfileModal({ onClose }) {
                 </button>
               </>
             ) : (
-              <button className="profile-btn edit-btn" onClick={handleEdit}>
-                <FaEdit />
-                <span>프로필 수정</span>
-              </button>
+              <>
+                <button className="profile-btn edit-btn" onClick={handleEdit}>
+                  <FaEdit />
+                  <span>프로필 수정</span>
+                </button>
+                <button className="profile-btn logout-btn" onClick={handleLogout}>
+                  로그아웃
+                </button>
+              </>
             )}
           </div>
         </div>
