@@ -481,7 +481,10 @@ function App() {
             className="menu-toggle-arrow"
             onClick={() => setIsMenuExpanded(!isMenuExpanded)}
           >
-            {isMenuExpanded ? '>' : '<'}
+            <img
+              src={isMenuExpanded ? '/resources/Icon/rightarrow.png' : '/resources/Icon/leftarrow.png'}
+              alt={isMenuExpanded ? 'Close' : 'Open'}
+            />
           </button>
 
           {/* 항상 보이는 아이콘들 (게시판, 지도) */}
