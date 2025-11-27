@@ -488,41 +488,39 @@ function App() {
           </button>
 
           {/* 확장 시 보이는 아이콘들 */}
-          {isMenuExpanded && (
-            <div className="secondary-icons">
-              <button className="icon-button" onClick={() => console.log('알람')} title="알람">
-                <img src="/resources/Icon/Alarm-icon.png" alt="Alarm" />
-              </button>
-              <button className="icon-button" onClick={() => console.log('채팅')} title="채팅">
-                <img src="/resources/Icon/Chat-icon.png" alt="Chat" />
-              </button>
-              <button className="icon-button" onClick={() => console.log('이벤트')} title="이벤트">
-                <img src="/resources/Icon/Event-icon.png" alt="Event" />
-              </button>
-              <button className="icon-button" onClick={() => console.log('친구목록')} title="친구목록">
-                <img src="/resources/Icon/Friend-icon.png" alt="Friend" />
-              </button>
-              <button className="icon-button" onClick={() => console.log('프로필')} title="프로필">
-                <img src="/resources/Icon/Profile-icon.png" alt="Profile" />
-              </button>
-              <button className="icon-button" onClick={() => setShowMenuModal(true)} title="설정">
-                <img src="/resources/Icon/Setting-icon.png" alt="Setting" />
-              </button>
-              <button className="icon-button" onClick={() => console.log('상점')} title="상점">
-                <img src="/resources/Icon/Shop-icon.png" alt="Shop" />
-              </button>
-            </div>
-          )}
-
-          {/* 항상 보이는 아이콘들 (게시판, 지도) */}
-          <div className="primary-icons">
-            <button className="icon-button" onClick={() => setShowBoardModal(true)} title="게시판">
-              <img src="/resources/Icon/Board-icon.png" alt="Board" />
+          <div className={`secondary-icons ${isMenuExpanded ? 'show' : 'hide'}`}>
+            <button className="icon-button" onClick={() => console.log('알람')} title="알람">
+              <img src="/resources/Icon/Alarm-icon.png" alt="Alarm" />
             </button>
-            <button className="icon-button" onClick={toggleMapFull} title="지도">
-              <img src="/resources/Icon/Map-icon.png" alt="Map" />
+            <button className="icon-button" onClick={() => console.log('채팅')} title="채팅">
+              <img src="/resources/Icon/Chat-icon.png" alt="Chat" />
+            </button>
+            <button className="icon-button" onClick={() => console.log('이벤트')} title="이벤트">
+              <img src="/resources/Icon/Event-icon.png" alt="Event" />
+            </button>
+            <button className="icon-button" onClick={() => console.log('친구목록')} title="친구목록">
+              <img src="/resources/Icon/Friend-icon.png" alt="Friend" />
+            </button>
+            <button className="icon-button" onClick={() => console.log('프로필')} title="프로필">
+              <img src="/resources/Icon/Profile-icon.png" alt="Profile" />
+            </button>
+            <button className="icon-button" onClick={() => setShowMenuModal(true)} title="설정">
+              <img src="/resources/Icon/Setting-icon.png" alt="Setting" />
+            </button>
+            <button className="icon-button" onClick={() => console.log('상점')} title="상점">
+              <img src="/resources/Icon/Shop-icon.png" alt="Shop" />
             </button>
           </div>
+
+          {/* 게시판 아이콘 */}
+          <button className="icon-button primary-board" onClick={() => setShowBoardModal(true)} title="게시판">
+            <img src="/resources/Icon/Board-icon.png" alt="Board" />
+          </button>
+
+          {/* 지도 아이콘 */}
+          <button className="icon-button primary-map" onClick={toggleMapFull} title="지도">
+            <img src="/resources/Icon/Map-icon.png" alt="Map" />
+          </button>
         </div>
       )}
 
