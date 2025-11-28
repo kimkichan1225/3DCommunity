@@ -193,7 +193,7 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
 
   return (
     <>
-      {/* Mapbox 컨테이너 - 반드시 비어있어야 함 */}
+      {/* Mapbox 컨테이너 - Three.js 위에 반투명 오버레이로 표시 */}
       <div 
         ref={mapContainer} 
         className={`map-container ${isFull ? 'map-full' : ''}`}
@@ -203,7 +203,9 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
           left: 0,
           width: '100%',
           height: '100%',
-          zIndex: 0
+          zIndex: 10, // Three.js Canvas보다 위에 표시
+          opacity: 0.7, // 반투명 (70% 불투명)
+          pointerEvents: 'auto'
         }}
       />
       

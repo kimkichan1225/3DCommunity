@@ -320,6 +320,11 @@ function App() {
         className="three-canvas"
         camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
         shadows
+        gl={{ 
+          alpha: true, // 투명 배경 활성화
+          antialias: true,
+          preserveDrawingBuffer: true
+        }}
         style={{ width: '100%', height: '100%' }}
       >
         <ambientLight intensity={0.5} />
