@@ -319,19 +319,16 @@ function App() {
                 <CameraLogger />
 
                 {/* Render other players */}
-                {Object.values(otherPlayers).map((player) => {
-                  console.log('[App] Rendering OtherPlayer:', player);
-                  return (
-                    <OtherPlayer
-                      key={player.userId}
-                      userId={player.userId}
-                      username={player.username}
-                      position={player.position}
-                      rotationY={player.rotationY}
-                      animation={player.animation}
-                    />
-                  );
-                })}
+                {Object.values(otherPlayers).map((player) => (
+                  <OtherPlayer
+                    key={player.userId}
+                    userId={player.userId}
+                    username={player.username}
+                    position={player.position}
+                    rotationY={player.rotationY}
+                    animation={player.animation}
+                  />
+                ))}
               </>
             )}
             {/* CameraController는 항상 렌더링 (로그인 전: MainCamera, 로그인 후: Character) */}

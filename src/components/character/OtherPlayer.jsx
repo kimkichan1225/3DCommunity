@@ -43,7 +43,7 @@ function OtherPlayer({ userId, username, position, rotationY, animation }) {
     const animationMap = {
       idle: 'Idle',
       walk: 'Walk',
-      run: 'Walk'
+      run: 'Run'
     };
 
     const animationName = animationMap[animation] || 'Idle';
