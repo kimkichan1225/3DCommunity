@@ -139,70 +139,74 @@ function App() {
     setOtherPlayers({});
   };
 
-  // Connect to multiplayer service when logged in
+  // Connect to multiplayer service - even when not logged in (as observer)
   useEffect(() => {
-    if (isLoggedIn && userId && username) {
-      console.log('🔗 Connecting to multiplayer service...', { userId, username });
-
-      // Set up callbacks
-      multiplayerService.onPlayerJoin((data) => {
-        console.log('👤 Player joined:', data);
-        // Ignore own join event (compare as strings)
-        if (String(data.userId) === String(userId)) {
-          console.log('Ignoring own join event');
-          return;
-        }
-        setOtherPlayers((prev) => {
-          const updated = {
-            ...prev,
-            [data.userId]: {
-              userId: data.userId,
-              username: data.username,
-              position: [5, 10, 5], // Higher position to make it visible
-              rotationY: 0,
-              animation: 'idle'
-            }
-          };
-          console.log('[App] Updated otherPlayers:', updated);
-          return updated;
-        });
-      });
-
-      multiplayerService.onPlayerLeave((data) => {
-        console.log('👋 Player left:', data);
-        setOtherPlayers((prev) => {
-          const updated = { ...prev };
-          delete updated[data.userId];
-          return updated;
-        });
-      });
-
-      multiplayerService.onPositionUpdate((data) => {
-        setOtherPlayers((prev) => ({
+    // Set up callbacks first
+    multiplayerService.onPlayerJoin((data) => {
+      console.log('👤 Player joined:', data);
+      // If logged in, ignore own join event
+      if (isLoggedIn && String(data.userId) === String(userId)) {
+        console.log('Ignoring own join event');
+        return;
+      }
+      setOtherPlayers((prev) => {
+        const updated = {
           ...prev,
           [data.userId]: {
             userId: data.userId,
             username: data.username,
-            position: [data.x, data.y, data.z],
-            rotationY: data.rotationY,
-            animation: data.animation
+            position: [5, 10, 5], // Higher position to make it visible
+            rotationY: 0,
+            animation: 'idle'
           }
-        }));
+        };
+        console.log('[App] Updated otherPlayers:', updated);
+        return updated;
       });
+    });
 
-      multiplayerService.onChatMessage((data) => {
-        console.log('💬 Chat message:', data);
-        // Handle chat messages (can integrate with GlobalChat later)
+    multiplayerService.onPlayerLeave((data) => {
+      console.log('👋 Player left:', data);
+      setOtherPlayers((prev) => {
+        const updated = { ...prev };
+        delete updated[data.userId];
+        return updated;
       });
+    });
 
-      // Connect
+    multiplayerService.onPositionUpdate((data) => {
+      setOtherPlayers((prev) => ({
+        ...prev,
+        [data.userId]: {
+          userId: data.userId,
+          username: data.username,
+          position: [data.x, data.y, data.z],
+          rotationY: data.rotationY,
+          animation: data.animation
+        }
+      }));
+    });
+
+    multiplayerService.onChatMessage((data) => {
+      console.log('💬 Chat message:', data);
+      // Handle chat messages (can integrate with GlobalChat later)
+    });
+
+    // Connect as observer if not logged in, or as player if logged in
+    if (isLoggedIn && userId && username) {
+      console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
       multiplayerService.connect(userId, username);
-
-      // Cleanup on unmount
-      return () => {
-        multiplayerService.disconnect();
-      };
+    } else {
+      // Connect as observer (anonymous viewer)
+      console.log('👀 Connecting to multiplayer service as observer...');
+      const observerId = 'observer_' + Date.now();
+      multiplayerService.connect(observerId, 'Observer', true); // true = observer mode
     }
+
+    // Cleanup on unmount
+    return () => {
+      multiplayerService.disconnect();
+    };
   }, [isLoggedIn, userId, username]);
 
 
@@ -317,20 +321,21 @@ function App() {
                   multiplayerService={multiplayerService}
                 />
                 <CameraLogger />
-
-                {/* Render other players */}
-                {Object.values(otherPlayers).map((player) => (
-                  <OtherPlayer
-                    key={player.userId}
-                    userId={player.userId}
-                    username={player.username}
-                    position={player.position}
-                    rotationY={player.rotationY}
-                    animation={player.animation}
-                  />
-                ))}
               </>
             )}
+
+            {/* Render other players - 로그인 여부와 관계없이 항상 표시 */}
+            {Object.values(otherPlayers).map((player) => (
+              <OtherPlayer
+                key={player.userId}
+                userId={player.userId}
+                username={player.username}
+                position={player.position}
+                rotationY={player.rotationY}
+                animation={player.animation}
+              />
+            ))}
+
             {/* CameraController는 항상 렌더링 (로그인 전: MainCamera, 로그인 후: Character) */}
             <CameraController
               characterRef={characterRef}

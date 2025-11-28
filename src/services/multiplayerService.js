@@ -7,6 +7,7 @@ class MultiplayerService {
     this.connected = false;
     this.userId = null;
     this.username = null;
+    this.isObserver = false; // Observer mode (view-only, no join broadcast)
 
     // Callbacks
     this.onPlayerJoinCallback = null;
@@ -15,9 +16,10 @@ class MultiplayerService {
     this.onChatMessageCallback = null;
   }
 
-  connect(userId, username) {
+  connect(userId, username, isObserver = false) {
     this.userId = userId;
     this.username = username;
+    this.isObserver = isObserver;
 
     const socket = new SockJS('http://localhost:8080/ws');
 
@@ -37,10 +39,15 @@ class MultiplayerService {
           console.log('Player event:', data);
 
           // Compare as strings to handle type differences
-          if (data.action === 'join' && String(data.userId) !== String(this.userId)) {
-            this.onPlayerJoinCallback?.(data);
-          } else if (data.action === 'leave' && String(data.userId) !== String(this.userId)) {
-            this.onPlayerLeaveCallback?.(data);
+          // In observer mode, show all players; in player mode, hide own join/leave
+          if (data.action === 'join') {
+            if (this.isObserver || String(data.userId) !== String(this.userId)) {
+              this.onPlayerJoinCallback?.(data);
+            }
+          } else if (data.action === 'leave') {
+            if (this.isObserver || String(data.userId) !== String(this.userId)) {
+              this.onPlayerLeaveCallback?.(data);
+            }
           }
         });
 
@@ -48,8 +55,8 @@ class MultiplayerService {
         this.client.subscribe('/topic/positions', (message) => {
           const data = JSON.parse(message.body);
 
-          // Ignore own position updates (compare as strings)
-          if (String(data.userId) !== String(this.userId)) {
+          // In observer mode, show all position updates; in player mode, ignore own
+          if (this.isObserver || String(data.userId) !== String(this.userId)) {
             this.onPositionUpdateCallback?.(data);
           }
         });
@@ -61,8 +68,10 @@ class MultiplayerService {
           this.onChatMessageCallback?.(data);
         });
 
-        // Send join message
-        this.sendPlayerJoin();
+        // Send join message only if not in observer mode
+        if (!this.isObserver) {
+          this.sendPlayerJoin();
+        }
       },
       onStompError: (frame) => {
         console.error('❌ STOMP Error:', frame.headers['message']);
