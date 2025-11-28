@@ -11,13 +11,19 @@ import { useKeyboardControls } from '../../useKeyboardControls';
  * - 물리 기반 이동 및 충돌 처리
  * - 발걸음 소리 재생
  * - 닉네임 표시
+ * - 멀티플레이어 위치 동기화
  */
-function Character({ characterRef, initialPosition, isMovementDisabled, username }) {
+function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService }) {
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
 
   const { forward, backward, left, right, shift } = useKeyboardControls();
   const [currentAnimation, setCurrentAnimation] = useState('none');
+
+  // Multiplayer position update throttle
+  const lastPositionUpdateRef = useRef(0);
+  const positionUpdateIntervalRef = useRef(100); // Update every 100ms (10 times per second)
+  const lastRotationYRef = useRef(0); // 마지막 회전 각도 저장 (idle 시 사용)
 
   // 발걸음 소리를 위한 오디오 시스템
   const stepAudioRef = useRef(null);
@@ -138,11 +144,15 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     if (left) direction.x -= 1;
     if (right) direction.x += 1;
 
+    let targetAngleForNetwork = null; // 네트워크 전송용 각도 저장
+
     if (direction.length() > 0) {
       direction.normalize();
 
       // 회전 처리 - 부드럽게 회전 (모델만)
       const targetAngle = Math.atan2(direction.x, direction.z);
+      targetAngleForNetwork = targetAngle; // 네트워크 전송용으로 저장
+
       const targetQuaternion = new THREE.Quaternion();
       targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
 
@@ -177,6 +187,34 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
 
     // 모델의 회전은 입력에 의한 회전만 적용
     modelGroupRef.current.quaternion.copy(currentRotationRef.current);
+
+    // Send position updates to multiplayer service (throttled)
+    if (multiplayerService && userId) {
+      const currentTime = Date.now();
+      if (currentTime - lastPositionUpdateRef.current > positionUpdateIntervalRef.current) {
+        // Use target angle if moving, otherwise use last known rotation
+        let rotationY;
+        if (targetAngleForNetwork !== null) {
+          rotationY = targetAngleForNetwork;
+          lastRotationYRef.current = rotationY; // 이동 중일 때 마지막 각도 저장
+        } else {
+          rotationY = lastRotationYRef.current; // idle 시 마지막 각도 유지
+        }
+
+        // Determine animation state
+        let animState = 'idle';
+        if (currentAnimation === 'Walk') animState = 'walk';
+        else if (currentAnimation === 'Run') animState = 'run';
+
+        multiplayerService.sendPositionUpdate(
+          [rbPosition.x, rbPosition.y, rbPosition.z],
+          rotationY,
+          animState
+        );
+
+        lastPositionUpdateRef.current = currentTime;
+      }
+    }
   });
 
   return (

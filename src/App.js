@@ -1,4 +1,4 @@
-import React, { Suspense, useRef, useState } from 'react';
+import React, { Suspense, useRef, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import './App.css';
 import { Physics } from '@react-three/rapier';
@@ -12,6 +12,8 @@ import CameraController from './components/camera/CameraController';
 import CameraLogger from './components/camera/CameraLogger';
 import Level1 from './components/map/Level1';
 import GlobalChat from './components/GlobalChat';
+import OtherPlayer from './components/character/OtherPlayer';
+import multiplayerService from './services/multiplayerService';
 
 function App() {
   const characterRef = useRef();
@@ -25,7 +27,9 @@ function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
   const [username, setUsername] = useState('');
+  const [userId, setUserId] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const [otherPlayers, setOtherPlayers] = useState({});
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
@@ -122,13 +126,88 @@ function App() {
     setIsLoggedIn(true);
     setShowLanding(false);
     setUsername(user.username || 'Guest');
+    setUserId(user.id || String(Date.now())); // Use user ID or generate unique ID
   };
 
   const handleLogout = () => {
+    // Disconnect from multiplayer service
+    multiplayerService.disconnect();
     setIsLoggedIn(false);
     setShowLanding(true);
     setUsername('');
+    setUserId('');
+    setOtherPlayers({});
   };
+
+  // Connect to multiplayer service - even when not logged in (as observer)
+  useEffect(() => {
+    // Set up callbacks first
+    multiplayerService.onPlayerJoin((data) => {
+      console.log('👤 Player joined:', data);
+      // If logged in, ignore own join event
+      if (isLoggedIn && String(data.userId) === String(userId)) {
+        console.log('Ignoring own join event');
+        return;
+      }
+      setOtherPlayers((prev) => {
+        const updated = {
+          ...prev,
+          [data.userId]: {
+            userId: data.userId,
+            username: data.username,
+            position: [5, 10, 5], // Higher position to make it visible
+            rotationY: 0,
+            animation: 'idle'
+          }
+        };
+        console.log('[App] Updated otherPlayers:', updated);
+        return updated;
+      });
+    });
+
+    multiplayerService.onPlayerLeave((data) => {
+      console.log('👋 Player left:', data);
+      setOtherPlayers((prev) => {
+        const updated = { ...prev };
+        delete updated[data.userId];
+        return updated;
+      });
+    });
+
+    multiplayerService.onPositionUpdate((data) => {
+      setOtherPlayers((prev) => ({
+        ...prev,
+        [data.userId]: {
+          userId: data.userId,
+          username: data.username,
+          position: [data.x, data.y, data.z],
+          rotationY: data.rotationY,
+          animation: data.animation
+        }
+      }));
+    });
+
+    multiplayerService.onChatMessage((data) => {
+      console.log('💬 Chat message:', data);
+      // Handle chat messages (can integrate with GlobalChat later)
+    });
+
+    // Connect as observer if not logged in, or as player if logged in
+    if (isLoggedIn && userId && username) {
+      console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
+      multiplayerService.connect(userId, username);
+    } else {
+      // Connect as observer (anonymous viewer)
+      console.log('👀 Connecting to multiplayer service as observer...');
+      const observerId = 'observer_' + Date.now();
+      multiplayerService.connect(observerId, 'Observer', true); // true = observer mode
+    }
+
+    // Cleanup on unmount
+    return () => {
+      multiplayerService.disconnect();
+    };
+  }, [isLoggedIn, userId, username]);
 
 
   return (
@@ -238,10 +317,27 @@ function App() {
                   initialPosition={initialPosition}
                   isMovementDisabled={isAnyModalOpen && !isMapFull}
                   username={username}
+                  userId={userId}
+                  multiplayerService={multiplayerService}
                 />
                 <CameraLogger />
               </>
             )}
+
+            {/* Render other players - 로그인 여부와 관계없이 항상 표시 (observer 제외) */}
+            {Object.values(otherPlayers)
+              .filter((player) => !String(player.userId).startsWith('observer_'))
+              .map((player) => (
+                <OtherPlayer
+                  key={player.userId}
+                  userId={player.userId}
+                  username={player.username}
+                  position={player.position}
+                  rotationY={player.rotationY}
+                  animation={player.animation}
+                />
+              ))}
+
             {/* CameraController는 항상 렌더링 (로그인 전: MainCamera, 로그인 후: Character) */}
             <CameraController
               characterRef={characterRef}
