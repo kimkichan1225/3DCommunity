@@ -31,6 +31,17 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("기본 게시판 생성 완료: 자유게시판");
         }
 
+        // 공지사항 게시판이 없으면 생성 (임시로 FREE 카테고리 사용)
+        if (!boardRepository.existsByName("공지사항")) {
+            Board noticeBoard = Board.builder()
+                    .name("공지사항")
+                    .description("중요한 공지사항을 확인하세요.")
+                    .category(Board.BoardCategory.FREE) // 임시로 FREE 사용
+                    .build();
+            boardRepository.save(noticeBoard);
+            System.out.println("공지사항 게시판 생성 완료 (카테고리: FREE)");
+        }
+
         // 테스트 계정 생성
         if (!userRepository.existsByEmail("test@test.com")) {
             User testUser = User.builder()

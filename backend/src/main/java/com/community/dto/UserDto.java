@@ -23,7 +23,7 @@ public class UserDto {
     public static UserDto fromEntity(User user) {
         return UserDto.builder()
                 .id(user.getId())
-                .username(user.getUsername())
+                .username(user.getNickname()) // 닉네임 사용
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .createdAt(user.getCreatedAt())

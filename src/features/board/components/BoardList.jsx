@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import './BoardList.css';
 import boardService from '../services/boardService';
 
-function BoardList({ type, onPostClick }) {
+function BoardList({ type, onPostClick, refreshKey }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     loadPosts();
-  }, [type]);
+  }, [type, refreshKey]);
 
   const loadPosts = async () => {
     setLoading(true);
@@ -65,6 +65,7 @@ function BoardList({ type, onPostClick }) {
         <div className="board-list-col-title">제목</div>
         <div className="board-list-col-author">작성자</div>
         <div className="board-list-col-views">조회수</div>
+        <div className="board-list-col-comments">댓글수</div>
         <div className="board-list-col-likes">추천수</div>
       </div>
       <div className="board-list-body">
@@ -83,6 +84,7 @@ function BoardList({ type, onPostClick }) {
               <div className="board-list-col-title">{post.title}</div>
               <div className="board-list-col-author">{post.authorName || post.author}</div>
               <div className="board-list-col-views">{post.viewCount || post.views || 0}</div>
+              <div className="board-list-col-comments">{post.commentCount || 0}</div>
               <div className="board-list-col-likes">{post.likeCount || post.likes || 0}</div>
             </div>
           ))

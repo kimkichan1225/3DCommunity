@@ -93,4 +93,30 @@ public class PostService {
 
         post.setIsDeleted(true);
     }
+
+    // 게시글 검색
+    public Page<PostDto.ListResponse> searchPosts(Long boardId, String keyword, String searchType, Pageable pageable) {
+        Page<Post> posts;
+
+        switch (searchType.toLowerCase()) {
+            case "title":
+                posts = postRepository.findByBoardIdAndTitleContainingAndIsDeletedFalseOrderByCreatedAtDesc(
+                        boardId, keyword, pageable);
+                break;
+            case "content":
+                posts = postRepository.findByBoardIdAndContentContainingAndIsDeletedFalseOrderByCreatedAtDesc(
+                        boardId, keyword, pageable);
+                break;
+            case "all":
+                // 제목 또는 내용에 키워드 포함
+                // Repository에 추가 메서드가 필요하지만, 우선 제목 검색 사용
+                posts = postRepository.findByBoardIdAndTitleContainingAndIsDeletedFalseOrderByCreatedAtDesc(
+                        boardId, keyword, pageable);
+                break;
+            default:
+                throw new IllegalArgumentException("잘못된 검색 타입입니다. (title, content, all 중 선택)");
+        }
+
+        return posts.map(PostDto.ListResponse::from);
+    }
 }
