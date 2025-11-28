@@ -29,6 +29,7 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [center, setCenter] = useState(initialCenter); // 현재 위치를 상태로 관리
+  const onMapReadyCalledRef = useRef(false); // onMapReady가 한 번만 호출되도록 제어
 
   // 로딩 오버레이용 별도 컨테이너
   const loadingOverlayRef = useRef(null);
@@ -79,6 +80,13 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
       map.on('load', () => {
         console.log('🗺️  Mapbox 지도가 로드되었습니다.');
         setIsLoading(false);
+        
+        // onMapReady 콜백을 한 번만 호출 (중복 방지)
+        if (onMapReadyCalledRef.current) {
+          console.warn('⚠️  onMapReady already called, skipping');
+          return;
+        }
+        onMapReadyCalledRef.current = true;
         
         // Add DEM source for terrain (Mapbox default)
         if (!map.getSource('mapbox-dem')) {
@@ -165,8 +173,8 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
         mapRef.current = null;
       }
     };
-    // 의존성 배열: center가 변경될 때만 재초기화
-  }, [center]);
+    // 의존성 배열: 빈 배열 (컴포넌트 마운트 시 한 번만 초기화, 재초기화 방지)
+  }, []);
 
   // When container visibility/size changes (isFull), make sure map resizes
   useEffect(() => {

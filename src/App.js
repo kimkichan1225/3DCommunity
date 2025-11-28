@@ -11,6 +11,7 @@ import Character from './components/character/Character';
 import CameraController from './components/camera/CameraController';
 import CameraLogger from './components/camera/CameraLogger';
 import Level1 from './components/map/Level1';
+import MapFloor from './components/map/MapFloor';
 import GlobalChat from './components/GlobalChat';
 import OtherPlayer from './components/character/OtherPlayer';
 import multiplayerService from './services/multiplayerService';
@@ -18,10 +19,13 @@ import multiplayerService from './services/multiplayerService';
 function App() {
   const characterRef = useRef();
   const mainCameraRef = useRef();
+  const level1PositionRef = useRef(null); // Level1 위치를 ref로 저장 (즉시 접근 용도)
+  const mapReadyCalledRef = useRef(false); // handleMapReady가 한 번만 호출되도록 제어
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [mapHelpers, setMapHelpers] = useState(null);
   const [initialPosition, setInitialPosition] = useState(null);
+  const [level1Position, setLevel1Position] = useState(null); // Level1 위치 저장 (state)
   const [isMapFull, setIsMapFull] = useState(false);
   const [showBoardModal, setShowBoardModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -35,9 +39,26 @@ function App() {
   // 모달이 열려있는지 확인
   const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
 
+  // 캐릭터 현재 위치 업데이트 콜백
+  const handleCharacterPositionUpdate = (position) => {
+    if (!isMapFull) {
+      // Level1 모드일 때만 위치 저장
+      level1PositionRef.current = position;
+      setLevel1Position(position);
+      console.log('📍 현재 캐릭터 위치 저장:', position);
+    }
+  };
+
   // Map가 준비되면 호출됩니다. mapbox의 projection helper를 받아와
   // 현재 위치(geolocation)를 Three.js 월드 좌표로 변환해 캐릭터 초기 위치를 설정합니다.
   const handleMapReady = ({ map, project }) => {
+    // handleMapReady가 여러 번 호출되지 않도록 제어
+    if (mapReadyCalledRef.current) {
+      console.warn('⚠️  handleMapReady already called, skipping');
+      return;
+    }
+    mapReadyCalledRef.current = true;
+
     setMapHelpers({ map, project });
 
     // Try to get browser geolocation; fallback to map center
@@ -63,7 +84,7 @@ function App() {
             const threeZ = -dz;
 
             setInitialPosition([threeX, threeY, threeZ]);
-            console.log('Initial character position (Three.js):', [threeX, threeY, threeZ]);
+            console.log('✅ Initial character position (Three.js):', [threeX, threeY, threeZ]);
           } catch (e) {
             console.warn('map projection failed', e);
           }
@@ -85,8 +106,24 @@ function App() {
 
   const toggleMapFull = (e) => {
     e && e.stopPropagation();
-    // Only toggle the boolean; Mapbox3D will mount when isMapFull becomes true
-    setIsMapFull((v) => !v);
+    
+    if (!isMapFull) {
+      // 지도 진입
+      console.log('🗺️ 지도 진입 - isMapFull:', false, '→ true');
+      setIsMapFull(true);
+      // ⚠️ initialPosition을 건드리지 않음! (자동 위치 복구 방지)
+    } else {
+      // 지도 종료: 저장된 Level1 위치로 복귀
+      console.log('🗺️ 지도 종료 - isMapFull:', true, '→ false');
+      const posToRestore = level1PositionRef.current || level1Position;
+      if (posToRestore) {
+        console.log('📍 저장된 위치로 복귀:', posToRestore);
+        setInitialPosition(posToRestore);
+      } else {
+        console.warn('⚠️ 복귀할 위치가 없습니다');
+      }
+      setIsMapFull(false);
+    }
   };
 
   // Helper: request geolocation and set initialPosition using provided project helper
@@ -319,6 +356,8 @@ function App() {
                   username={username}
                   userId={userId}
                   multiplayerService={multiplayerService}
+                  isMapFull={isMapFull}
+                  onPositionUpdate={handleCharacterPositionUpdate}
                 />
                 <CameraLogger />
               </>
@@ -344,6 +383,8 @@ function App() {
               mainCameraRef={mainCameraRef}
               isLoggedIn={isLoggedIn}
             />
+            {/* 지도 모드일 때만 MapFloor 렌더링 */}
+            {isMapFull && <MapFloor />}
             <Level1 characterRef={characterRef} mainCameraRef={mainCameraRef} />
           </Physics>
         </Suspense>
