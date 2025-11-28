@@ -22,7 +22,8 @@
       "Bash(rm:*)",
       "Bash(temp_header.txt)",
       "Bash(temp_footer.txt)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
