@@ -13,7 +13,9 @@ import CameraLogger from './components/camera/CameraLogger';
 import Level1 from './components/map/Level1';
 import GlobalChat from './components/GlobalChat';
 import OtherPlayer from './components/character/OtherPlayer';
+import ProfileAvatar from './components/ProfileAvatar';
 import multiplayerService from './services/multiplayerService';
+import authService from './features/auth/services/authService';
 
 function App() {
   const characterRef = useRef();
@@ -30,6 +32,7 @@ function App() {
   const [userId, setUserId] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [otherPlayers, setOtherPlayers] = useState({});
+  const [userProfile, setUserProfile] = useState(null); // 사용자 프로필 (selectedProfile, selectedOutline 포함)
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
@@ -126,7 +129,22 @@ function App() {
     setIsLoggedIn(true);
     setShowLanding(false);
     setUsername(user.username || 'Guest');
-    setUserId(user.id || String(Date.now())); // Use user ID or generate unique ID
+    setUserId(user.id || String(Date.now()));
+    setUserProfile(user); // 프로필 정보 저장 (selectedProfile, selectedOutline 포함)
+  };
+
+  // 프로필 업데이트 시 호출되는 함수
+  const handleProfileUpdate = async () => {
+    try {
+      // 서버에서 최신 사용자 정보 가져오기
+      const updatedUser = await authService.fetchCurrentUser();
+      if (updatedUser) {
+        setUserProfile(updatedUser);
+        console.log('✅ 프로필 업데이트 완료:', updatedUser);
+      }
+    } catch (error) {
+      console.error('Failed to update user profile:', error);
+    }
   };
 
   const handleLogout = () => {
@@ -136,6 +154,7 @@ function App() {
     setShowLanding(true);
     setUsername('');
     setUserId('');
+    setUserProfile(null);
     setOtherPlayers({});
   };
 
@@ -217,10 +236,14 @@ function App() {
         <Mapbox3D onMapReady={handleMapReady} isFull={isMapFull} />
       )}
 
-      {/* 프로필 아이콘 (좌측 상단, 로그인한 사용자만 표시) */}
+      {/* 프로필 아바타 (좌측 상단, 로그인한 사용자만 표시) */}
       {isLoggedIn && (
-        <button className="profile-icon-button" onClick={() => setShowProfileModal(true)} title="프로필">
-          <img src="/resources/Icon/Profile-icon.png" alt="Profile" />
+        <button className="profile-avatar-button" onClick={() => setShowProfileModal(true)} title="프로필">
+          <ProfileAvatar
+            profileImage={userProfile?.selectedProfile}
+            outlineImage={userProfile?.selectedOutline}
+            size={150}
+          />
         </button>
       )}
 
@@ -370,6 +393,7 @@ function App() {
         <ProfileModal
           onClose={() => setShowProfileModal(false)}
           onLogout={handleLogout}
+          onProfileUpdate={handleProfileUpdate}
         />
       )}
 

@@ -5,7 +5,7 @@ import authService from '../../auth/services/authService';
 import profileService from '../services/profileService';
 import ProfileCustomizer from './ProfileCustomizer';
 
-function ProfileModal({ onClose, onLogout }) {
+function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
   const [userData, setUserData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -163,6 +163,10 @@ function ProfileModal({ onClose, onLogout }) {
                   try {
                     const profile = await profileService.getCurrentUserProfile();
                     setUserData(profile);
+                    // 부모 컴포넌트(App.js)에도 알림
+                    if (onProfileUpdate) {
+                      onProfileUpdate();
+                    }
                   } catch (error) {
                     console.error('프로필 새로고침 실패:', error);
                   }

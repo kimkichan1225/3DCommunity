@@ -3,11 +3,14 @@ package com.community.controller;
 import com.community.dto.AuthResponse;
 import com.community.dto.LoginRequest;
 import com.community.dto.RegisterRequest;
+import com.community.dto.UserDto;
+import com.community.model.User;
 import com.community.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -49,5 +52,17 @@ public class AuthController {
     @GetMapping("/test")
     public ResponseEntity<String> test() {
         return ResponseEntity.ok("인증 API 서버가 정상 작동 중입니다.");
+    }
+
+    /**
+     * 현재 로그인한 사용자 정보 조회 (프로필 정보 포함)
+     */
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        UserDto userDto = UserDto.fromEntity(user);
+        return ResponseEntity.ok(userDto);
     }
 }

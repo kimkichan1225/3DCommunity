@@ -67,43 +67,31 @@
   transform: scale(1.05);
 }
 
-/* 프로필 아이콘 버튼 (좌측 상단) */
-.profile-icon-button {
+/* 프로필 아바타 버튼 (좌측 상단) */
+.profile-avatar-button {
   position: fixed;
   top: 20px;
   left: 20px;
   z-index: 100;
-  width: 65px;
-  height: 65px;
-  background: rgba(0, 0, 0, 0.7);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  width: 150px;
+  height: 150px;
+  background: transparent;
+  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  padding: 6px;
+  padding: 0;
 }
 
-.profile-icon-button:hover {
-  background: rgba(0, 0, 0, 0.9);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.15) translateY(-5px);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+.profile-avatar-button:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.8));
 }
 
-.profile-icon-button img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: brightness(1.1);
-  transition: filter 0.3s ease;
-}
-
-.profile-icon-button:hover img {
-  filter: brightness(1.3) drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+.profile-avatar-button .profile-avatar {
+  pointer-events: none;
 }
 
 .map-back-button {

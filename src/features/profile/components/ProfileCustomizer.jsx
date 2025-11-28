@@ -11,10 +11,19 @@ function ProfileCustomizer({ onUpdate }) {
   const [selectedOutline, setSelectedOutline] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [notification, setNotification] = useState(null); // { message, type: 'success' | 'error' | 'warning' }
 
   useEffect(() => {
     loadProfileItems();
   }, []);
+
+  // 팝업 알림 표시 함수
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 2000); // 2초 후 자동 닫힘
+  };
 
   const loadProfileItems = async () => {
     try {
@@ -44,7 +53,7 @@ function ProfileCustomizer({ onUpdate }) {
 
   const handleSelectProfile = (item) => {
     if (!item.isUnlocked) {
-      alert('잠금 해제되지 않은 아이템입니다.');
+      showNotification('잠금 해제되지 않은 아이템입니다.', 'warning');
       return;
     }
     setSelectedProfile(item);
@@ -52,7 +61,7 @@ function ProfileCustomizer({ onUpdate }) {
 
   const handleSelectOutline = (item) => {
     if (!item.isUnlocked) {
-      alert('잠금 해제되지 않은 아이템입니다.');
+      showNotification('잠금 해제되지 않은 아이템입니다.', 'warning');
       return;
     }
     setSelectedOutline(item);
@@ -61,11 +70,11 @@ function ProfileCustomizer({ onUpdate }) {
   const handleUnlock = async (item) => {
     try {
       await profileItemService.unlockItem(item.id);
-      alert(`${item.itemName}을(를) 잠금 해제했습니다!`);
+      showNotification(`${item.itemName}을(를) 잠금 해제했습니다!`, 'success');
       loadProfileItems(); // 새로고침
     } catch (err) {
       const message = err.response?.data?.message || '잠금 해제에 실패했습니다.';
-      alert(message);
+      showNotification(message, 'error');
     }
   };
 
@@ -75,12 +84,12 @@ function ProfileCustomizer({ onUpdate }) {
         selectedProfileId: selectedProfile?.id || null,
         selectedOutlineId: selectedOutline?.id || null
       });
-      alert('프로필이 저장되었습니다!');
+      showNotification('프로필이 저장되었습니다!', 'success');
       if (onUpdate) {
         onUpdate();
       }
     } catch (err) {
-      alert('프로필 저장에 실패했습니다.');
+      showNotification('프로필 저장에 실패했습니다.', 'error');
     }
   };
 
@@ -95,9 +104,20 @@ function ProfileCustomizer({ onUpdate }) {
   const currentItems = activeTab === 'profile' ? profileItems : outlineItems;
 
   return (
-    <div className="profile-customizer">
-      {/* 미리보기 */}
-      <div className="profile-preview">
+    <>
+      {/* 팝업 알림 */}
+      {notification && (
+        <>
+          <div className="notification-backdrop" />
+          <div className={`notification-popup ${notification.type}`}>
+            {notification.message}
+          </div>
+        </>
+      )}
+
+      <div className="profile-customizer">
+        {/* 미리보기 */}
+        <div className="profile-preview">
         <h3>미리보기</h3>
         <ProfileAvatar
           profileImage={selectedProfile}
@@ -184,6 +204,7 @@ function ProfileCustomizer({ onUpdate }) {
         </button>
       </div>
     </div>
+    </>
   );
 }
 

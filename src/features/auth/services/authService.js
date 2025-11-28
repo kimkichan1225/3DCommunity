@@ -28,6 +28,27 @@ class AuthService {
     return null;
   }
 
+  // 서버에서 최신 사용자 정보 가져오기 (프로필 정보 포함)
+  async fetchCurrentUser() {
+    try {
+      const token = this.getToken();
+      if (!token) return null;
+
+      const response = await axios.get(`${API_URL}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // localStorage도 업데이트
+      localStorage.setItem('user', JSON.stringify(response.data));
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch current user:', error);
+      return null;
+    }
+  }
+
   getToken() {
     return localStorage.getItem('token');
   }
