@@ -23,6 +23,7 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   // Multiplayer position update throttle
   const lastPositionUpdateRef = useRef(0);
   const positionUpdateIntervalRef = useRef(100); // Update every 100ms (10 times per second)
+  const lastRotationYRef = useRef(0); // 마지막 회전 각도 저장 (idle 시 사용)
 
   // 발걸음 소리를 위한 오디오 시스템
   const stepAudioRef = useRef(null);
@@ -191,13 +192,13 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     if (multiplayerService && userId) {
       const currentTime = Date.now();
       if (currentTime - lastPositionUpdateRef.current > positionUpdateIntervalRef.current) {
-        // Use target angle if moving, otherwise use current rotation
+        // Use target angle if moving, otherwise use last known rotation
         let rotationY;
         if (targetAngleForNetwork !== null) {
           rotationY = targetAngleForNetwork;
+          lastRotationYRef.current = rotationY; // 이동 중일 때 마지막 각도 저장
         } else {
-          const euler = new THREE.Euler().setFromQuaternion(currentRotationRef.current);
-          rotationY = euler.y;
+          rotationY = lastRotationYRef.current; // idle 시 마지막 각도 유지
         }
 
         // Determine animation state
