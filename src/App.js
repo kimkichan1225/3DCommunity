@@ -236,7 +236,7 @@ function App() {
                 <Character
                   characterRef={characterRef}
                   initialPosition={initialPosition}
-                  isMovementDisabled={isAnyModalOpen}
+                  isMovementDisabled={isAnyModalOpen && !isMapFull}
                   username={username}
                 />
                 <CameraLogger />
