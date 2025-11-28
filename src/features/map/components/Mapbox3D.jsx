@@ -20,10 +20,10 @@ if (MAPBOX_TOKEN) {
  * Props:
  * - onMapReady: 지도가 준비되면 호출되는 콜백 함수
  * - initialCenter: 초기 중심 좌표 [lng, lat]
- * - initialZoom: 초기 줌 레벨
+ * - initialZoom: 초기 줌 레벨 (0-24, 높을수록 확대)
  * - isFull: 전체화면 모드 여부
  */
-export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.4979], initialZoom = 15, isFull = false }) {
+export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.4979], initialZoom = 18, isFull = false }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
