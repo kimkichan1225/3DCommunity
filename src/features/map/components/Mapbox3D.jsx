@@ -23,7 +23,7 @@ if (MAPBOX_TOKEN) {
  * - initialZoom: 초기 줌 레벨 (0-24, 높을수록 확대)
  * - isFull: 전체화면 모드 여부
  */
-export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.4979], initialZoom = 18, isFull = false }) {
+export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.4979], initialZoom = 20, isFull = false }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);

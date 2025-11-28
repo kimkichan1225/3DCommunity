@@ -138,17 +138,61 @@ function App() {
         <Mapbox3D onMapReady={handleMapReady} isFull={isMapFull} />
       )}
 
-      {/* 프로필 아이콘 (좌측 상단, 로그인한 사용자만 표시) */}
-      {isLoggedIn && (
-        <button className="profile-icon-button" onClick={() => setShowProfileModal(true)} title="프로필">
-          <img src="/resources/Icon/Profile-icon.png" alt="Profile" />
-        </button>
-      )}
+      {/* 3D 배경 (항상 렌더링) - 지도 위에 오버레이로 렌더링됩니다 */}
+      <div className="three-overlay">
+      <Canvas
+        className="three-canvas"
+        camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
+        shadows
+        style={{ width: '100%', height: '100%' }}
+      >
+        <ambientLight intensity={0.5} />
+        <directionalLight
+          position={[50, 50, 25]}
+          intensity={6}
+          castShadow
+          shadow-mapSize-width={8192}
+          shadow-mapSize-height={8192}
+          shadow-camera-far={1000}
+          shadow-camera-left={-500}
+          shadow-camera-right={500}
+          shadow-camera-top={500}
+          shadow-camera-bottom={-500}
+          shadow-bias={-0.0001}
+          shadow-normalBias={0.02}
+          shadow-radius={4}
+        />
+        {/* Sun visual */}
+        <mesh position={[50, 50, 25]}>
+          <sphereGeometry args={[3, 16, 16]} />
+          <meshBasicMaterial color="#FDB813" />
+        </mesh>
 
-      {/* 아이콘 메뉴 (로그인한 사용자만 표시) */}
-      {isLoggedIn && (
-        <div className={`icon-menu-container ${isMenuExpanded ? 'expanded' : ''}`}>
-          {/* 토글 화살표 */}
+        <Suspense fallback={null}>
+          <Physics gravity={[0, -40, 0]} debug>
+            {/* 로그인 후에만 캐릭터 표시 */}
+            {isLoggedIn && (
+              <>
+                <Character
+                  characterRef={characterRef}
+                  initialPosition={initialPosition}
+                  isMovementDisabled={isAnyModalOpen || isMapFull}
+                  username={username}
+                />
+                <CameraLogger />
+              </>
+            )}
+            {/* CameraController는 항상 렌더링 (로그인 전: MainCamera, 로그인 후: Character) */}
+            <CameraController
+              characterRef={characterRef}
+              mainCameraRef={mainCameraRef}
+              isLoggedIn={isLoggedIn}
+            />
+            <Level1 characterRef={characterRef} mainCameraRef={mainCameraRef} />
+          </Physics>
+        </Suspense>
+      </Canvas>
+      </div>
           <button
             className="menu-toggle-arrow"
             onClick={() => setIsMenuExpanded(!isMenuExpanded)}
