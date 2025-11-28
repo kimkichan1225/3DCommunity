@@ -28,9 +28,28 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
   const mapRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [center, setCenter] = useState(initialCenter); // 현재 위치를 상태로 관리
 
   // 로딩 오버레이용 별도 컨테이너
   const loadingOverlayRef = useRef(null);
+
+  // 지도 초기화 전에 현재 위치 가져오기
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('📍 현재 위치:', latitude, longitude);
+          setCenter([longitude, latitude]); // [lng, lat] 순서
+        },
+        (error) => {
+          console.warn('⚠️  위치 정보를 가져올 수 없음:', error.message);
+          console.log('기본 위치로 설정합니다.');
+          // 오류 시 기본값 사용
+        }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     // 토큰이 없으면 렌더링하지 않음
@@ -49,7 +68,7 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
       const map = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: initialCenter,
+        center: center, // 현재 위치로 중심 설정
         zoom: initialZoom,
         pitch: 60,
         bearing: -17.5,
@@ -146,8 +165,8 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
         mapRef.current = null;
       }
     };
-    // 의존성 배열에 onMapReady 제거 (무한 루프 방지)
-  }, []);
+    // 의존성 배열: center가 변경될 때만 재초기화
+  }, [center]);
 
   // When container visibility/size changes (isFull), make sure map resizes
   useEffect(() => {
