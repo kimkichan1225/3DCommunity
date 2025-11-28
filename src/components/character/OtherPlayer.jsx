@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { useGLTF, useAnimations, Text } from '@react-three/drei';
+import { useGLTF, useAnimations, Text, Billboard } from '@react-three/drei';
 import { SkeletonUtils } from 'three-stdlib';
 
 function OtherPlayer({ userId, username, position, rotationY, animation }) {
@@ -68,17 +68,22 @@ function OtherPlayer({ userId, username, position, rotationY, animation }) {
       />
 
       {/* Name tag above player */}
-      <Text
-        position={[0, 5, 0]}
-        fontSize={0.5}
-        color="#60a5fa"
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.05}
-        outlineColor="#000000"
-      >
-        {username}
-      </Text>
+      {username && (
+        <Billboard position={[0, 7, 0]} follow={true} lockX={false} lockY={false} lockZ={false}>
+          <Text
+            fontSize={0.6}
+            color="#60a5fa"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.05}
+            outlineColor="black"
+            outlineOpacity={1}
+            fontWeight="bold"
+          >
+            {username}
+          </Text>
+        </Billboard>
+      )}
     </group>
   );
 }
