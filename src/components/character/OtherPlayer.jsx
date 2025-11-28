@@ -3,9 +3,8 @@ import { useGLTF, useAnimations, Text } from '@react-three/drei';
 
 function OtherPlayer({ userId, username, position, rotationY, animation }) {
   const groupRef = useRef();
-  const modelGroupRef = useRef();
+  const modelRef = useRef();
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
-  const { actions } = useAnimations(animations, modelGroupRef);
 
   // Clone scene to avoid sharing geometry between instances
   const clonedScene = useMemo(() => {
@@ -16,74 +15,55 @@ function OtherPlayer({ userId, username, position, rotationY, animation }) {
         child.receiveShadow = true;
       }
     });
-    console.log(`[OtherPlayer] Model cloned for ${username}`, cloned);
     return cloned;
-  }, [scene, username]);
+  }, [scene]);
 
-  // Debug log on mount
+  const { actions } = useAnimations(animations, modelRef);
+
+  // Set model ref after primitive is mounted
   useEffect(() => {
-    console.log(`[OtherPlayer] Mounted: ${username}`, { position, rotationY, animation });
-  }, []);
+    if (clonedScene) {
+      modelRef.current = clonedScene;
+    }
+  }, [clonedScene]);
 
   // Update rotation
   useEffect(() => {
-    if (modelGroupRef.current && rotationY !== undefined) {
-      modelGroupRef.current.rotation.y = rotationY;
+    if (clonedScene && rotationY !== undefined) {
+      clonedScene.rotation.y = rotationY;
     }
-  }, [rotationY]);
+  }, [clonedScene, rotationY]);
 
   // Update animation
   useEffect(() => {
-    if (!actions || !modelGroupRef.current) return;
+    if (!actions) return;
 
-    // Wait for the model to be fully mounted
-    const timer = setTimeout(() => {
-      // Stop all animations
-      Object.values(actions).forEach((action) => {
-        try {
-          action.stop();
-        } catch (e) {
-          // Ignore errors
-        }
-      });
+    const animationMap = {
+      idle: 'Idle',
+      walk: 'Walk',
+      run: 'Walk'
+    };
 
-      // Play current animation
-      const animationMap = {
-        idle: 'Idle',
-        walk: 'Walk',
-        run: 'Walk' // Use walk animation for run (or add a run animation if available)
-      };
+    const animationName = animationMap[animation] || 'Idle';
 
-      const animationName = animationMap[animation] || 'Idle';
-      if (actions[animationName]) {
-        try {
-          actions[animationName].reset().play();
-        } catch (e) {
-          console.warn(`Failed to play animation ${animationName}:`, e);
-        }
-      }
-    }, 100); // Small delay to ensure model is ready
+    // Stop all animations
+    Object.values(actions).forEach((action) => {
+      if (action) action.stop();
+    });
 
-    return () => clearTimeout(timer);
-  }, [animation, actions]);
-
-  // Add cloned scene to ref
-  useEffect(() => {
-    if (modelGroupRef.current && clonedScene) {
-      modelGroupRef.current.add(clonedScene);
-      console.log(`[OtherPlayer] Scene added to group for ${username}`);
-
-      return () => {
-        if (modelGroupRef.current) {
-          modelGroupRef.current.remove(clonedScene);
-        }
-      };
+    // Play current animation
+    if (actions[animationName]) {
+      actions[animationName].reset().fadeIn(0.2).play();
     }
-  }, [clonedScene, username]);
+  }, [animation, actions]);
 
   return (
     <group ref={groupRef} position={position || [0, 0, 0]}>
-      <group ref={modelGroupRef} scale={2} />
+      {/* Character model */}
+      <primitive
+        object={clonedScene}
+        scale={2}
+      />
 
       {/* Name tag above player */}
       <Text
