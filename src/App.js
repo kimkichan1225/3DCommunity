@@ -194,11 +194,11 @@ function App() {
 
     // Connect as observer if not logged in, or as player if logged in
     if (isLoggedIn && userId && username) {
-      console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
+      // console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
       multiplayerService.connect(userId, username);
     } else {
       // Connect as observer (anonymous viewer)
-      console.log('👀 Connecting to multiplayer service as observer...');
+      // console.log('👀 Connecting to multiplayer service as observer...');
       const observerId = 'observer_' + Date.now();
       multiplayerService.connect(observerId, 'Observer', true); // true = observer mode
     }

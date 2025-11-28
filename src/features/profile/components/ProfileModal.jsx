@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaTimes, FaEdit, FaCamera } from 'react-icons/fa';
+import { FaUser, FaTimes, FaEdit, FaCamera, FaPalette } from 'react-icons/fa';
 import './ProfileModal.css';
 import authService from '../../auth/services/authService';
 import profileService from '../services/profileService';
+import ProfileCustomizer from './ProfileCustomizer';
 
 function ProfileModal({ onClose, onLogout }) {
   const [userData, setUserData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCustomizer, setShowCustomizer] = useState(false);
   const [editedData, setEditedData] = useState({
     username: '',
     statusMessage: '',
@@ -141,13 +143,44 @@ function ProfileModal({ onClose, onLogout }) {
           <FaTimes />
         </button>
 
-        <h2 className="profile-modal-title">프로필</h2>
+        <h2 className="profile-modal-title">
+          {showCustomizer ? '프로필 커스터마이징' : '프로필'}
+        </h2>
 
         {isLoading && (
           <div className="profile-loading-overlay">
             <p>처리 중...</p>
           </div>
         )}
+
+        {/* 프로필 커스터마이저 표시 */}
+        {showCustomizer ? (
+          <>
+            <ProfileCustomizer
+              onUpdate={() => {
+                // 프로필 업데이트 후 새로고침
+                const fetchProfile = async () => {
+                  try {
+                    const profile = await profileService.getCurrentUserProfile();
+                    setUserData(profile);
+                  } catch (error) {
+                    console.error('프로필 새로고침 실패:', error);
+                  }
+                };
+                fetchProfile();
+              }}
+            />
+            <div className="profile-buttons">
+              <button
+                className="profile-btn cancel-btn"
+                onClick={() => setShowCustomizer(false)}
+              >
+                뒤로
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
 
         <div className="profile-content">
           {/* 프로필 이미지 */}
@@ -246,6 +279,10 @@ function ProfileModal({ onClose, onLogout }) {
                   <FaEdit />
                   <span>프로필 수정</span>
                 </button>
+                <button className="profile-btn customizer-btn" onClick={() => setShowCustomizer(true)}>
+                  <FaPalette />
+                  <span>프로필 꾸미기</span>
+                </button>
                 <button className="profile-btn logout-btn" onClick={handleLogout}>
                   로그아웃
                 </button>
@@ -253,6 +290,8 @@ function ProfileModal({ onClose, onLogout }) {
             )}
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

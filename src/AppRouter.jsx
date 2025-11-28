@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App';
 import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
+import ProfileItemManager from './pages/admin/ProfileItemManager';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
@@ -33,6 +34,7 @@ function AppRouter() {
           <Route path="payments" element={<div>결제/환불 (준비 중)</div>} />
           <Route path="statistics" element={<div>통계 (준비 중)</div>} />
           <Route path="audit-logs" element={<div>감사 로그 (준비 중)</div>} />
+          <Route path="profile-items" element={<ProfileItemManager />} />
           <Route path="system" element={<div>시스템 (준비 중)</div>} />
         </Route>
 

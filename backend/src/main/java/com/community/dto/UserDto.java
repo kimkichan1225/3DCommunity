@@ -20,13 +20,26 @@ public class UserDto {
     private String role;
     private LocalDateTime createdAt;
 
+    // 프로필 관련 정보
+    private ProfileItemDto selectedProfile;
+    private ProfileItemDto selectedOutline;
+
     public static UserDto fromEntity(User user) {
-        return UserDto.builder()
+        UserDtoBuilder builder = UserDto.builder()
                 .id(user.getId())
                 .username(user.getNickname()) // 닉네임 사용
                 .email(user.getEmail())
                 .role(user.getRole().name())
-                .createdAt(user.getCreatedAt())
-                .build();
+                .createdAt(user.getCreatedAt());
+
+        // 선택된 프로필/테두리 정보 추가
+        if (user.getSelectedProfile() != null) {
+            builder.selectedProfile(ProfileItemDto.fromEntity(user.getSelectedProfile()));
+        }
+        if (user.getSelectedOutline() != null) {
+            builder.selectedOutline(ProfileItemDto.fromEntity(user.getSelectedOutline()));
+        }
+
+        return builder.build();
     }
 }
