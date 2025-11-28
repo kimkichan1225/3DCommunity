@@ -8,6 +8,15 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: postgres.krnevmhwahnxiqvyrjeu
     password: "!Q@W#E$R!"
+    hikari:
+      maximum-pool-size: 3          # 최대 연결 수 (Supabase 무료 플랜 고려)
+      minimum-idle: 1               # 최소 유휴 연결 수
+      connection-timeout: 30000     # 연결 타임아웃 (30초)
+      idle-timeout: 180000          # 유휴 연결 유지 시간 (3분)
+      max-lifetime: 300000          # 연결 최대 수명 (5분)
+      auto-commit: true
+      pool-name: HikariPool-Community
+      leak-detection-threshold: 60000  # 연결 누수 감지 (1분)
 
   # JPA 설정
   jpa:

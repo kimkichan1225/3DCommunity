@@ -11,6 +11,7 @@ import Character from './components/character/Character';
 import CameraController from './components/camera/CameraController';
 import CameraLogger from './components/camera/CameraLogger';
 import Level1 from './components/map/Level1';
+import GlobalChat from './components/GlobalChat';
 
 function App() {
   const characterRef = useRef();
@@ -279,6 +280,11 @@ function App() {
       {/* 설정 모달 */}
       {showSettingModal && (
         <SettingModal onClose={() => setShowSettingModal(false)} />
+      )}
+
+      {/* 전체 채팅 (로그인한 사용자만, 맵 전체화면 아닐 때만 표시) */}
+      {isLoggedIn && !isMapFull && (
+        <GlobalChat isVisible={true} />
       )}
     </div>
   );
