@@ -92,6 +92,46 @@
   display: flex;
   justify-content: center;
   margin-bottom: 8px;
+  position: relative;
+}
+
+.profile-image-container.clickable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.profile-image-container.clickable:hover {
+  transform: scale(1.05);
+}
+
+.profile-customizer-overlay {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.profile-customizer-overlay svg {
+  font-size: 32px;
+}
+
+.profile-image-container.clickable:hover .profile-customizer-overlay {
+  opacity: 1;
 }
 
 .profile-image-upload {

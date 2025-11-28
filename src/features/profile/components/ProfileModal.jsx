@@ -4,6 +4,7 @@ import './ProfileModal.css';
 import authService from '../../auth/services/authService';
 import profileService from '../services/profileService';
 import ProfileCustomizer from './ProfileCustomizer';
+import ProfileAvatar from '../../../components/ProfileAvatar';
 
 function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
   const [userData, setUserData] = useState(null);
@@ -187,37 +188,22 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
           <>
 
         <div className="profile-content">
-          {/* 프로필 이미지 */}
-          <div className="profile-image-container">
-            {isEditing ? (
-              <label className="profile-image-upload">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  style={{ display: 'none' }}
-                />
-                {editedData.profileImage ? (
-                  <img src={editedData.profileImage} alt="Profile" className="profile-image" />
-                ) : (
-                  <div className="profile-image-placeholder">
-                    <FaUser />
-                  </div>
-                )}
-                <div className="profile-image-overlay">
-                  <FaCamera />
-                </div>
-              </label>
-            ) : (
-              <>
-                {userData.profileImage ? (
-                  <img src={userData.profileImage} alt="Profile" className="profile-image" />
-                ) : (
-                  <div className="profile-image-placeholder">
-                    <FaUser />
-                  </div>
-                )}
-              </>
+          {/* 프로필 이미지 - 커스터마이징한 프로필 표시 */}
+          <div
+            className="profile-image-container clickable"
+            onClick={() => !isEditing && setShowCustomizer(true)}
+            title="클릭하여 프로필 꾸미기"
+          >
+            <ProfileAvatar
+              profileImage={userData.selectedProfile}
+              outlineImage={userData.selectedOutline}
+              size={150}
+            />
+            {!isEditing && (
+              <div className="profile-customizer-overlay">
+                <FaPalette />
+                <span>프로필 꾸미기</span>
+              </div>
             )}
           </div>
 
@@ -282,10 +268,6 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
                 <button className="profile-btn edit-btn" onClick={handleEdit}>
                   <FaEdit />
                   <span>프로필 수정</span>
-                </button>
-                <button className="profile-btn customizer-btn" onClick={() => setShowCustomizer(true)}>
-                  <FaPalette />
-                  <span>프로필 꾸미기</span>
                 </button>
                 <button className="profile-btn logout-btn" onClick={handleLogout}>
                   로그아웃
