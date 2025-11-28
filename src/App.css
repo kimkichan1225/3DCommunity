@@ -22,9 +22,9 @@
 
 /* When map is full-screen, bring it to front and hide 3D overlay */
 .map-container.map-full {
-  /* 지도 전체화면: Mapbox가 반투명 오버레이로 Three.js 위에 표시됨 */
+  /* 지도 전체화면: Mapbox가 완전 불투명으로 Three.js 위에 표시됨 */
   z-index: 10;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 /* Top-right toggle button */
