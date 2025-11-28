@@ -29,6 +29,9 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 로딩 오버레이용 별도 컨테이너
+  const loadingOverlayRef = useRef(null);
+
   useEffect(() => {
     // 토큰이 없으면 렌더링하지 않음
     if (!MAPBOX_TOKEN) {
@@ -37,8 +40,10 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
       return;
     }
 
+    // 이미 초기화된 경우 빈 return (중복 초기화 방지)
+    if (mapRef.current) return;
+
     if (!mapContainer.current) return;
-    if (mapRef.current) return; // already initialized
 
     try {
       const map = new mapboxgl.Map({
@@ -136,12 +141,13 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
     }
 
     return () => {
-      if (mapRef.current && mapRef.current.remove) {
+      if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
-  }, [onMapReady, initialCenter, initialZoom]);
+    // 의존성 배열에 onMapReady 제거 (무한 루프 방지)
+  }, []);
 
   // When container visibility/size changes (isFull), make sure map resizes
   useEffect(() => {
@@ -159,49 +165,68 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
   }, [isFull]);
 
   return (
-    <div 
-      ref={mapContainer} 
-      className={`map-container ${isFull ? 'map-full' : ''}`}
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%'
-      }}
-    >
-      {isLoading && (
-        <div style={{
+    <>
+      {/* Mapbox 컨테이너 - 반드시 비어있어야 함 */}
+      <div 
+        ref={mapContainer} 
+        className={`map-container ${isFull ? 'map-full' : ''}`}
+        style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          color: 'white',
-          padding: '20px 40px',
-          borderRadius: '8px',
-          zIndex: 1000,
-          fontFamily: 'Arial, sans-serif'
-        }}>
-          지도 로딩 중...
-        </div>
-      )}
-      {error && (
-        <div style={{
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0
+        }}
+      />
+      
+      {/* 로딩/에러 오버레이 - 별도 컨테이너 */}
+      <div
+        ref={loadingOverlayRef}
+        style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: 'rgba(255, 0, 0, 0.9)',
-          color: 'white',
-          padding: '20px 40px',
-          borderRadius: '8px',
-          zIndex: 1000,
-          fontFamily: 'Arial, sans-serif',
-          maxWidth: '400px',
-          textAlign: 'center'
-        }}>
-          <strong>지도 오류:</strong><br />{error}
-        </div>
-      )}
-    </div>
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: isLoading || error ? 1000 : -1,
+          pointerEvents: isLoading || error ? 'auto' : 'none'
+        }}
+      >
+        {isLoading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            padding: '20px 40px',
+            borderRadius: '8px',
+            fontFamily: 'Arial, sans-serif',
+            whiteSpace: 'nowrap'
+          }}>
+            지도 로딩 중...
+          </div>
+        )}
+        {error && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(255, 0, 0, 0.9)',
+            color: 'white',
+            padding: '20px 40px',
+            borderRadius: '8px',
+            fontFamily: 'Arial, sans-serif',
+            maxWidth: '400px',
+            textAlign: 'center'
+          }}>
+            <strong>지도 오류:</strong><br />{error}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
