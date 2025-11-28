@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaTimes, FaEdit, FaCamera } from 'react-icons/fa';
+import { FaUser, FaTimes, FaEdit, FaCamera, FaPalette } from 'react-icons/fa';
 import './ProfileModal.css';
 import authService from '../../auth/services/authService';
 import profileService from '../services/profileService';
+import ProfileCustomizer from './ProfileCustomizer';
+import ProfileAvatar from '../../../components/ProfileAvatar';
 
-function ProfileModal({ onClose, onLogout }) {
+function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
   const [userData, setUserData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCustomizer, setShowCustomizer] = useState(false);
   const [editedData, setEditedData] = useState({
     username: '',
     statusMessage: '',
@@ -141,7 +144,9 @@ function ProfileModal({ onClose, onLogout }) {
           <FaTimes />
         </button>
 
-        <h2 className="profile-modal-title">프로필</h2>
+        <h2 className="profile-modal-title">
+          {showCustomizer ? '프로필 커스터마이징' : '프로필'}
+        </h2>
 
         {isLoading && (
           <div className="profile-loading-overlay">
@@ -149,38 +154,56 @@ function ProfileModal({ onClose, onLogout }) {
           </div>
         )}
 
+        {/* 프로필 커스터마이저 표시 */}
+        {showCustomizer ? (
+          <>
+            <ProfileCustomizer
+              onUpdate={() => {
+                // 프로필 업데이트 후 새로고침
+                const fetchProfile = async () => {
+                  try {
+                    const profile = await profileService.getCurrentUserProfile();
+                    setUserData(profile);
+                    // 부모 컴포넌트(App.js)에도 알림
+                    if (onProfileUpdate) {
+                      onProfileUpdate();
+                    }
+                  } catch (error) {
+                    console.error('프로필 새로고침 실패:', error);
+                  }
+                };
+                fetchProfile();
+              }}
+            />
+            <div className="profile-buttons">
+              <button
+                className="profile-btn cancel-btn"
+                onClick={() => setShowCustomizer(false)}
+              >
+                뒤로
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+
         <div className="profile-content">
-          {/* 프로필 이미지 */}
-          <div className="profile-image-container">
-            {isEditing ? (
-              <label className="profile-image-upload">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  style={{ display: 'none' }}
-                />
-                {editedData.profileImage ? (
-                  <img src={editedData.profileImage} alt="Profile" className="profile-image" />
-                ) : (
-                  <div className="profile-image-placeholder">
-                    <FaUser />
-                  </div>
-                )}
-                <div className="profile-image-overlay">
-                  <FaCamera />
-                </div>
-              </label>
-            ) : (
-              <>
-                {userData.profileImage ? (
-                  <img src={userData.profileImage} alt="Profile" className="profile-image" />
-                ) : (
-                  <div className="profile-image-placeholder">
-                    <FaUser />
-                  </div>
-                )}
-              </>
+          {/* 프로필 이미지 - 커스터마이징한 프로필 표시 */}
+          <div
+            className="profile-image-container clickable"
+            onClick={() => !isEditing && setShowCustomizer(true)}
+            title="클릭하여 프로필 꾸미기"
+          >
+            <ProfileAvatar
+              profileImage={userData.selectedProfile}
+              outlineImage={userData.selectedOutline}
+              size={150}
+            />
+            {!isEditing && (
+              <div className="profile-customizer-overlay">
+                <FaPalette />
+                <span>프로필 꾸미기</span>
+              </div>
             )}
           </div>
 
@@ -253,6 +276,8 @@ function ProfileModal({ onClose, onLogout }) {
             )}
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

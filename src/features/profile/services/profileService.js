@@ -10,7 +10,7 @@ class ProfileService {
   async getCurrentUserProfile() {
     try {
       const token = authService.getToken();
-      const response = await axios.get(`${API_URL}/api/profile`, {
+      const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

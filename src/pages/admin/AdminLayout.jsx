@@ -18,6 +18,7 @@ const AdminLayout = () => {
     { path: '/admin/payments', label: '결제/환불', icon: '💳' },
     { path: '/admin/statistics', label: '통계', icon: '📈' },
     { path: '/admin/audit-logs', label: '감사 로그', icon: '📋' },
+    { path: '/admin/profile-items', label: '프로필 아이템', icon: '🎨' },
     { path: '/admin/system', label: '시스템', icon: '⚙️' },
   ];
 

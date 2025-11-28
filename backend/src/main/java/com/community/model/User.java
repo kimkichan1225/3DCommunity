@@ -44,6 +44,16 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 선택된 프로필 이미지
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "selected_profile_id")
+    private ProfileItem selectedProfile;
+
+    // 선택된 프로필 테두리
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "selected_outline_id")
+    private ProfileItem selectedOutline;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
