@@ -143,11 +143,15 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     if (left) direction.x -= 1;
     if (right) direction.x += 1;
 
+    let targetAngleForNetwork = null; // 네트워크 전송용 각도 저장
+
     if (direction.length() > 0) {
       direction.normalize();
 
       // 회전 처리 - 부드럽게 회전 (모델만)
       const targetAngle = Math.atan2(direction.x, direction.z);
+      targetAngleForNetwork = targetAngle; // 네트워크 전송용으로 저장
+
       const targetQuaternion = new THREE.Quaternion();
       targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
 
@@ -187,9 +191,14 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     if (multiplayerService && userId) {
       const currentTime = Date.now();
       if (currentTime - lastPositionUpdateRef.current > positionUpdateIntervalRef.current) {
-        // Get rotation Y from euler angles
-        const euler = new THREE.Euler().setFromQuaternion(currentRotationRef.current);
-        const rotationY = euler.y;
+        // Use target angle if moving, otherwise use current rotation
+        let rotationY;
+        if (targetAngleForNetwork !== null) {
+          rotationY = targetAngleForNetwork;
+        } else {
+          const euler = new THREE.Euler().setFromQuaternion(currentRotationRef.current);
+          rotationY = euler.y;
+        }
 
         // Determine animation state
         let animState = 'idle';
