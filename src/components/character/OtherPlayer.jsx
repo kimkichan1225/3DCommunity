@@ -1,14 +1,16 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useGLTF, useAnimations, Text } from '@react-three/drei';
+import { SkeletonUtils } from 'three-stdlib';
 
 function OtherPlayer({ userId, username, position, rotationY, animation }) {
   const groupRef = useRef();
   const modelRef = useRef();
+
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
 
-  // Clone scene to avoid sharing geometry between instances
-  const clonedScene = useMemo(() => {
-    const cloned = scene.clone();
+  // Clone with SkeletonUtils to properly clone skinned meshes
+  const clone = React.useMemo(() => {
+    const cloned = SkeletonUtils.clone(scene);
     cloned.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true;
@@ -20,19 +22,19 @@ function OtherPlayer({ userId, username, position, rotationY, animation }) {
 
   const { actions } = useAnimations(animations, modelRef);
 
-  // Set model ref after primitive is mounted
+  // Update position
   useEffect(() => {
-    if (clonedScene) {
-      modelRef.current = clonedScene;
+    if (groupRef.current && position) {
+      groupRef.current.position.set(position[0], position[1], position[2]);
     }
-  }, [clonedScene]);
+  }, [position]);
 
   // Update rotation
   useEffect(() => {
-    if (clonedScene && rotationY !== undefined) {
-      clonedScene.rotation.y = rotationY;
+    if (modelRef.current && rotationY !== undefined) {
+      modelRef.current.rotation.y = rotationY;
     }
-  }, [clonedScene, rotationY]);
+  }, [rotationY]);
 
   // Update animation
   useEffect(() => {
@@ -58,10 +60,10 @@ function OtherPlayer({ userId, username, position, rotationY, animation }) {
   }, [animation, actions]);
 
   return (
-    <group ref={groupRef} position={position || [0, 0, 0]}>
-      {/* Character model */}
+    <group ref={groupRef}>
       <primitive
-        object={clonedScene}
+        ref={modelRef}
+        object={clone}
         scale={2}
       />
 

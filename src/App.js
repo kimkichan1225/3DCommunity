@@ -152,16 +152,20 @@ function App() {
           console.log('Ignoring own join event');
           return;
         }
-        setOtherPlayers((prev) => ({
-          ...prev,
-          [data.userId]: {
-            userId: data.userId,
-            username: data.username,
-            position: [0, 2, 0],
-            rotationY: 0,
-            animation: 'idle'
-          }
-        }));
+        setOtherPlayers((prev) => {
+          const updated = {
+            ...prev,
+            [data.userId]: {
+              userId: data.userId,
+              username: data.username,
+              position: [5, 10, 5], // Higher position to make it visible
+              rotationY: 0,
+              animation: 'idle'
+            }
+          };
+          console.log('[App] Updated otherPlayers:', updated);
+          return updated;
+        });
       });
 
       multiplayerService.onPlayerLeave((data) => {
@@ -315,16 +319,19 @@ function App() {
                 <CameraLogger />
 
                 {/* Render other players */}
-                {Object.values(otherPlayers).map((player) => (
-                  <OtherPlayer
-                    key={player.userId}
-                    userId={player.userId}
-                    username={player.username}
-                    position={player.position}
-                    rotationY={player.rotationY}
-                    animation={player.animation}
-                  />
-                ))}
+                {Object.values(otherPlayers).map((player) => {
+                  console.log('[App] Rendering OtherPlayer:', player);
+                  return (
+                    <OtherPlayer
+                      key={player.userId}
+                      userId={player.userId}
+                      username={player.username}
+                      position={player.position}
+                      rotationY={player.rotationY}
+                      animation={player.animation}
+                    />
+                  );
+                })}
               </>
             )}
             {/* CameraController는 항상 렌더링 (로그인 전: MainCamera, 로그인 후: Character) */}
