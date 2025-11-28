@@ -9,7 +9,7 @@ function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 메인 게임 페이지 */}
+        {/* 메인 게임 페이지 (로그인 화면 포함) */}
         <Route path="/" element={<App />} />
         <Route path="/game" element={<App />} />
 

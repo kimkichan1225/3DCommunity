@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import './AuthModal.css';
 
 function AuthModal({ mode, onClose, onSuccess }) {
-  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(mode === 'login');
   const [formData, setFormData] = useState({
     email: '',
@@ -37,12 +35,14 @@ function AuthModal({ mode, onClose, onSuccess }) {
           password: formData.password
         });
 
-        // role 기반 리다이렉트
+        // DEVELOPER는 관리자 페이지로 리다이렉트
         if (response.user.role === 'ROLE_DEVELOPER') {
-          navigate('/admin');
-        } else {
-          onSuccess(response.user);
+          window.location.href = '/admin';
+          return;
         }
+
+        // 일반 사용자는 부모 컴포넌트로 user 정보 전달
+        onSuccess(response.user);
       } else {
         // 회원가입
         if (formData.password !== formData.confirmPassword) {

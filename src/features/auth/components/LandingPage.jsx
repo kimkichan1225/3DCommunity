@@ -39,6 +39,14 @@ function LandingPage({ onLoginSuccess }) {
           email: formData.email,
           password: formData.password
         });
+
+        // 관리자인 경우 관리자 페이지로 리다이렉트
+        if (response.user.role === 'ROLE_DEVELOPER') {
+          window.location.href = '/admin';
+          return;
+        }
+
+        // 일반 사용자는 게임 화면으로
         onLoginSuccess(response.user);
       } else {
         if (formData.password !== formData.confirmPassword) {

@@ -2,12 +2,19 @@ spring:
   application:
     name: 3d-community-backend
 
-  # 데이터베이스 설정 (PostgreSQL - Supabase Transaction Pooler)
+  # 데이터베이스 설정 (PostgreSQL - Supabase Session Pooler)
   datasource:
-    url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
+    url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require&prepareThreshold=0
     driver-class-name: org.postgresql.Driver
     username: postgres.krnevmhwahnxiqvyrjeu
     password: "!Q@W#E$R!"
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
 
   # JPA 설정
   jpa:
