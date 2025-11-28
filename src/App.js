@@ -324,17 +324,19 @@ function App() {
               </>
             )}
 
-            {/* Render other players - 로그인 여부와 관계없이 항상 표시 */}
-            {Object.values(otherPlayers).map((player) => (
-              <OtherPlayer
-                key={player.userId}
-                userId={player.userId}
-                username={player.username}
-                position={player.position}
-                rotationY={player.rotationY}
-                animation={player.animation}
-              />
-            ))}
+            {/* Render other players - 로그인 여부와 관계없이 항상 표시 (observer 제외) */}
+            {Object.values(otherPlayers)
+              .filter((player) => !String(player.userId).startsWith('observer_'))
+              .map((player) => (
+                <OtherPlayer
+                  key={player.userId}
+                  userId={player.userId}
+                  username={player.username}
+                  position={player.position}
+                  rotationY={player.rotationY}
+                  animation={player.animation}
+                />
+              ))}
 
             {/* CameraController는 항상 렌더링 (로그인 전: MainCamera, 로그인 후: Character) */}
             <CameraController
