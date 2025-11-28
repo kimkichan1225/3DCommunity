@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import './PostForm.css';
 
-function PostForm({ boardId, onClose, onSuccess }) {
+function PostForm({ boardId, post, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    images: ''
+    title: post?.title || '',
+    content: post?.content || '',
+    images: post?.images || ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const isEditMode = !!post;
 
   const handleChange = (e) => {
     setFormData({
@@ -40,25 +41,53 @@ function PostForm({ boardId, onClose, onSuccess }) {
       const token = localStorage.getItem('token');
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-      const response = await axios.post(
-        `${API_URL}/api/posts`,
-        {
+      let response;
+      if (isEditMode) {
+        // 수정 모드
+        const updateData = {
+          title: formData.title,
+          content: formData.content,
+          images: formData.images || null
+        };
+        console.log('📤 수정 요청:', updateData);
+
+        response = await axios.put(
+          `${API_URL}/api/posts/${post.id}`,
+          updateData,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      } else {
+        // 작성 모드
+        const createData = {
           boardId: boardId,
           title: formData.title,
           content: formData.content,
           images: formData.images || null
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+        };
+        console.log('📤 작성 요청:', createData);
 
+        response = await axios.post(
+          `${API_URL}/api/posts`,
+          createData,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      console.log('✅ 응답:', response.data);
       onSuccess(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || '게시글 작성에 실패했습니다.');
+      console.error('❌ 에러 상세:', err.response?.data);
+      setError(err.response?.data || `게시글 ${isEditMode ? '수정' : '작성'}에 실패했습니다.`);
     } finally {
       setLoading(false);
     }
@@ -68,7 +97,7 @@ function PostForm({ boardId, onClose, onSuccess }) {
     <div className="post-form-overlay" onClick={onClose}>
       <div className="post-form-modal" onClick={(e) => e.stopPropagation()}>
         <div className="post-form-header">
-          <h2>글쓰기</h2>
+          <h2>{isEditMode ? '글 수정' : '글쓰기'}</h2>
           <button className="post-form-close" onClick={onClose}>×</button>
         </div>
 
@@ -115,7 +144,7 @@ function PostForm({ boardId, onClose, onSuccess }) {
               취소
             </button>
             <button type="submit" className="post-form-submit" disabled={loading}>
-              {loading ? '작성 중...' : '작성 완료'}
+              {loading ? (isEditMode ? '수정 중...' : '작성 중...') : (isEditMode ? '수정 완료' : '작성 완료')}
             </button>
           </div>
         </form>

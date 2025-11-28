@@ -68,6 +68,13 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
+        // UserDetails의 getUsername()은 로그인에 사용되는 고유 식별자를 반환해야 함
+        // 이 프로젝트에서는 email을 로그인 ID로 사용하므로 email을 반환
+        return email;
+    }
+
+    // 실제 닉네임을 가져오는 메서드
+    public String getNickname() {
         return username;
     }
 

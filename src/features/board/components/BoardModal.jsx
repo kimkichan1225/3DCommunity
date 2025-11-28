@@ -3,13 +3,16 @@ import './BoardModal.css';
 import BoardList from './BoardList';
 import BoardDetail from './BoardDetail';
 import PostForm from './PostForm';
+import boardService from '../services/boardService';
 import { FaPencilAlt, FaBars } from 'react-icons/fa';
 
 function BoardModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('board'); // 'board' | 'notice'
   const [selectedPost, setSelectedPost] = useState(null);
   const [showPostForm, setShowPostForm] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handlePostClick = (post) => {
     setSelectedPost(post);
@@ -17,12 +20,34 @@ function BoardModal({ onClose }) {
 
   const handleBackToList = () => {
     setSelectedPost(null);
+    setRefreshKey(prev => prev + 1); // 목록 새로고침 트리거
   };
 
   const handlePostSuccess = (newPost) => {
     setShowPostForm(false);
-    setSelectedPost(null); // 목록 새로고침
-    alert('게시글이 작성되었습니다!');
+    setEditingPost(null);
+    setSelectedPost(null);
+    setRefreshKey(prev => prev + 1); // 목록 새로고침 트리거
+    alert(editingPost ? '게시글이 수정되었습니다!' : '게시글이 작성되었습니다!');
+  };
+
+  const handleEditPost = (post) => {
+    setEditingPost(post);
+    setShowPostForm(true);
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('게시글을 삭제하시겠습니까?')) return;
+
+    try {
+      await boardService.deletePost(postId);
+      alert('게시글이 삭제되었습니다.');
+      setSelectedPost(null);
+      setRefreshKey(prev => prev + 1); // 목록 새로고침 트리거
+    } catch (err) {
+      console.error('❌ 게시글 삭제 실패:', err);
+      alert('게시글 삭제에 실패했습니다.');
+    }
   };
 
   return (
@@ -87,9 +112,18 @@ function BoardModal({ onClose }) {
           {/* 콘텐츠 영역 */}
           <div className="board-modal-content">
             {selectedPost ? (
-              <BoardDetail post={selectedPost} onBack={handleBackToList} />
+              <BoardDetail
+                post={selectedPost}
+                onBack={handleBackToList}
+                onEdit={handleEditPost}
+                onDelete={handleDeletePost}
+              />
             ) : (
-              <BoardList type={activeTab} onPostClick={handlePostClick} />
+              <BoardList
+                type={activeTab}
+                onPostClick={handlePostClick}
+                refreshKey={refreshKey}
+              />
             )}
           </div>
         </div>
@@ -98,7 +132,11 @@ function BoardModal({ onClose }) {
         {showPostForm && (
           <PostForm
             boardId={1} // TODO: 실제 게시판 ID로 변경
-            onClose={() => setShowPostForm(false)}
+            post={editingPost}
+            onClose={() => {
+              setShowPostForm(false);
+              setEditingPost(null);
+            }}
             onSuccess={handlePostSuccess}
           />
         )}

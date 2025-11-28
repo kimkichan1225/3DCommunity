@@ -92,4 +92,21 @@ public class PostController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // 게시글 검색 (제목 또는 내용)
+    @GetMapping("/board/{boardId}/search")
+    public ResponseEntity<?> searchPosts(
+            @PathVariable Long boardId,
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "title") String searchType, // title, content, all
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<PostDto.ListResponse> response = postService.searchPosts(boardId, keyword, searchType, pageable);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

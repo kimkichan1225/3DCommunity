@@ -44,6 +44,7 @@ public class PostDto {
         private String images;
         private Integer viewCount;
         private Integer likeCount;
+        private Integer commentCount;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -53,12 +54,16 @@ public class PostDto {
                     .boardId(post.getBoard().getId())
                     .boardName(post.getBoard().getName())
                     .authorId(post.getAuthor().getId())
-                    .authorName(post.getAuthor().getUsername())
+                    .authorName(post.getAuthor().getNickname())
                     .title(post.getTitle())
                     .content(post.getContent())
                     .images(post.getImages())
                     .viewCount(post.getViewCount())
                     .likeCount(post.getLikeCount())
+                    .commentCount(post.getComments() != null ?
+                        (int) post.getComments().stream()
+                            .filter(c -> !c.getIsDeleted())
+                            .count() : 0)
                     .createdAt(post.getCreatedAt())
                     .updatedAt(post.getUpdatedAt())
                     .build();
@@ -76,16 +81,21 @@ public class PostDto {
         private String title;
         private Integer viewCount;
         private Integer likeCount;
+        private Integer commentCount;
         private LocalDateTime createdAt;
 
         public static ListResponse from(Post post) {
             return ListResponse.builder()
                     .id(post.getId())
                     .boardName(post.getBoard().getName())
-                    .authorName(post.getAuthor().getUsername())
+                    .authorName(post.getAuthor().getNickname())
                     .title(post.getTitle())
                     .viewCount(post.getViewCount())
                     .likeCount(post.getLikeCount())
+                    .commentCount(post.getComments() != null ?
+                        (int) post.getComments().stream()
+                            .filter(c -> !c.getIsDeleted())
+                            .count() : 0)
                     .createdAt(post.getCreatedAt())
                     .build();
         }

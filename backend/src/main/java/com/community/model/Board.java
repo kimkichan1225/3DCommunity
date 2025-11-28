@@ -40,6 +40,7 @@ public class Board {
 
     public enum BoardCategory {
         FREE,       // 자유 게시판
+        NOTICE,     // 공지사항
         STRATEGY,   // 공략 게시판
         SUGGESTION  // 건의 게시판
     }
