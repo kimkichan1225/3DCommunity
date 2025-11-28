@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/h2-console/**", "/error").permitAll()
                         .requestMatchers("/api/boards/**", "/api/posts/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll() // WebSocket endpoints
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
