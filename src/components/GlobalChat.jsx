@@ -2,12 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import './GlobalChat.css';
 import multiplayerService from '../services/multiplayerService';
 
-function GlobalChat({ isVisible = true, username, userId }) {
+function GlobalChat({ isVisible = true, username, userId, onlineCount: externalOnlineCount }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const messagesEndRef = useRef(null);
+
+  // 외부에서 전달받은 온라인 카운트 사용
+  useEffect(() => {
+    if (externalOnlineCount !== undefined) {
+      setOnlineCount(externalOnlineCount);
+    }
+  }, [externalOnlineCount]);
 
   // 자동 스크롤
   const scrollToBottom = () => {
@@ -36,7 +43,6 @@ function GlobalChat({ isVisible = true, username, userId }) {
 
     // 플레이어 입장 알림
     const handlePlayerJoin = (data) => {
-      setOnlineCount(prev => prev + 1);
       const systemMessage = {
         id: Date.now(),
         username: 'System',
@@ -53,7 +59,6 @@ function GlobalChat({ isVisible = true, username, userId }) {
 
     // 플레이어 퇴장 알림
     const handlePlayerLeave = (data) => {
-      setOnlineCount(prev => Math.max(0, prev - 1));
       const systemMessage = {
         id: Date.now(),
         username: 'System',

@@ -1,6 +1,7 @@
 package com.community.config;
 
 import com.community.dto.PlayerJoinDto;
+import com.community.service.ActiveUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -16,6 +17,7 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 public class WebSocketEventListener {
 
     private final SimpMessageSendingOperations messagingTemplate;
+    private final ActiveUserService activeUserService;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
@@ -32,6 +34,15 @@ public class WebSocketEventListener {
         if (username != null && userId != null) {
             log.info("User Disconnected : " + username);
 
+            // ActiveUserService에서 사용자 제거
+            String sessionId = headerAccessor.getSessionId();
+            if (sessionId != null) {
+                activeUserService.removeUserBySession(sessionId);
+                log.info("Removed user {} from active users. Current count: {}",
+                        userId, activeUserService.getActiveUserCount());
+            }
+
+            // 다른 플레이어들에게 퇴장 알림
             PlayerJoinDto leaveDto = new PlayerJoinDto();
             leaveDto.setUserId(userId);
             leaveDto.setUsername(username);
@@ -39,6 +50,10 @@ public class WebSocketEventListener {
             leaveDto.setTimestamp(System.currentTimeMillis());
 
             messagingTemplate.convertAndSend("/topic/players", leaveDto);
+
+            // 온라인 인원 수 업데이트 브로드캐스트
+            messagingTemplate.convertAndSend("/topic/online-count",
+                    activeUserService.getActiveUserCount());
         }
     }
 }

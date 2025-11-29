@@ -33,6 +33,7 @@ function App() {
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [otherPlayers, setOtherPlayers] = useState({});
   const [userProfile, setUserProfile] = useState(null); // 사용자 프로필 (selectedProfile, selectedOutline 포함)
+  const [onlineCount, setOnlineCount] = useState(0); // 온라인 인원 수
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
@@ -147,7 +148,14 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // Call logout API to remove user from active list
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout API error:', error);
+    }
+
     // Disconnect from multiplayer service
     multiplayerService.disconnect();
     setIsLoggedIn(false);
@@ -156,13 +164,25 @@ function App() {
     setUserId('');
     setUserProfile(null);
     setOtherPlayers({});
+    setOnlineCount(0);
   };
 
   // Connect to multiplayer service - even when not logged in (as observer)
   useEffect(() => {
     // Set up callbacks first
     multiplayerService.onPlayerJoin((data) => {
-      console.log('👤 Player joined:', data);
+      console.log('👤 Player event:', data);
+
+      // 중복 로그인 체크
+      if (data.action === 'duplicate') {
+        // 자신의 중복 로그인 시도인지 확인
+        if (isLoggedIn && String(data.userId) === String(userId)) {
+          alert('현재 접속 중인 아이디입니다.');
+          handleLogout();
+        }
+        return;
+      }
+
       // If logged in, ignore own join event
       if (isLoggedIn && String(data.userId) === String(userId)) {
         console.log('Ignoring own join event');
@@ -211,6 +231,11 @@ function App() {
       // Handle chat messages (can integrate with GlobalChat later)
     });
 
+    // Online count update handler
+    multiplayerService.onOnlineCountUpdate((count) => {
+      setOnlineCount(count);
+    });
+
     // Connect as observer if not logged in, or as player if logged in
     if (isLoggedIn && userId && username) {
       // console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
@@ -227,6 +252,30 @@ function App() {
       multiplayerService.disconnect();
     };
   }, [isLoggedIn, userId, username]);
+
+  // Cleanup on window close or refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isLoggedIn) {
+        // Disconnect WebSocket - this will trigger SessionDisconnectEvent on server
+        multiplayerService.disconnect();
+
+        // Send beacon to logout endpoint (non-blocking)
+        const token = authService.getToken();
+        if (token) {
+          const url = `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/auth/logout`;
+          const blob = new Blob([JSON.stringify({})], { type: 'application/json' });
+          navigator.sendBeacon(url, blob);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isLoggedIn]);
 
 
   return (
@@ -404,7 +453,7 @@ function App() {
 
       {/* 전체 채팅 (로그인한 사용자만, 맵 전체화면 아닐 때만 표시) */}
       {isLoggedIn && !isMapFull && (
-        <GlobalChat isVisible={true} username={username} userId={userId} />
+        <GlobalChat isVisible={true} username={username} userId={userId} onlineCount={onlineCount} />
       )}
     </div>
   );
