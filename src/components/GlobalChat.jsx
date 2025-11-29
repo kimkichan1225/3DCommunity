@@ -41,41 +41,7 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
       setMessages(prev => [...prev, newMessage]);
     };
 
-    // 플레이어 입장 알림
-    const handlePlayerJoin = (data) => {
-      const systemMessage = {
-        id: Date.now(),
-        username: 'System',
-        userId: 'system',
-        text: `${data.username}님이 입장하셨습니다.`,
-        timestamp: new Date().toLocaleTimeString('ko-KR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        isSystem: true
-      };
-      setMessages(prev => [...prev, systemMessage]);
-    };
-
-    // 플레이어 퇴장 알림
-    const handlePlayerLeave = (data) => {
-      const systemMessage = {
-        id: Date.now(),
-        username: 'System',
-        userId: 'system',
-        text: `${data.username}님이 퇴장하셨습니다.`,
-        timestamp: new Date().toLocaleTimeString('ko-KR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        isSystem: true
-      };
-      setMessages(prev => [...prev, systemMessage]);
-    };
-
     multiplayerService.onChatMessage(handleChatMessage);
-    multiplayerService.onPlayerJoin(handlePlayerJoin);
-    multiplayerService.onPlayerLeave(handlePlayerLeave);
 
     return () => {
       // Cleanup

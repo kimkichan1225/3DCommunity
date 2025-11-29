@@ -44,9 +44,10 @@ class MultiplayerService {
           if (data.action === 'join' || data.action === 'duplicate') {
             this.onPlayerJoinCallback?.(data);
           } else if (data.action === 'leave') {
-            if (this.isObserver || String(data.userId) !== String(this.userId)) {
-              this.onPlayerLeaveCallback?.(data);
-            }
+            // Always handle leave events (observer will see all, player will filter in App.js)
+            console.log('🔔 Calling onPlayerLeaveCallback with data:', data);
+            console.log('🔔 Callback exists?', !!this.onPlayerLeaveCallback);
+            this.onPlayerLeaveCallback?.(data);
           }
         });
 
@@ -147,6 +148,7 @@ class MultiplayerService {
   }
 
   onPlayerLeave(callback) {
+    console.log('📝 Registering onPlayerLeave callback');
     this.onPlayerLeaveCallback = callback;
   }
 

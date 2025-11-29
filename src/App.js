@@ -209,6 +209,8 @@ function App() {
       setOtherPlayers((prev) => {
         const updated = { ...prev };
         delete updated[data.userId];
+        console.log('[App] After removing player', data.userId, '- Updated otherPlayers:', updated);
+        console.log('[App] Remaining players:', Object.keys(updated));
         return updated;
       });
     });
@@ -276,6 +278,12 @@ function App() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [isLoggedIn]);
+
+  // Debug: otherPlayers 상태 변경 감지
+  useEffect(() => {
+    console.log('[App] otherPlayers state changed:', otherPlayers);
+    console.log('[App] Number of other players:', Object.keys(otherPlayers).length);
+  }, [otherPlayers]);
 
 
   return (
