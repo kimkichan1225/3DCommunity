@@ -134,6 +134,39 @@
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+/* 시스템 메시지 */
+.chat-message.system-message {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  text-align: center;
+}
+
+.chat-message.system-message .message-text {
+  color: #93c5fd;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* 내 메시지 */
+.chat-message.my-message {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.chat-message.my-message .message-username {
+  color: #34d399;
+  text-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+}
+
+/* 빈 메시지 상태 */
+.chat-empty-message {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  padding: 40px 20px;
+  font-style: italic;
+}
+
 @keyframes messageSlideIn {
   from {
     opacity: 0;

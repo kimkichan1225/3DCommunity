@@ -1,25 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './GlobalChat.css';
+import multiplayerService from '../services/multiplayerService';
 
-function GlobalChat({ isVisible = true }) {
-  const [messages, setMessages] = useState([
-    { id: 1, username: 'Player1', text: '안녕하세요!', timestamp: '12:30' },
-    { id: 2, username: 'Player2', text: '여기 사람 많네요', timestamp: '12:31' },
-    { id: 3, username: 'Player3', text: '같이 게임하실 분?', timestamp: '12:32' },
-  ]);
+function GlobalChat({ isVisible = true, username, userId }) {
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
+  const messagesEndRef = useRef(null);
+
+  // 자동 스크롤
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // WebSocket 채팅 메시지 수신
+  useEffect(() => {
+    const handleChatMessage = (data) => {
+      const newMessage = {
+        id: data.timestamp || Date.now(),
+        username: data.username,
+        userId: data.userId,
+        text: data.message,
+        timestamp: new Date(data.timestamp).toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+      setMessages(prev => [...prev, newMessage]);
+    };
+
+    // 플레이어 입장 알림
+    const handlePlayerJoin = (data) => {
+      setOnlineCount(prev => prev + 1);
+      const systemMessage = {
+        id: Date.now(),
+        username: 'System',
+        userId: 'system',
+        text: `${data.username}님이 입장하셨습니다.`,
+        timestamp: new Date().toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        isSystem: true
+      };
+      setMessages(prev => [...prev, systemMessage]);
+    };
+
+    // 플레이어 퇴장 알림
+    const handlePlayerLeave = (data) => {
+      setOnlineCount(prev => Math.max(0, prev - 1));
+      const systemMessage = {
+        id: Date.now(),
+        username: 'System',
+        userId: 'system',
+        text: `${data.username}님이 퇴장하셨습니다.`,
+        timestamp: new Date().toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        isSystem: true
+      };
+      setMessages(prev => [...prev, systemMessage]);
+    };
+
+    multiplayerService.onChatMessage(handleChatMessage);
+    multiplayerService.onPlayerJoin(handlePlayerJoin);
+    multiplayerService.onPlayerLeave(handlePlayerLeave);
+
+    return () => {
+      // Cleanup
+      multiplayerService.onChatMessage(null);
+    };
+  }, []);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (inputText.trim()) {
-      const newMessage = {
-        id: Date.now(),
-        username: 'You',
-        text: inputText,
-        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages([...messages, newMessage]);
+    if (inputText.trim() && multiplayerService.connected) {
+      // WebSocket으로 메시지 전송
+      multiplayerService.sendChatMessage(inputText.trim());
       setInputText('');
     }
   };
@@ -33,7 +96,7 @@ function GlobalChat({ isVisible = true }) {
         <div className="header-left">
           <span className="chat-icon">💬</span>
           <span className="chat-title">전체 채팅</span>
-          <span className="online-count">• {messages.length} online</span>
+          <span className="online-count">• {onlineCount} online</span>
         </div>
         <div className="header-buttons">
           <button
@@ -49,15 +112,28 @@ function GlobalChat({ isVisible = true }) {
       {!isMinimized && (
         <>
           <div className="global-chat-messages">
+            {messages.length === 0 && (
+              <div className="chat-empty-message">
+                채팅 메시지가 없습니다. 첫 메시지를 보내보세요!
+              </div>
+            )}
             {messages.map((msg) => (
-              <div key={msg.id} className="chat-message">
-                <div className="message-header">
-                  <span className="message-username">{msg.username}</span>
-                  <span className="message-timestamp">{msg.timestamp}</span>
-                </div>
+              <div
+                key={msg.id}
+                className={`chat-message ${msg.isSystem ? 'system-message' : ''} ${String(msg.userId) === String(userId) ? 'my-message' : ''}`}
+              >
+                {!msg.isSystem && (
+                  <div className="message-header">
+                    <span className="message-username">
+                      {String(msg.userId) === String(userId) ? '나' : msg.username}
+                    </span>
+                    <span className="message-timestamp">{msg.timestamp}</span>
+                  </div>
+                )}
                 <div className="message-text">{msg.text}</div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* 입력 영역 */}

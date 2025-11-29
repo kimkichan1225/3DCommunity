@@ -404,7 +404,7 @@ function App() {
 
       {/* 전체 채팅 (로그인한 사용자만, 맵 전체화면 아닐 때만 표시) */}
       {isLoggedIn && !isMapFull && (
-        <GlobalChat isVisible={true} />
+        <GlobalChat isVisible={true} username={username} userId={userId} />
       )}
     </div>
   );
