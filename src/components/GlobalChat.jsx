@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './GlobalChat.css';
 import multiplayerService from '../services/multiplayerService';
 
-function GlobalChat({ isVisible = true, username, userId, onlineCount: externalOnlineCount }) {
+function GlobalChat({ isVisible = true, username, userId, onlineCount: externalOnlineCount, playerJoinEvent, playerLeaveEvent }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
@@ -15,6 +15,42 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
       setOnlineCount(externalOnlineCount);
     }
   }, [externalOnlineCount]);
+
+  // 플레이어 입장 이벤트 처리
+  useEffect(() => {
+    if (playerJoinEvent) {
+      const systemMessage = {
+        id: Date.now(),
+        username: 'System',
+        userId: 'system',
+        text: `${playerJoinEvent.username}님이 입장하셨습니다.`,
+        timestamp: new Date().toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        isSystem: true
+      };
+      setMessages(prev => [...prev, systemMessage]);
+    }
+  }, [playerJoinEvent]);
+
+  // 플레이어 퇴장 이벤트 처리
+  useEffect(() => {
+    if (playerLeaveEvent) {
+      const systemMessage = {
+        id: Date.now(),
+        username: 'System',
+        userId: 'system',
+        text: `${playerLeaveEvent.username}님이 퇴장하셨습니다.`,
+        timestamp: new Date().toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        isSystem: true
+      };
+      setMessages(prev => [...prev, systemMessage]);
+    }
+  }, [playerLeaveEvent]);
 
   // 자동 스크롤
   const scrollToBottom = () => {

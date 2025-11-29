@@ -38,15 +38,12 @@ class MultiplayerService {
         // Subscribe to player join/leave events
         this.client.subscribe('/topic/players', (message) => {
           const data = JSON.parse(message.body);
-          console.log('Player event:', data);
 
           // Handle all actions including 'duplicate'
           if (data.action === 'join' || data.action === 'duplicate') {
             this.onPlayerJoinCallback?.(data);
           } else if (data.action === 'leave') {
             // Always handle leave events (observer will see all, player will filter in App.js)
-            console.log('🔔 Calling onPlayerLeaveCallback with data:', data);
-            console.log('🔔 Callback exists?', !!this.onPlayerLeaveCallback);
             this.onPlayerLeaveCallback?.(data);
           }
         });
@@ -54,7 +51,6 @@ class MultiplayerService {
         // Subscribe to online count updates
         this.client.subscribe('/topic/online-count', (message) => {
           const count = parseInt(message.body);
-          console.log('👥 Online count:', count);
           this.onOnlineCountUpdateCallback?.(count);
         });
 
@@ -148,7 +144,6 @@ class MultiplayerService {
   }
 
   onPlayerLeave(callback) {
-    console.log('📝 Registering onPlayerLeave callback');
     this.onPlayerLeaveCallback = callback;
   }
 

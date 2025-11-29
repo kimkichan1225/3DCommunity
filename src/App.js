@@ -34,6 +34,8 @@ function App() {
   const [otherPlayers, setOtherPlayers] = useState({});
   const [userProfile, setUserProfile] = useState(null); // 사용자 프로필 (selectedProfile, selectedOutline 포함)
   const [onlineCount, setOnlineCount] = useState(0); // 온라인 인원 수
+  const [playerJoinEvent, setPlayerJoinEvent] = useState(null); // 플레이어 입장 이벤트
+  const [playerLeaveEvent, setPlayerLeaveEvent] = useState(null); // 플레이어 퇴장 이벤트
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
@@ -171,8 +173,6 @@ function App() {
   useEffect(() => {
     // Set up callbacks first
     multiplayerService.onPlayerJoin((data) => {
-      console.log('👤 Player event:', data);
-
       // 중복 로그인 체크
       if (data.action === 'duplicate') {
         // 자신의 중복 로그인 시도인지 확인
@@ -185,34 +185,34 @@ function App() {
 
       // If logged in, ignore own join event
       if (isLoggedIn && String(data.userId) === String(userId)) {
-        console.log('Ignoring own join event');
         return;
       }
-      setOtherPlayers((prev) => {
-        const updated = {
-          ...prev,
-          [data.userId]: {
-            userId: data.userId,
-            username: data.username,
-            position: [5, 10, 5], // Higher position to make it visible
-            rotationY: 0,
-            animation: 'idle'
-          }
-        };
-        console.log('[App] Updated otherPlayers:', updated);
-        return updated;
-      });
+
+      // Update otherPlayers state
+      setOtherPlayers((prev) => ({
+        ...prev,
+        [data.userId]: {
+          userId: data.userId,
+          username: data.username,
+          position: [5, 10, 5], // Higher position to make it visible
+          rotationY: 0,
+          animation: 'idle'
+        }
+      }));
+
+      // Notify GlobalChat
+      setPlayerJoinEvent({ ...data, timestamp: Date.now() });
     });
 
     multiplayerService.onPlayerLeave((data) => {
-      console.log('👋 Player left:', data);
       setOtherPlayers((prev) => {
         const updated = { ...prev };
         delete updated[data.userId];
-        console.log('[App] After removing player', data.userId, '- Updated otherPlayers:', updated);
-        console.log('[App] Remaining players:', Object.keys(updated));
         return updated;
       });
+
+      // Notify GlobalChat
+      setPlayerLeaveEvent({ ...data, timestamp: Date.now() });
     });
 
     multiplayerService.onPositionUpdate((data) => {
@@ -229,8 +229,7 @@ function App() {
     });
 
     multiplayerService.onChatMessage((data) => {
-      console.log('💬 Chat message:', data);
-      // Handle chat messages (can integrate with GlobalChat later)
+      // Chat messages are handled in GlobalChat component
     });
 
     // Online count update handler
@@ -279,11 +278,6 @@ function App() {
     };
   }, [isLoggedIn]);
 
-  // Debug: otherPlayers 상태 변경 감지
-  useEffect(() => {
-    console.log('[App] otherPlayers state changed:', otherPlayers);
-    console.log('[App] Number of other players:', Object.keys(otherPlayers).length);
-  }, [otherPlayers]);
 
 
   return (
@@ -461,7 +455,14 @@ function App() {
 
       {/* 전체 채팅 (로그인한 사용자만, 맵 전체화면 아닐 때만 표시) */}
       {isLoggedIn && !isMapFull && (
-        <GlobalChat isVisible={true} username={username} userId={userId} onlineCount={onlineCount} />
+        <GlobalChat
+          isVisible={true}
+          username={username}
+          userId={userId}
+          onlineCount={onlineCount}
+          playerJoinEvent={playerJoinEvent}
+          playerLeaveEvent={playerLeaveEvent}
+        />
       )}
     </div>
   );
