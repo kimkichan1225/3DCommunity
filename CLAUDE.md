@@ -9,8 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Current Branch Strategy:**
 - `main`: Production-ready code
 - `dev`: Development integration
-- `kichan`: Current active development branch
-- Feature branches: For individual features
+- `kim`: Current active development branch (as of 2025-11-29)
+- Feature branches: For individual features (e.g., `kichan`)
 
 ## Development Commands
 
@@ -354,10 +354,10 @@ REACT_APP_MAPBOX_TOKEN=pk.eyJ1IjoiYmluc3MwMTI0...
 ## Git Workflow
 
 ### Branch Strategy
-1. Pull latest from `kichan` before starting work
+1. Pull latest from the active development branch (`kim` currently) before starting work
 2. Work in your assigned `features/` folder
 3. Commit frequently with descriptive messages
-4. Push to `kichan` regularly to avoid conflicts
+4. Push to the development branch regularly to avoid conflicts
 
 ### Conflict Prevention
 - Each feature folder is isolated
@@ -366,7 +366,7 @@ REACT_APP_MAPBOX_TOKEN=pk.eyJ1IjoiYmluc3MwMTI0...
 
 ### Pull Latest Changes
 ```bash
-git pull origin kichan
+git pull origin kim  # or current active development branch
 ```
 
 ## Common Development Tasks
@@ -468,7 +468,7 @@ See `README.md` and `docs/REQUIREMENTS.md` for full roadmap:
 ## Repository
 
 - **GitHub**: https://github.com/kimkichan1225/3DCommunity
-- **Current Branch**: kichan
+- **Current Active Branch**: kim (as of 2025-11-29)
 - **Main Branch**: main
 
 ## Additional Documentation
@@ -480,4 +480,4 @@ See `README.md` and `docs/REQUIREMENTS.md` for full roadmap:
 
 ---
 
-**Last Updated**: 2025-11-28 (after features/ migration)
+**Last Updated**: 2025-11-29 (kim branch active)
