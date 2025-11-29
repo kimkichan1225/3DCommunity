@@ -7,6 +7,7 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
   const [inputText, setInputText] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'plaza', 'system'
   const messagesEndRef = useRef(null);
 
   // 외부에서 전달받은 온라인 카운트 사용
@@ -94,6 +95,14 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
     }
   };
 
+  // 탭에 따라 메시지 필터링
+  const filteredMessages = messages.filter((msg) => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'plaza') return !msg.isSystem;
+    if (activeTab === 'system') return msg.isSystem;
+    return true;
+  });
+
   if (!isVisible) return null;
 
   return (
@@ -115,16 +124,40 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
         </div>
       </div>
 
+      {/* 탭 메뉴 */}
+      {!isMinimized && (
+        <div className="chat-tabs">
+          <button
+            className={`chat-tab ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            전체
+          </button>
+          <button
+            className={`chat-tab ${activeTab === 'plaza' ? 'active' : ''}`}
+            onClick={() => setActiveTab('plaza')}
+          >
+            광장
+          </button>
+          <button
+            className={`chat-tab ${activeTab === 'system' ? 'active' : ''}`}
+            onClick={() => setActiveTab('system')}
+          >
+            시스템
+          </button>
+        </div>
+      )}
+
       {/* 채팅 메시지 영역 */}
       {!isMinimized && (
         <>
           <div className="global-chat-messages">
-            {messages.length === 0 && (
+            {filteredMessages.length === 0 && (
               <div className="chat-empty-message">
                 채팅 메시지가 없습니다. 첫 메시지를 보내보세요!
               </div>
             )}
-            {messages.map((msg) => (
+            {filteredMessages.map((msg) => (
               <div
                 key={msg.id}
                 className={`chat-message ${msg.isSystem ? 'system-message' : ''} ${String(msg.userId) === String(userId) ? 'my-message' : ''}`}
