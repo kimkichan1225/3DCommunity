@@ -36,10 +36,14 @@ function App() {
   const [onlineCount, setOnlineCount] = useState(0); // 온라인 인원 수
   const [playerJoinEvent, setPlayerJoinEvent] = useState(null); // 플레이어 입장 이벤트
   const [playerLeaveEvent, setPlayerLeaveEvent] = useState(null); // 플레이어 퇴장 이벤트
+  const [isChatInputFocused, setIsChatInputFocused] = useState(false); // 채팅 입력 포커스 상태
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
   const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
+
+  // 캐릭터 이동을 막아야 하는 상태 (모달 열림 또는 채팅 입력 중)
+  const shouldBlockMovement = isAnyModalOpen || isChatInputFocused;
 
   // Map가 준비되면 호출됩니다. mapbox의 projection helper를 받아와
   // 현재 위치(geolocation)를 Three.js 월드 좌표로 변환해 캐릭터 초기 위치를 설정합니다.
@@ -389,7 +393,7 @@ function App() {
                 <Character
                   characterRef={characterRef}
                   initialPosition={initialPosition}
-                  isMovementDisabled={isAnyModalOpen && !isMapFull}
+                  isMovementDisabled={shouldBlockMovement && !isMapFull}
                   username={username}
                   userId={userId}
                   multiplayerService={multiplayerService}
@@ -462,6 +466,7 @@ function App() {
           onlineCount={onlineCount}
           playerJoinEvent={playerJoinEvent}
           playerLeaveEvent={playerLeaveEvent}
+          onInputFocusChange={setIsChatInputFocused}
         />
       )}
     </div>

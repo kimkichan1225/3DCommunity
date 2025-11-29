@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import './GlobalChat.css';
 import multiplayerService from '../services/multiplayerService';
 
-function GlobalChat({ isVisible = true, username, userId, onlineCount: externalOnlineCount, playerJoinEvent, playerLeaveEvent }) {
+function GlobalChat({ isVisible = true, username, userId, onlineCount: externalOnlineCount, playerJoinEvent, playerLeaveEvent, onInputFocusChange }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'plaza', 'system'
+  const [isFocused, setIsFocused] = useState(false);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   // 외부에서 전달받은 온라인 카운트 사용
   useEffect(() => {
@@ -52,6 +54,27 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
       setMessages(prev => [...prev, systemMessage]);
     }
   }, [playerLeaveEvent]);
+
+  // 키보드 이벤트 처리 (Enter로 채팅 활성화, ESC로 비활성화)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter' && !isFocused && isVisible && !isMinimized) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      } else if (e.key === 'Escape' && isFocused) {
+        e.preventDefault();
+        inputRef.current?.blur();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFocused, isVisible, isMinimized]);
+
+  // 포커스 상태 변경 시 부모에게 알림
+  useEffect(() => {
+    onInputFocusChange?.(isFocused);
+  }, [isFocused, onInputFocusChange]);
 
   // 자동 스크롤
   const scrollToBottom = () => {
@@ -179,11 +202,14 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
           {/* 입력 영역 */}
           <form className="global-chat-input-container" onSubmit={handleSendMessage}>
             <input
+              ref={inputRef}
               type="text"
               className="global-chat-input"
               placeholder="메시지를 입력하세요... (Enter)"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               maxLength={200}
             />
             <button type="submit" className="send-button">
