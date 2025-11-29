@@ -30,11 +30,11 @@
 
 /* 호버 효과 (선택적) */
 .profile-avatar:hover .profile-image {
-  transform: translate(-50%, -50%) scale(1.05);
+  transform: translate(-50%, -50%) scale(1.02);
   transition: transform 0.2s ease;
 }
 
 .profile-avatar:hover .profile-outline {
-  filter: brightness(1.1);
+  filter: brightness(1.05);
   transition: filter 0.2s ease;
 }
