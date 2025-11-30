@@ -23,10 +23,20 @@ function ChatBubble({ message, position = [0, 8.5, 0], duration = 5000 }) {
     return null;
   }
 
-  // 메시지 길이에 따라 말풍선 크기 조정
+  // 메시지 길이에 따라 말풍선 크기 동적 조정
   const messageLength = message.length;
-  const bubbleWidth = Math.min(Math.max(messageLength * 0.15, 2), 6);
-  const bubbleHeight = 1.2;
+
+  // 글자 수에 따른 너비 계산 (한글/영문 고려)
+  // 짧은 메시지: 최소 2, 긴 메시지: 최대 8
+  const bubbleWidth = Math.min(Math.max(messageLength * 0.2, 2.5), 8);
+
+  // 메시지 길이에 따라 높이도 조정 (여러 줄 대응)
+  // 20자 이하: 1줄, 40자 이하: 2줄, 60자 이하: 3줄...
+  const estimatedLines = Math.ceil(messageLength / 20);
+  const bubbleHeight = Math.min(0.8 + (estimatedLines * 0.5), 3); // 최소 0.8, 최대 3
+
+  // 폰트 크기도 메시지 길이에 따라 조정
+  const fontSize = messageLength > 30 ? 0.35 : 0.4;
 
   return (
     <Billboard position={position} follow={true} lockX={false} lockY={false} lockZ={false}>
@@ -59,13 +69,15 @@ function ChatBubble({ message, position = [0, 8.5, 0], duration = 5000 }) {
         {/* 텍스트 */}
         <Text
           position={[0, 0, 0.1]}
-          fontSize={0.4}
+          fontSize={fontSize}
           color="#222222"
           anchorX="center"
           anchorY="middle"
-          maxWidth={bubbleWidth - 0.4}
+          maxWidth={bubbleWidth - 0.6}
           textAlign="center"
           fontWeight="500"
+          lineHeight={1.2}
+          whiteSpace="normal"
         >
           {message}
         </Text>
