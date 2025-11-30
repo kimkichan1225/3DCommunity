@@ -26,14 +26,18 @@ function ChatBubble({ message, position = [0, 8.5, 0], duration = 5000 }) {
   // 메시지 길이에 따라 말풍선 크기 동적 조정
   const messageLength = message.length;
 
-  // 글자 수에 따른 너비 계산 (한글/영문 고려)
-  // 짧은 메시지: 최소 2, 긴 메시지: 최대 8
-  const bubbleWidth = Math.min(Math.max(messageLength * 0.2, 2.5), 8);
+  // 최대 너비 설정 (말풍선이 너무 커지지 않도록)
+  const maxWidth = 7;
 
-  // 메시지 길이에 따라 높이도 조정 (여러 줄 대응)
-  // 20자 이하: 1줄, 40자 이하: 2줄, 60자 이하: 3줄...
-  const estimatedLines = Math.ceil(messageLength / 20);
-  const bubbleHeight = Math.min(0.8 + (estimatedLines * 0.5), 3); // 최소 0.8, 최대 3
+  // 글자 수에 따른 너비 계산
+  // 짧은 메시지: 최소 2.5, 긴 메시지: 최대 7
+  const bubbleWidth = Math.min(Math.max(messageLength * 0.2, 2.5), maxWidth);
+
+  // 텍스트가 줄바꿈될 것을 고려한 실제 줄 수 계산
+  // maxWidth를 기준으로 한 줄당 약 15자 정도 표시 가능
+  const charsPerLine = 15;
+  const estimatedLines = Math.ceil(messageLength / charsPerLine);
+  const bubbleHeight = Math.min(0.8 + (estimatedLines * 0.5), 4); // 최소 0.8, 최대 4
 
   // 폰트 크기도 메시지 길이에 따라 조정
   const fontSize = messageLength > 30 ? 0.35 : 0.4;
@@ -73,11 +77,12 @@ function ChatBubble({ message, position = [0, 8.5, 0], duration = 5000 }) {
           color="#222222"
           anchorX="center"
           anchorY="middle"
-          maxWidth={bubbleWidth - 0.6}
+          maxWidth={bubbleWidth - 0.8}
           textAlign="center"
           fontWeight="500"
           lineHeight={1.2}
           whiteSpace="normal"
+          overflowWrap="break-word"
         >
           {message}
         </Text>
