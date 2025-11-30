@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './GlobalChat.css';
 import multiplayerService from '../services/multiplayerService';
 
-function GlobalChat({ isVisible = true, username, userId, onlineCount: externalOnlineCount, playerJoinEvent, playerLeaveEvent, onInputFocusChange }) {
+function GlobalChat({ isVisible = true, username, userId, onlineCount: externalOnlineCount, playerJoinEvent, playerLeaveEvent, onInputFocusChange, onChatMessage }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
@@ -99,6 +99,11 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
         })
       };
       setMessages(prev => [...prev, newMessage]);
+
+      // 부모 컴포넌트에게도 전달 (말풍선 표시용)
+      if (onChatMessage) {
+        onChatMessage(data);
+      }
     };
 
     multiplayerService.onChatMessage(handleChatMessage);
@@ -107,7 +112,7 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
       // Cleanup
       multiplayerService.onChatMessage(null);
     };
-  }, []);
+  }, [onChatMessage]);
 
   const handleSendMessage = (e) => {
     e.preventDefault();

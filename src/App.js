@@ -37,6 +37,8 @@ function App() {
   const [playerJoinEvent, setPlayerJoinEvent] = useState(null); // 플레이어 입장 이벤트
   const [playerLeaveEvent, setPlayerLeaveEvent] = useState(null); // 플레이어 퇴장 이벤트
   const [isChatInputFocused, setIsChatInputFocused] = useState(false); // 채팅 입력 포커스 상태
+  const [playerChatMessages, setPlayerChatMessages] = useState({}); // 플레이어별 채팅 메시지 { userId: { message, timestamp } }
+  const [myChatMessage, setMyChatMessage] = useState(''); // 내 캐릭터의 채팅 메시지
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
@@ -173,6 +175,42 @@ function App() {
     setOnlineCount(0);
   };
 
+  // 채팅 메시지 처리 함수 (GlobalChat에서 호출됨)
+  const handleChatMessage = (data) => {
+    console.log('📨 채팅 메시지 수신:', data);
+    console.log('현재 userId:', userId, '메시지 userId:', data.userId);
+
+    if (String(data.userId) === String(userId)) {
+      // My own message
+      console.log('✅ 내 메시지 설정:', data.message);
+      setMyChatMessage(data.message);
+      // Clear after 5 seconds
+      setTimeout(() => {
+        console.log('🧹 내 메시지 삭제');
+        setMyChatMessage('');
+      }, 5000);
+    } else {
+      // Other player's message
+      console.log('✅ 다른 플레이어 메시지 설정:', data.userId, data.message);
+      setPlayerChatMessages((prev) => ({
+        ...prev,
+        [data.userId]: {
+          message: data.message,
+          timestamp: Date.now()
+        }
+      }));
+      // Clear after 5 seconds
+      setTimeout(() => {
+        console.log('🧹 다른 플레이어 메시지 삭제:', data.userId);
+        setPlayerChatMessages((prev) => {
+          const updated = { ...prev };
+          delete updated[data.userId];
+          return updated;
+        });
+      }, 5000);
+    }
+  };
+
   // Connect to multiplayer service - even when not logged in (as observer)
   useEffect(() => {
     // Set up callbacks first
@@ -230,10 +268,6 @@ function App() {
           animation: data.animation
         }
       }));
-    });
-
-    multiplayerService.onChatMessage((data) => {
-      // Chat messages are handled in GlobalChat component
     });
 
     // Online count update handler
@@ -397,6 +431,7 @@ function App() {
                   username={username}
                   userId={userId}
                   multiplayerService={multiplayerService}
+                  chatMessage={myChatMessage}
                 />
                 <CameraLogger />
               </>
@@ -413,6 +448,7 @@ function App() {
                   position={player.position}
                   rotationY={player.rotationY}
                   animation={player.animation}
+                  chatMessage={playerChatMessages[player.userId]?.message}
                 />
               ))}
 
@@ -467,6 +503,7 @@ function App() {
           playerJoinEvent={playerJoinEvent}
           playerLeaveEvent={playerLeaveEvent}
           onInputFocusChange={setIsChatInputFocused}
+          onChatMessage={handleChatMessage}
         />
       )}
     </div>

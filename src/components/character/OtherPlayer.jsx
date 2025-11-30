@@ -1,8 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import { useGLTF, useAnimations, Text, Billboard } from '@react-three/drei';
 import { SkeletonUtils } from 'three-stdlib';
+import ChatBubble from './ChatBubble';
 
-function OtherPlayer({ userId, username, position, rotationY, animation }) {
+function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage }) {
   const groupRef = useRef();
   const modelRef = useRef();
 
@@ -83,6 +84,11 @@ function OtherPlayer({ userId, username, position, rotationY, animation }) {
             {username}
           </Text>
         </Billboard>
+      )}
+
+      {/* 채팅 말풍선 */}
+      {chatMessage && (
+        <ChatBubble message={chatMessage} position={[0, 8.5, 0]} duration={5000} />
       )}
     </group>
   );
