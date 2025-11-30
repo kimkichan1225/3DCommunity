@@ -39,6 +39,8 @@ function App() {
   const [isChatInputFocused, setIsChatInputFocused] = useState(false); // 채팅 입력 포커스 상태
   const [playerChatMessages, setPlayerChatMessages] = useState({}); // 플레이어별 채팅 메시지 { userId: { message, timestamp } }
   const [myChatMessage, setMyChatMessage] = useState(''); // 내 캐릭터의 채팅 메시지
+  const myMessageTimerRef = useRef(null); // 내 메시지 타이머 참조
+  const playerMessageTimersRef = useRef({}); // 다른 플레이어 메시지 타이머 참조
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
@@ -177,21 +179,27 @@ function App() {
 
   // 채팅 메시지 처리 함수 (GlobalChat에서 호출됨)
   const handleChatMessage = (data) => {
-    console.log('📨 채팅 메시지 수신:', data);
-    console.log('현재 userId:', userId, '메시지 userId:', data.userId);
-
     if (String(data.userId) === String(userId)) {
       // My own message
-      console.log('✅ 내 메시지 설정:', data.message);
+      // 이전 타이머가 있으면 취소
+      if (myMessageTimerRef.current) {
+        clearTimeout(myMessageTimerRef.current);
+      }
+
       setMyChatMessage(data.message);
-      // Clear after 5 seconds
-      setTimeout(() => {
-        console.log('🧹 내 메시지 삭제');
+
+      // 새 타이머 설정 - 5초 후 삭제
+      myMessageTimerRef.current = setTimeout(() => {
         setMyChatMessage('');
+        myMessageTimerRef.current = null;
       }, 5000);
     } else {
       // Other player's message
-      console.log('✅ 다른 플레이어 메시지 설정:', data.userId, data.message);
+      // 이전 타이머가 있으면 취소
+      if (playerMessageTimersRef.current[data.userId]) {
+        clearTimeout(playerMessageTimersRef.current[data.userId]);
+      }
+
       setPlayerChatMessages((prev) => ({
         ...prev,
         [data.userId]: {
@@ -199,14 +207,15 @@ function App() {
           timestamp: Date.now()
         }
       }));
-      // Clear after 5 seconds
-      setTimeout(() => {
-        console.log('🧹 다른 플레이어 메시지 삭제:', data.userId);
+
+      // 새 타이머 설정 - 5초 후 삭제
+      playerMessageTimersRef.current[data.userId] = setTimeout(() => {
         setPlayerChatMessages((prev) => {
           const updated = { ...prev };
           delete updated[data.userId];
           return updated;
         });
+        delete playerMessageTimersRef.current[data.userId];
       }, 5000);
     }
   };

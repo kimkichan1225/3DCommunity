@@ -11,20 +11,15 @@ function ChatBubble({ message, position = [0, 8.5, 0], duration = 5000 }) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    console.log('🎈 ChatBubble useEffect 실행, 메시지:', message);
     setVisible(true);
     const timer = setTimeout(() => {
-      console.log('⏰ ChatBubble 타이머 완료, 숨김');
       setVisible(false);
     }, duration);
 
     return () => clearTimeout(timer);
   }, [message, duration]);
 
-  console.log('🎨 ChatBubble 렌더링, visible:', visible, 'message:', message);
-
   if (!visible || !message) {
-    console.log('❌ ChatBubble 렌더링 중단:', { visible, message });
     return null;
   }
 

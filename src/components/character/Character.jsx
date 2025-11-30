@@ -267,10 +267,7 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
 
         {/* 채팅 말풍선 */}
         {chatMessage && (
-          <>
-            {console.log('💬 Character: 말풍선 렌더링, 메시지:', chatMessage)}
-            <ChatBubble message={chatMessage} position={[0, 8.5, 0]} duration={5000} />
-          </>
+          <ChatBubble message={chatMessage} position={[0, 8.5, 0]} duration={5000} />
         )}
       </group>
     </>
