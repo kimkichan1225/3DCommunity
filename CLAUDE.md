@@ -8,32 +8,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Current Branch Strategy:**
 - `main`: Production-ready code
-- `dev`: Development integration
-- `kim`: Current active development branch (as of 2025-11-29)
-- Feature branches: For individual features (e.g., `kichan`)
+- `kim`: Current active development branch (as of 2025-11-30)
+- `kichan`: Feature branch
+- Note: Use `kim` branch for latest development work
 
 ## Development Commands
 
 ### Frontend
 ```bash
-npm start                    # Dev server at http://localhost:3000
-npm run build                # Production build
-npm test                     # Run tests
+npm start                       # Dev server at http://localhost:3000
+npm run build                   # Production build
+npm test                        # Run tests
 npm install --legacy-peer-deps  # Install dependencies (required for peer deps)
+
+# Windows-specific commands
+npm start                       # Use this on Windows (already configured in package.json)
 ```
 
 ### Backend
 ```bash
 cd backend
 
-# Using Gradle (recommended)
+# Using Gradle on Unix/Mac
 ./gradlew bootRun            # Run Spring Boot server (port 8080)
 ./gradlew build              # Build JAR file
 ./gradlew clean build        # Clean build
 
-# Using IDE (IntelliJ IDEA)
-# Open backend/build.gradle as project
-# Run CommunityApplication.java main method
+# Using Gradle on Windows
+gradlew bootRun              # Run Spring Boot server (port 8080)
+gradlew build                # Build JAR file
+gradlew clean build          # Clean build
+
+# Using IDE (IntelliJ IDEA) - RECOMMENDED
+# 1. Open backend/build.gradle as project
+# 2. Wait for Gradle sync to complete
+# 3. Run CommunityApplication.java main method
 ```
 
 ### Deployment
@@ -366,7 +375,8 @@ REACT_APP_MAPBOX_TOKEN=pk.eyJ1IjoiYmluc3MwMTI0...
 
 ### Pull Latest Changes
 ```bash
-git pull origin kim  # or current active development branch
+git pull origin kim  # Pull from kim branch (current active development)
+git status           # Check current changes before pulling
 ```
 
 ## Common Development Tasks
@@ -458,18 +468,31 @@ See `README.md` and `docs/REQUIREMENTS.md` for full roadmap:
 - Character customization and shop
 - Touch controls for mobile
 
-## Known Issues
+## Current Features Status
 
+### Implemented
+- User authentication (JWT-based)
+- 3D character movement with physics
+- Board/post system with CRUD operations
+- Profile management
+- Settings modal
+- Map integration (Mapbox 3D)
+- Global chat system
+- Real-time multiplayer (WebSocket via multiplayerService)
+- Online player count
+- Character customization (profile/outline selection)
+
+### Known Issues
 1. Some footstep audio paths may fail to load
 2. Physics debug mode may be enabled (shows collision shapes)
-3. Mapbox token is hardcoded in `App.js` (should use `.env`)
-4. No real-time multiplayer sync yet (single-player only)
+3. Chat input focus blocks character movement (intended behavior)
 
 ## Repository
 
 - **GitHub**: https://github.com/kimkichan1225/3DCommunity
-- **Current Active Branch**: kim (as of 2025-11-29)
+- **Current Active Branch**: kim (as of 2025-11-30)
 - **Main Branch**: main
+- **Development Platform**: Windows (file paths use backslashes)
 
 ## Additional Documentation
 
@@ -478,6 +501,27 @@ See `README.md` and `docs/REQUIREMENTS.md` for full roadmap:
 - `MIGRATION_GUIDE.md` - Details on features/ folder migration
 - `docs/REQUIREMENTS.md` - Complete requirements specification
 
+## Important Notes for Development
+
+### Character Movement Blocking
+Character movement is automatically disabled when:
+- Any modal is open (Board, Profile, Settings, Landing)
+- Chat input is focused (`isChatInputFocused === true`)
+- This is controlled by `shouldBlockMovement` state in App.js
+
+### Multiplayer System
+- Uses `multiplayerService` for WebSocket communication
+- Tracks other players in `otherPlayers` state
+- Real-time position updates for all connected players
+- Online count display
+- Player join/leave events
+
+### Component Communication
+- Character state is managed via `characterRef` in App.js
+- Camera follows character via `CameraController.jsx`
+- Modal states control UI overlay rendering
+- Auth state determines whether to show LandingPage or 3D scene
+
 ---
 
-**Last Updated**: 2025-11-29 (kim branch active)
+**Last Updated**: 2025-11-30 (kim branch active)
