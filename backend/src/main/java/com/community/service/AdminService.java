@@ -1,6 +1,7 @@
 package com.community.service;
 
 import com.community.dto.DashboardStatsDto;
+import com.community.model.PostType;
 import com.community.repository.PostRepository;
 import com.community.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ public class AdminService {
     private final PostRepository postRepository;
 
     /**
-     * 대시보드 통계 데이터 조회
+     * 대시보드 통계 데이터 조회 (타입별 통계 포함)
      */
     public DashboardStatsDto getDashboardStats() {
         long totalUsers = userRepository.count();
@@ -29,34 +30,34 @@ public class AdminService {
         // TODO: 실제 구현 시 커스텀 쿼리 필요
         long todayNewUsers = 0; // userRepository.countByCreatedAtBetween(todayStart, todayEnd);
 
-        // TODO: 실시간 접속자는 WebSocket 또는 Redis 기반으로 구현 필요
-        long onlineUsers = 0;
-
         long totalPosts = postRepository.count();
 
         // TODO: Comment Repository에서 조회
         long totalComments = 0;
 
-        // TODO: Report 엔티티 생성 후 구현
-        long pendingReports = 0;
-
-        // TODO: Room 엔티티 생성 후 구현
-        long activeRooms = 0;
-
-        // TODO: Payment 엔티티 생성 후 구현
-        long todayRevenue = 0;
-        long monthlyRevenue = 0;
+        // 타입별 게시글 수 계산 (모든 게시판 전체)
+        long generalPosts = postRepository.findAll().stream()
+                .filter(post -> !post.getIsDeleted() && post.getPostType() == PostType.GENERAL)
+                .count();
+        long questionPosts = postRepository.findAll().stream()
+                .filter(post -> !post.getIsDeleted() && post.getPostType() == PostType.QUESTION)
+                .count();
+        long imagePosts = postRepository.findAll().stream()
+                .filter(post -> !post.getIsDeleted() && post.getPostType() == PostType.IMAGE)
+                .count();
+        long videoPosts = postRepository.findAll().stream()
+                .filter(post -> !post.getIsDeleted() && post.getPostType() == PostType.VIDEO)
+                .count();
 
         return DashboardStatsDto.builder()
                 .totalUsers(totalUsers)
                 .todayNewUsers(todayNewUsers)
-                .onlineUsers(onlineUsers)
                 .totalPosts(totalPosts)
                 .totalComments(totalComments)
-                .pendingReports(pendingReports)
-                .activeRooms(activeRooms)
-                .todayRevenue(todayRevenue)
-                .monthlyRevenue(monthlyRevenue)
+                .generalPosts(generalPosts)
+                .questionPosts(questionPosts)
+                .imagePosts(imagePosts)
+                .videoPosts(videoPosts)
                 .build();
     }
 }

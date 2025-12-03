@@ -1,10 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import './AdminLayout.css';
+import { jwtDecode } from 'jwt-decode';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [adminInfo, setAdminInfo] = useState({ nickname: '관리자', email: '' });
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setAdminInfo({
+          nickname: decoded.nickname || decoded.sub || '관리자',
+          email: decoded.sub || '',
+        });
+      } catch (error) {
+        console.error('토큰 디코딩 실패:', error);
+      }
+    }
+  }, []);
 
   const menuItems = [
     { path: '/admin', label: '대시보드', icon: '📊' },
@@ -25,6 +43,33 @@ const AdminLayout = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/');
+  };
+
+  const handleUpdateProfile = async (nickname) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/profile/update', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nickname }),
+      });
+
+      if (response.ok) {
+        setAdminInfo({ ...adminInfo, nickname });
+        alert('프로필이 업데이트되었습니다.');
+        return true;
+      } else {
+        alert('프로필 업데이트에 실패했습니다.');
+        return false;
+      }
+    } catch (error) {
+      console.error('프로필 업데이트 오류:', error);
+      alert('오류가 발생했습니다.');
+      return false;
+    }
   };
 
   return (
@@ -65,14 +110,79 @@ const AdminLayout = () => {
         <header className="admin-header">
           <h1>관리자 페이지</h1>
           <div className="admin-user-info">
-            <span>관리자</span>
+            <button
+              className="profile-button"
+              onClick={() => setShowProfileModal(true)}
+              title="프로필 수정"
+            >
+              <span className="profile-icon">👤</span>
+              <span className="profile-name">{adminInfo.nickname}</span>
+            </button>
           </div>
         </header>
 
         <div className="admin-content">
           <Outlet />
         </div>
+
+        {showProfileModal && (
+          <AdminProfileModal
+            adminInfo={adminInfo}
+            onClose={() => setShowProfileModal(false)}
+            onUpdate={handleUpdateProfile}
+          />
+        )}
       </main>
+    </div>
+  );
+};
+
+const AdminProfileModal = ({ adminInfo, onClose, onUpdate }) => {
+  const [nickname, setNickname] = useState(adminInfo.nickname);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    const success = await onUpdate(nickname);
+    setIsLoading(false);
+    if (success) {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="admin-profile-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>프로필 수정</h2>
+          <button className="close-button" onClick={onClose}>×</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>이메일</label>
+            <input type="text" value={adminInfo.email} disabled />
+          </div>
+          <div className="form-group">
+            <label>닉네임</label>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              required
+              maxLength={20}
+            />
+          </div>
+          <div className="modal-actions">
+            <button type="submit" className="btn-save" disabled={isLoading}>
+              {isLoading ? '저장 중...' : '저장'}
+            </button>
+            <button type="button" className="btn-cancel" onClick={onClose}>
+              취소
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

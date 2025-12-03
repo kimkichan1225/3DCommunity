@@ -6,11 +6,19 @@ function PostForm({ boardId, post, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     title: post?.title || '',
     content: post?.content || '',
-    images: post?.images || ''
+    images: post?.images || '',
+    postType: post?.postType || 'GENERAL'
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const isEditMode = !!post;
+
+  const postTypeOptions = [
+    { value: 'GENERAL', label: '일반', icon: '' },
+    { value: 'QUESTION', label: '질문', icon: '❓' },
+    { value: 'IMAGE', label: '짤', icon: '🖼️' },
+    { value: 'VIDEO', label: '영상', icon: '🎬' }
+  ];
 
   const handleChange = (e) => {
     setFormData({
@@ -47,7 +55,8 @@ function PostForm({ boardId, post, onClose, onSuccess }) {
         const updateData = {
           title: formData.title,
           content: formData.content,
-          images: formData.images || null
+          images: formData.images || null,
+          postType: formData.postType
         };
         console.log('📤 수정 요청:', updateData);
 
@@ -67,7 +76,8 @@ function PostForm({ boardId, post, onClose, onSuccess }) {
           boardId: boardId,
           title: formData.title,
           content: formData.content,
-          images: formData.images || null
+          images: formData.images || null,
+          postType: formData.postType
         };
         console.log('📤 작성 요청:', createData);
 
@@ -102,6 +112,24 @@ function PostForm({ boardId, post, onClose, onSuccess }) {
         </div>
 
         <form onSubmit={handleSubmit} className="post-form">
+          <div className="post-form-group">
+            <label className="post-form-label">
+              게시글 타입
+            </label>
+            <select
+              name="postType"
+              value={formData.postType}
+              onChange={handleChange}
+              className="post-form-type-select"
+            >
+              {postTypeOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.icon} {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="post-form-group">
             <input
               type="text"

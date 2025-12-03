@@ -3,6 +3,7 @@ package com.community.service;
 import com.community.dto.PostDto;
 import com.community.model.Board;
 import com.community.model.Post;
+import com.community.model.PostType;
 import com.community.model.User;
 import com.community.repository.BoardRepository;
 import com.community.repository.PostRepository;
@@ -37,6 +38,7 @@ public class PostService {
                 .title(request.getTitle())
                 .content(request.getContent())
                 .images(request.getImages())
+                .postType(request.getPostType() != null ? request.getPostType() : PostType.GENERAL)
                 .build();
 
         Post savedPost = postRepository.save(post);
@@ -58,10 +60,17 @@ public class PostService {
         return PostDto.Response.from(post);
     }
 
-    // 게시판별 게시글 목록
-    public Page<PostDto.ListResponse> getPostsByBoard(Long boardId, Pageable pageable) {
-        return postRepository.findByBoardIdAndIsDeletedFalseOrderByCreatedAtDesc(boardId, pageable)
-                .map(PostDto.ListResponse::from);
+    // 게시판별 게시글 목록 (타입 필터링 옵션)
+    public Page<PostDto.ListResponse> getPostsByBoard(Long boardId, PostType postType, Pageable pageable) {
+        if (postType != null) {
+            // 특정 타입 필터링
+            return postRepository.findByBoardIdAndPostTypeAndIsDeletedFalseOrderByCreatedAtDesc(boardId, postType, pageable)
+                    .map(PostDto.ListResponse::from);
+        } else {
+            // 전체 조회
+            return postRepository.findByBoardIdAndIsDeletedFalseOrderByCreatedAtDesc(boardId, pageable)
+                    .map(PostDto.ListResponse::from);
+        }
     }
 
     // 게시글 수정
@@ -77,6 +86,9 @@ public class PostService {
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
         post.setImages(request.getImages());
+        if (request.getPostType() != null) {
+            post.setPostType(request.getPostType());
+        }
 
         return PostDto.Response.from(post);
     }

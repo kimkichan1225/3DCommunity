@@ -30,6 +30,18 @@ public class Board {
     @Column(length = 50)
     private BoardCategory category;
 
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
+
+    @Column(name = "order_index")
+    @Builder.Default
+    private Integer orderIndex = 0;
+
+    @Column(name = "post_count")
+    @Builder.Default
+    private Long postCount = 0L;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

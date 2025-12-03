@@ -4,6 +4,8 @@ import App from './App';
 import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import ProfileItemManager from './pages/admin/ProfileItemManager';
+import NoticeManagement from './pages/admin/NoticeManagement';
+import BoardManagement from './pages/admin/BoardManagement';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
@@ -26,9 +28,9 @@ function AppRouter() {
           <Route index element={<Dashboard />} />
           <Route path="users" element={<div>사용자 관리 (준비 중)</div>} />
           <Route path="reports" element={<div>신고 관리 (준비 중)</div>} />
-          <Route path="notices" element={<div>공지사항 관리 (준비 중)</div>} />
+          <Route path="notices" element={<NoticeManagement />} />
           <Route path="chat-logs" element={<div>채팅 로그 (준비 중)</div>} />
-          <Route path="boards" element={<div>게시판 관리 (준비 중)</div>} />
+          <Route path="boards" element={<BoardManagement />} />
           <Route path="rooms" element={<div>게임 방 관리 (준비 중)</div>} />
           <Route path="shop" element={<div>상점 관리 (준비 중)</div>} />
           <Route path="payments" element={<div>결제/환불 (준비 중)</div>} />
