@@ -197,6 +197,30 @@ public class AdminService {
     }
 
     /**
+     * 관리자 권한으로 게시글 삭제
+     */
+    @Transactional
+    public void deletePost(Long postId, User admin, HttpServletRequest httpRequest) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
+
+        if (post.getIsDeleted()) {
+            throw new RuntimeException("이미 삭제된 게시글입니다.");
+        }
+
+        // 게시글 소프트 삭제
+        post.setIsDeleted(true);
+        postRepository.save(post);
+
+        // 감사 로그 기록
+        String description = String.format("게시글 삭제: [%s] %s (작성자: %s)",
+                post.getBoard().getName(),
+                post.getTitle(),
+                post.getAuthor().getEmail());
+        auditLogService.log(admin, "POST_DELETE", "Post", postId, description, httpRequest);
+    }
+
+    /**
      * 클라이언트 IP 주소 추출
      */
     private String getClientIp(HttpServletRequest request) {

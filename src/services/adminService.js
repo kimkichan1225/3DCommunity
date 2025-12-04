@@ -97,6 +97,14 @@ const adminService = {
     const response = await api.get(`/api/admin/audit-logs?${queryParams.toString()}`);
     return response.data;
   },
+
+  /**
+   * 관리자 권한으로 게시글 삭제
+   */
+  deletePost: async (postId) => {
+    const response = await api.delete(`/api/admin/posts/${postId}`);
+    return response.data;
+  },
 };
 
 export default adminService;

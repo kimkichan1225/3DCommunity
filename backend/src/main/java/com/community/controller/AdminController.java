@@ -172,4 +172,24 @@ public class AdminController {
 
         return ResponseEntity.ok(historyDtos);
     }
+
+    // ==================== 게시글 관리 API ====================
+
+    /**
+     * 관리자 권한으로 게시글 삭제
+     */
+    @DeleteMapping("/posts/{postId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    public ResponseEntity<String> deletePostAsAdmin(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal User admin,
+            HttpServletRequest httpRequest
+    ) {
+        try {
+            adminService.deletePost(postId, admin, httpRequest);
+            return ResponseEntity.ok("게시글이 삭제되었습니다.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
