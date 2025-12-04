@@ -69,6 +69,13 @@ class AuthService {
   isAuthenticated() {
     return !!this.getToken();
   }
+
+  async checkUsername(username) {
+    const response = await axios.get(`${API_URL}/api/auth/check-username`, {
+      params: { username }
+    });
+    return response.data;
+  }
 }
 
 export default new AuthService();

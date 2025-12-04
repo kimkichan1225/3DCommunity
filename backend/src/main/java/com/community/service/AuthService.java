@@ -91,4 +91,11 @@ public class AuthService {
                 .message("로그인 성공")
                 .build();
     }
+
+    /**
+     * 닉네임 사용 가능 여부 확인
+     */
+    public boolean isUsernameAvailable(String username) {
+        return !userRepository.existsByUsername(username);
+    }
 }

@@ -13,6 +13,9 @@ function LandingPage({ onLoginSuccess }) {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isUsernameChecked, setIsUsernameChecked] = useState(false);
+  const [usernameCheckMessage, setUsernameCheckMessage] = useState('');
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState(false);
 
   const handleClick = () => {
     if (!showButtons && !authMode) {
@@ -26,6 +29,34 @@ function LandingPage({ onLoginSuccess }) {
       [e.target.name]: e.target.value
     });
     setError('');
+
+    // 닉네임이 변경되면 중복 확인 초기화
+    if (e.target.name === 'nickname') {
+      setIsUsernameChecked(false);
+      setUsernameCheckMessage('');
+      setIsUsernameAvailable(false);
+    }
+  };
+
+  const handleCheckUsername = async () => {
+    if (!formData.nickname.trim()) {
+      setUsernameCheckMessage('닉네임을 입력하세요.');
+      return;
+    }
+
+    if (formData.nickname.length < 2 || formData.nickname.length > 20) {
+      setUsernameCheckMessage('닉네임은 2~20자 사이여야 합니다.');
+      return;
+    }
+
+    try {
+      const response = await authService.checkUsername(formData.nickname);
+      setIsUsernameChecked(true);
+      setIsUsernameAvailable(response.available);
+      setUsernameCheckMessage(response.message);
+    } catch (err) {
+      setUsernameCheckMessage('중복 확인 중 오류가 발생했습니다.');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -49,6 +80,13 @@ function LandingPage({ onLoginSuccess }) {
         // 일반 사용자는 게임 화면으로
         onLoginSuccess(response.user);
       } else {
+        // 회원가입 시 닉네임 중복 확인 필수
+        if (!isUsernameChecked || !isUsernameAvailable) {
+          setError('닉네임 중복 확인을 해주세요.');
+          setLoading(false);
+          return;
+        }
+
         if (formData.password !== formData.confirmPassword) {
           setError('비밀번호가 일치하지 않습니다.');
           setLoading(false);
@@ -67,6 +105,9 @@ function LandingPage({ onLoginSuccess }) {
         alert('회원가입이 완료되었습니다. 로그인해주세요.');
         setAuthMode('login');
         setFormData({ email: '', password: '', nickname: '', confirmPassword: '' });
+        setIsUsernameChecked(false);
+        setUsernameCheckMessage('');
+        setIsUsernameAvailable(false);
       }
     } catch (err) {
       setError(err.response?.data?.message || '오류가 발생했습니다.');
@@ -79,6 +120,9 @@ function LandingPage({ onLoginSuccess }) {
     setAuthMode(null);
     setFormData({ email: '', password: '', nickname: '', confirmPassword: '' });
     setError('');
+    setIsUsernameChecked(false);
+    setUsernameCheckMessage('');
+    setIsUsernameAvailable(false);
   };
 
   return (
@@ -146,15 +190,30 @@ function LandingPage({ onLoginSuccess }) {
             <form onSubmit={handleSubmit} className="auth-form">
               {authMode === 'register' && (
                 <div className="form-group">
-                  <label>닉네임</label>
-                  <input
-                    type="text"
-                    name="nickname"
-                    value={formData.nickname}
-                    onChange={handleChange}
-                    placeholder="닉네임을 입력하세요"
-                    required
-                  />
+                  <label>닉네임 (2~20자)</label>
+                  <div className="nickname-input-group">
+                    <input
+                      type="text"
+                      name="nickname"
+                      value={formData.nickname}
+                      onChange={handleChange}
+                      placeholder="닉네임을 입력하세요"
+                      required
+                      maxLength="20"
+                    />
+                    <button
+                      type="button"
+                      className="check-username-btn"
+                      onClick={handleCheckUsername}
+                    >
+                      중복 확인
+                    </button>
+                  </div>
+                  {usernameCheckMessage && (
+                    <div className={`username-check-message ${isUsernameAvailable ? 'success' : 'error'}`}>
+                      {usernameCheckMessage}
+                    </div>
+                  )}
                 </div>
               )}
 
