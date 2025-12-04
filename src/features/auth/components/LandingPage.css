@@ -369,6 +369,7 @@
 
 .nickname-input-group input {
   flex: 1;
+  color: #fff !important;
 }
 
 .check-username-btn {
