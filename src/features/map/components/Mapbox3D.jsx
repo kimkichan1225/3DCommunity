@@ -34,24 +34,24 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
   // 로딩 오버레이용 별도 컨테이너
   const loadingOverlayRef = useRef(null);
 
-  // 지도 초기화 전에 현재 위치 가져오기
+  // 지도 초기화 및 전체화면 진입 시 현재 위치로 중심 이동
   useEffect(() => {
-    if (navigator.geolocation) {
+    if (isFull && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          console.log('📍 현재 위치:', latitude, longitude);
+          console.log('📍 지도 전체화면 - 현재 위치:', latitude, longitude);
           setCenter([longitude, latitude]); // [lng, lat] 순서
         },
         (error) => {
           console.warn('⚠️  위치 정보를 가져올 수 없음:', error.message);
-          console.log('기본 위치로 설정합니다.');
-          // 오류 시 기본값 사용
+          // 오류 시 기존 center 유지
         }
       );
     }
-  }, []);
+  }, [isFull]);
 
+  // 지도 생성 및 업데이트
   useEffect(() => {
     // 토큰이 없으면 렌더링하지 않음
     if (!MAPBOX_TOKEN) {
@@ -60,10 +60,14 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
       return;
     }
 
-    // 이미 초기화된 경우 빈 return (중복 초기화 방지)
-    if (mapRef.current) return;
-
     if (!mapContainer.current) return;
+
+    // 항상 새로 생성 (center가 바뀌면 기존 map 제거)
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+      onMapReadyCalledRef.current = false;
+    }
 
     try {
       const map = new mapboxgl.Map({
@@ -151,7 +155,6 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
         };
 
         mapRef.current = map;
-
         if (onMapReady) onMapReady({ map, project });
       });
 
@@ -173,8 +176,7 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
         mapRef.current = null;
       }
     };
-    // 의존성 배열: 빈 배열 (컴포넌트 마운트 시 한 번만 초기화, 재초기화 방지)
-  }, []);
+  }, [center, initialZoom]);
 
   // When container visibility/size changes (isFull), make sure map resizes
   useEffect(() => {
@@ -193,7 +195,7 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
 
   return (
     <>
-      {/* Mapbox 컨테이너 - Three.js 위에 완전 불투명 오버레이로 표시 */}
+      {/* Mapbox 컨테이너 - Three.js 위에 표시 */}
       <div 
         ref={mapContainer} 
         className={`map-container ${isFull ? 'map-full' : ''}`}
@@ -203,8 +205,8 @@ export default function Mapbox3D({ onMapReady, initialCenter = [127.0276, 37.497
           left: 0,
           width: '100%',
           height: '100%',
-          zIndex: 10, // Three.js Canvas보다 위에 표시
-          opacity: 1, // 완전 불투명 (Level1 맵 안 보임)
+          zIndex: 5, // Three.js Canvas보다 낮게 설정하여 캐릭터가 보임
+          opacity: 1,
           pointerEvents: 'auto'
         }}
       />

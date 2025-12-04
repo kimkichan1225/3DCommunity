@@ -8,6 +8,7 @@ import { BoardModal } from './features/board';
 import { ProfileModal } from './features/profile';
 import { SettingModal } from './features/system/settings';
 import Character from './components/character/Character';
+import MapCharacterController from './components/character/MapCharacterController';
 import CameraController from './components/camera/CameraController';
 import CameraLogger from './components/camera/CameraLogger';
 import Level1 from './components/map/Level1';
@@ -56,7 +57,6 @@ function App() {
       // Level1 모드일 때만 위치 저장
       level1PositionRef.current = position;
       setLevel1Position(position);
-      console.log('📍 현재 캐릭터 위치 저장:', position);
     }
   };
 
@@ -479,17 +479,30 @@ function App() {
             {/* 로그인 후에만 캐릭터 표시 */}
             {isLoggedIn && (
               <>
-                <Character
-                  characterRef={characterRef}
-                  initialPosition={initialPosition}
-                  isMovementDisabled={shouldBlockMovement && !isMapFull}
-                  username={username}
-                  userId={userId}
-                  multiplayerService={multiplayerService}
-                  isMapFull={isMapFull}
-                  onPositionUpdate={handleCharacterPositionUpdate}
-                  chatMessage={myChatMessage}
-                />
+                {/* 지도 모드: MapCharacterController 사용 */}
+                {isMapFull ? (
+                  <MapCharacterController
+                    characterRef={characterRef}
+                    isMovementDisabled={shouldBlockMovement}
+                    username={username}
+                    userId={userId}
+                    multiplayerService={multiplayerService}
+                    chatMessage={myChatMessage}
+                  />
+                ) : (
+                  /* Level1 모드: 기존 Character 사용 */
+                  <Character
+                    characterRef={characterRef}
+                    initialPosition={initialPosition}
+                    isMovementDisabled={shouldBlockMovement}
+                    username={username}
+                    userId={userId}
+                    multiplayerService={multiplayerService}
+                    isMapFull={isMapFull}
+                    onPositionUpdate={handleCharacterPositionUpdate}
+                    chatMessage={myChatMessage}
+                  />
+                )}
                 <CameraLogger />
               </>
             )}
@@ -517,7 +530,8 @@ function App() {
             />
             {/* 지도 모드일 때만 MapFloor 렌더링 */}
             {isMapFull && <MapFloor />}
-            <Level1 characterRef={characterRef} mainCameraRef={mainCameraRef} />
+            {/* Level1은 지도 모드가 아닐 때만 렌더링 */}
+            {!isMapFull && <Level1 characterRef={characterRef} mainCameraRef={mainCameraRef} />}
           </Physics>
         </Suspense>
       </Canvas>
