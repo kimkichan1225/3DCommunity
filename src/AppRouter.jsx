@@ -7,6 +7,7 @@ import UserManagement from './pages/admin/UserManagement';
 import ProfileItemManager from './pages/admin/ProfileItemManager';
 import NoticeManagement from './pages/admin/NoticeManagement';
 import BoardManagement from './pages/admin/BoardManagement';
+import ReportManagement from './pages/admin/ReportManagement';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
@@ -28,7 +29,7 @@ function AppRouter() {
         >
           <Route index element={<Dashboard />} />
           <Route path="users" element={<UserManagement />} />
-          <Route path="reports" element={<div>신고 관리 (준비 중)</div>} />
+          <Route path="reports" element={<ReportManagement />} />
           <Route path="notices" element={<NoticeManagement />} />
           <Route path="chat-logs" element={<div>채팅 로그 (준비 중)</div>} />
           <Route path="boards" element={<BoardManagement />} />
