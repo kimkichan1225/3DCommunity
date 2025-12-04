@@ -58,7 +58,7 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("테스트 계정 생성 완료: test@test.com / test1234");
         }
 
-        // 관리자 계정 생성
+        // 관리자 계정 생성 (ROLE_DEVELOPER)
         if (!userRepository.existsByEmail("admin@admin.com")) {
             User adminUser = User.builder()
                     .username("관리자")
@@ -68,6 +68,18 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
             userRepository.save(adminUser);
             System.out.println("관리자 계정 생성 완료: admin@admin.com / admin1234");
+        }
+
+        // 사용자 관리자 계정 생성 (ROLE_ADMIN)
+        if (!userRepository.existsByEmail("manager@manager.com")) {
+            User managerUser = User.builder()
+                    .username("사용자관리자")
+                    .email("manager@manager.com")
+                    .password(passwordEncoder.encode("manager1234"))
+                    .role(Role.ROLE_ADMIN)
+                    .build();
+            userRepository.save(managerUser);
+            System.out.println("사용자 관리자 계정 생성 완료: manager@manager.com / manager1234");
         }
 
         // 기본 프로필 아이템 생성

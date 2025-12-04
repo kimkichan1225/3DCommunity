@@ -44,6 +44,19 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 제재 관련 필드
+    @Column(name = "suspended_until")
+    private LocalDateTime suspendedUntil; // 제재 종료 시간 (null이면 제재 없음)
+
+    @Column(name = "suspension_reason", columnDefinition = "TEXT")
+    private String suspensionReason; // 제재 사유
+
+    @Column(name = "is_permanently_suspended")
+    private Boolean isPermanentlySuspended = false; // 영구 정지 여부
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt; // 마지막 로그인 시간
+
     // 선택된 프로필 이미지
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "selected_profile_id")
@@ -95,7 +108,24 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
+        // 영구 정지된 경우 또는 제재 기간이 남아있는 경우 계정 잠금
+        if (isPermanentlySuspended != null && isPermanentlySuspended) {
+            return false;
+        }
+        if (suspendedUntil != null && suspendedUntil.isAfter(LocalDateTime.now())) {
+            return false;
+        }
         return true;
+    }
+
+    /**
+     * 현재 제재 중인지 확인
+     */
+    public boolean isSuspended() {
+        if (isPermanentlySuspended != null && isPermanentlySuspended) {
+            return true;
+        }
+        return suspendedUntil != null && suspendedUntil.isAfter(LocalDateTime.now());
     }
 
     @Override

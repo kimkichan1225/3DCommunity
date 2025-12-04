@@ -15,6 +15,7 @@ import MapFloor from './components/map/MapFloor';
 import GlobalChat from './components/GlobalChat';
 import OtherPlayer from './components/character/OtherPlayer';
 import ProfileAvatar from './components/ProfileAvatar';
+import SuspensionNotification from './components/SuspensionNotification';
 import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 
@@ -551,6 +552,9 @@ function App() {
       {showSettingModal && (
         <SettingModal onClose={() => setShowSettingModal(false)} />
       )}
+
+      {/* 제재 알림 (로그인한 사용자만) */}
+      {isLoggedIn && <SuspensionNotification />}
 
       {/* 전체 채팅 (로그인한 사용자만, 맵 전체화면 아닐 때만 표시) */}
       {isLoggedIn && !isMapFull && (
