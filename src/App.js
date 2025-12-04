@@ -50,7 +50,6 @@ function App() {
   // 모달이 열려있는지 확인
   const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
 
-<<<<<<< HEAD
   // 캐릭터 현재 위치 업데이트 콜백
   const handleCharacterPositionUpdate = (position) => {
     if (!isMapFull) {
@@ -60,10 +59,9 @@ function App() {
       console.log('📍 현재 캐릭터 위치 저장:', position);
     }
   };
-=======
+
   // 캐릭터 이동을 막아야 하는 상태 (모달 열림 또는 채팅 입력 중)
   const shouldBlockMovement = isAnyModalOpen || isChatInputFocused;
->>>>>>> origin/kim
 
   // Map가 준비되면 호출됩니다. mapbox의 projection helper를 받아와
   // 현재 위치(geolocation)를 Three.js 월드 좌표로 변환해 캐릭터 초기 위치를 설정합니다.
@@ -373,9 +371,13 @@ function App() {
         <Mapbox3D onMapReady={handleMapReady} isFull={isMapFull} />
       )}
 
-      {/* 프로필 아바타 (좌측 상단, 로그인한 사용자만 표시) */}
+      {/* 프로필 아바타 (로그인한 사용자만 표시) */}
       {isLoggedIn && (
-        <button className="profile-avatar-button" onClick={() => setShowProfileModal(true)} title="프로필">
+        <button
+          className={`profile-avatar-button ${isMapFull ? 'bottom-right' : 'top-left'}`}
+          onClick={() => setShowProfileModal(true)}
+          title="프로필"
+        >
           <ProfileAvatar
             profileImage={userProfile?.selectedProfile}
             outlineImage={userProfile?.selectedOutline}

@@ -15,11 +15,7 @@ import ChatBubble from './ChatBubble';
  * - 멀티플레이어 위치 동기화
  * - 채팅 말풍선 표시
  */
-<<<<<<< HEAD
 function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage }) {
-=======
-function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, chatMessage }) {
->>>>>>> origin/kim
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
 
