@@ -366,14 +366,11 @@ function App() {
             <button className="icon-button" onClick={() => console.log('알람')} title="알람">
               <img src="/resources/Icon/Alarm-icon.png" alt="Alarm" />
             </button>
-            <button className="icon-button" onClick={() => setShowPhoneUI(true)} title="채팅">
-              <img src="/resources/Icon/Chat-icon.png" alt="Chat" />
+            <button className="icon-button" onClick={() => setShowPhoneUI(true)} title="모바일 (친구/채팅)">
+              <img src="/resources/Icon/Mobile-icon.png" alt="Mobile" />
             </button>
             <button className="icon-button" onClick={() => console.log('이벤트')} title="이벤트">
               <img src="/resources/Icon/Event-icon.png" alt="Event" />
-            </button>
-            <button className="icon-button" onClick={() => setShowPhoneUI(true)} title="친구목록">
-              <img src="/resources/Icon/Friend-icon.png" alt="Friend" />
             </button>
             <button className="icon-button" onClick={() => setShowSettingModal(true)} title="설정">
               <img src="/resources/Icon/Setting-icon.png" alt="Setting" />
