@@ -45,8 +45,8 @@ function App() {
   const playerMessageTimersRef = useRef({}); // 다른 플레이어 메시지 타이머 참조
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
-  // 모달이 열려있는지 확인
-  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showPhoneUI || showLanding;
+  // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
 
   // 캐릭터 이동을 막아야 하는 상태 (모달 열림 또는 채팅 입력 중)
   const shouldBlockMovement = isAnyModalOpen || isChatInputFocused;

@@ -9,8 +9,8 @@ function PhoneUI({ isOpen, onClose, userId, username }) {
   if (!isOpen) return null;
 
   return (
-    <div className="phone-ui-overlay" onClick={onClose}>
-      <div className="phone-container" onClick={(e) => e.stopPropagation()}>
+    <div className="phone-ui-overlay">
+      <div className="phone-container">
         {/* 폰 상단 (노치) */}
         <div className="phone-notch">
           <div className="notch-speaker"></div>
