@@ -114,6 +114,7 @@ function MapCharacterController({
     // 이동 비활성화
     if (isMovementDisabled) {
       rigidBodyRef.current.setLinvel({ x: 0, y: rigidBodyRef.current.linvel().y, z: 0 }, true);
+      rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
       return;
     }
 
@@ -169,6 +170,10 @@ function MapCharacterController({
     // 위치 동기화
     const translation = rigidBodyRef.current.translation();
     modelGroupRef.current.position.set(translation.x, translation.y, translation.z);
+    
+    // RigidBody 회전을 항상 0으로 고정 (기울임 방지)
+    rigidBodyRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+    rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
 
     // 부모 컴포넌트에 위치 업데이트 전달 (지도 중심 이동용)
     if (onPositionUpdate) {
@@ -199,7 +204,7 @@ function MapCharacterController({
   });
 
   return (
-    <group ref={modelGroupRef} position={[0, 1.5, 0]}>
+    <group ref={modelGroupRef} position={[0, 0, 0]}>
       <RigidBody
         ref={rigidBodyRef}
         colliders={false}
@@ -208,7 +213,7 @@ function MapCharacterController({
         angularDamping={1.0}
         lockRotation
       >
-        <CapsuleCollider args={[1.0, 0.8]} position={[0, 0, 0]} />
+        <CapsuleCollider args={[1.0, 0.8]} position={[0, 1.0, 0]} />
         <primitive object={scene} scale={2.5} position={[0, 0, 0]} />
       </RigidBody>
 

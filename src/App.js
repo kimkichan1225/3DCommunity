@@ -26,6 +26,8 @@ function App() {
   const level1PositionRef = useRef(null); // Level1 위치를 ref로 저장 (즉시 접근 용도)
   const mapReadyCalledRef = useRef(false); // handleMapReady가 한 번만 호출되도록 제어
   const lastMapUpdateRef = useRef(0); // 지도 업데이트 throttle
+  const initialMapCenterRef = useRef(null); // 초기 지도 중심 좌표 저장
+  const lastCharacterPositionRef = useRef([0, 0, 0]); // 지난 캐릭터 위치 저장
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [mapHelpers, setMapHelpers] = useState(null);
@@ -65,8 +67,9 @@ function App() {
   // 지도 모드에서 캐릭터 위치 업데이트 - Mapbox 지도 중심 이동 (y축 고정, throttle 적용)
   const handleMapCharacterPositionUpdate = (position) => {
     if (!mapHelpers || !mapHelpers.map || !mapHelpers.project) return;
+    if (!initialMapCenterRef.current) return;
 
-    // 100ms마다만 지도 업데이트 (성능 및 안정성 개선)
+    // 100ms마다 지도 업데이트 (테스트용)
     const now = Date.now();
     if (now - lastMapUpdateRef.current < 100) {
       return;
@@ -79,30 +82,41 @@ function App() {
       const map = mapHelpers.map;
       const project = mapHelpers.project;
       
-      // 현재 지도 중심을 Mercator 좌표로 변환
-      const center = map.getCenter();
-      const centerMerc = project([center.lng, center.lat], 0);
-      const unitsPerMeter = centerMerc.meterInMercatorCoordinateUnits || 1;
+      // 초기 지도 중심을 Mercator로 변환
+      const initialCenter = initialMapCenterRef.current;
+      const initialMerc = project([initialCenter.lng, initialCenter.lat], 0);
+      const unitsPerMeter = initialMerc.meterInMercatorCoordinateUnits || 1;
 
-      // Three.js 좌표 차이를 Mercator 단위로 변환 (x, z만 변환 - y축 무시)
+      console.log('🗺️ [1] initialCenter:', initialCenter);
+      console.log('🗺️ [2] initialMerc.translateX/Y:', initialMerc.translateX, initialMerc.translateY);
+      console.log('🗺️ [3] unitsPerMeter:', unitsPerMeter);
+      console.log('🗺️ [4] characterPos(Three.js):', threeX, threeZ);
+
+      // Three.js 좌표를 Mercator 단위로 변환 (x, z만 변환 - y축 무시)
       const dxMeters = threeX;
       const dzMeters = -threeZ; // Z는 반대 방향
       const dxMerc = dxMeters * unitsPerMeter;
       const dzMerc = dzMeters * unitsPerMeter;
 
-      // 새로운 Mercator 좌표 계산
-      const newMercX = centerMerc.translateX + dxMerc;
-      const newMercY = centerMerc.translateY + dzMerc;
+      console.log('🗺️ [5] dxMerc/dzMerc:', dxMerc, dzMerc);
+
+      // 새로운 Mercator 좌표 = 초기 위치 + 이동량
+      const newMercX = initialMerc.translateX + dxMerc;
+      const newMercY = initialMerc.translateY + dzMerc;
+
+      console.log('🗺️ [6] newMercX/Y:', newMercX, newMercY);
 
       // Mercator 좌표를 LngLat으로 변환
-      // MercatorCoordinate.fromLngLat의 역함수를 사용하여 LngLat 복구
       const mercatorCoord = new mapboxgl.MercatorCoordinate(newMercX, newMercY, 0);
       const lngLat = mercatorCoord.toLngLat();
       
+      console.log('🗺️ [7] converted to lngLat:', lngLat);
+      
       // 지도 중심 업데이트
       map.setCenter(lngLat);
+      console.log('✅ [8] Map.setCenter() called with:', lngLat);
     } catch (e) {
-      console.warn('Map position update failed:', e);
+      console.warn('❌ Map position update failed:', e);
     }
   };
 
@@ -120,6 +134,11 @@ function App() {
     mapReadyCalledRef.current = true;
 
     setMapHelpers({ map, project });
+    
+    // 초기 지도 중심 저장 (지도 업데이트용)
+    const initialCenter = map.getCenter();
+    initialMapCenterRef.current = initialCenter;
+    console.log('🗺️ Initial map center saved:', initialCenter);
 
     // Try to get browser geolocation; fallback to map center
     if (navigator.geolocation) {
@@ -140,7 +159,7 @@ function App() {
 
             // Mapbox의 Y increases northwards; Three.js Z forward is negative, adjust sign if needed
             const threeX = dx;
-            const threeY = 2; // 약간 띄워서 시작
+            const threeY = 0; // 지도 지면과 동일한 높이
             const threeZ = -dz;
 
             setInitialPosition([threeX, threeY, threeZ]);
@@ -153,14 +172,14 @@ function App() {
           console.warn('Geolocation denied or unavailable, using map center', err);
           // use map center as fallback
           const threeX = 0;
-          const threeY = 2;
+          const threeY = 0; // 지도 지면과 동일한 높이
           const threeZ = 0;
           setInitialPosition([threeX, threeY, threeZ]);
         }
       );
     } else {
       console.warn('Geolocation not supported, using map center');
-      setInitialPosition([0, 2, 0]);
+      setInitialPosition([0, 0, 0]); // 지도 지면과 동일한 높이
     }
   };
 
