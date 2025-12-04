@@ -43,11 +43,11 @@
 
 @keyframes slideIn {
   from {
-    transform: translateX(100px);
+    transform: translateY(100%);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
 }
