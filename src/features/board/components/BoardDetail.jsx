@@ -113,6 +113,12 @@ function BoardDetail({ post, onBack, onEdit, onDelete }) {
   // 작성자 본인 여부 확인
   const isAuthor = currentUser && post.authorId === currentUser.id;
 
+  // 관리자 권한 확인 (ROLE_ADMIN 또는 ROLE_DEVELOPER)
+  const isAdmin = currentUser && (currentUser.role === 'ROLE_ADMIN' || currentUser.role === 'ROLE_DEVELOPER');
+
+  // 수정/삭제 버튼 표시 여부: 작성자 본인이거나 관리자
+  const canEdit = isAuthor || isAdmin;
+
   return (
     <div className="board-detail">
       {/* 뒤로가기 버튼 */}
@@ -124,7 +130,7 @@ function BoardDetail({ post, onBack, onEdit, onDelete }) {
       <div className="board-detail-header">
         <div className="board-detail-title-row">
           <h2 className="board-detail-title">{post.title}</h2>
-          {isAuthor && (
+          {canEdit && (
             <div className="board-detail-actions-top">
               <button className="board-action-btn-small edit-btn" onClick={() => onEdit && onEdit(post)}>
                 <FaEdit /> 수정
@@ -132,6 +138,9 @@ function BoardDetail({ post, onBack, onEdit, onDelete }) {
               <button className="board-action-btn-small delete-btn" onClick={() => onDelete && onDelete(post.id)}>
                 <FaTrash /> 삭제
               </button>
+              {isAdmin && !isAuthor && (
+                <span className="admin-badge">🛡️ 관리자</span>
+              )}
             </div>
           )}
         </div>
@@ -225,6 +234,8 @@ function CommentItem({ comment, currentUser, onDelete, onReply }) {
   };
 
   const isCommentAuthor = currentUser && comment.authorId === currentUser.id;
+  const isAdmin = currentUser && (currentUser.role === 'ROLE_ADMIN' || currentUser.role === 'ROLE_DEVELOPER');
+  const canDeleteComment = isCommentAuthor || isAdmin;
 
   return (
     <div className="comment-item">
@@ -237,13 +248,16 @@ function CommentItem({ comment, currentUser, onDelete, onReply }) {
           <span className="comment-date">
             {new Date(comment.createdAt).toLocaleString('ko-KR')}
           </span>
+          {isAdmin && !isCommentAuthor && (
+            <span className="admin-badge-small">🛡️</span>
+          )}
         </div>
         <div className="comment-content">{comment.content}</div>
         <div className="comment-actions">
           <button className="comment-reply-btn" onClick={() => setShowReplyInput(!showReplyInput)}>
             답글 달기
           </button>
-          {isCommentAuthor && (
+          {canDeleteComment && (
             <button className="comment-delete-btn" onClick={() => onDelete(comment.id)}>
               삭제
             </button>
@@ -267,27 +281,35 @@ function CommentItem({ comment, currentUser, onDelete, onReply }) {
         {/* 대댓글 목록 */}
         {comment.replies && comment.replies.length > 0 && (
           <div className="replies-list">
-            {comment.replies.map((reply) => (
-              <div key={reply.id} className="reply-item">
-                <div className="comment-author-avatar">
-                  {(reply.authorName || 'U').charAt(0).toUpperCase()}
-                </div>
-                <div className="comment-body">
-                  <div className="comment-header">
-                    <span className="comment-author">{reply.authorName}</span>
-                    <span className="comment-date">
-                      {new Date(reply.createdAt).toLocaleString('ko-KR')}
-                    </span>
+            {comment.replies.map((reply) => {
+              const isReplyAuthor = currentUser && reply.authorId === currentUser.id;
+              const canDeleteReply = isReplyAuthor || isAdmin;
+
+              return (
+                <div key={reply.id} className="reply-item">
+                  <div className="comment-author-avatar">
+                    {(reply.authorName || 'U').charAt(0).toUpperCase()}
                   </div>
-                  <div className="comment-content">{reply.content}</div>
-                  {currentUser && reply.authorId === currentUser.id && (
-                    <button className="comment-delete-btn" onClick={() => onDelete(reply.id)}>
-                      삭제
-                    </button>
-                  )}
+                  <div className="comment-body">
+                    <div className="comment-header">
+                      <span className="comment-author">{reply.authorName}</span>
+                      <span className="comment-date">
+                        {new Date(reply.createdAt).toLocaleString('ko-KR')}
+                      </span>
+                      {isAdmin && !isReplyAuthor && (
+                        <span className="admin-badge-small">🛡️</span>
+                      )}
+                    </div>
+                    <div className="comment-content">{reply.content}</div>
+                    {canDeleteReply && (
+                      <button className="comment-delete-btn" onClick={() => onDelete(reply.id)}>
+                        삭제
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
