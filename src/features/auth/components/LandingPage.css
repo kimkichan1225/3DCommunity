@@ -165,6 +165,23 @@
   transform: translateY(-1px) scale(1.02);
 }
 
+.btn-developer {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+  color: white;
+  border: 3px solid #ff6b6b;
+  font-weight: 700;
+}
+
+.btn-developer:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+  background: linear-gradient(135deg, #ff8e53, #ff6b6b);
+}
+
+.btn-developer:active {
+  transform: translateY(-1px) scale(1.02);
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .logo {

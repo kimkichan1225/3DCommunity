@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 
-const ProtectedRoute = ({ children, requiredRole }) => {
+const ProtectedRoute = ({ children, requiredRole, requiredRoles }) => {
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -32,7 +32,10 @@ const ProtectedRoute = ({ children, requiredRole }) => {
         // 권한 확인
         const userRole = decoded.role || decoded.authorities?.[0]?.authority;
 
-        if (requiredRole && userRole !== requiredRole) {
+        // 여러 역할 중 하나라도 일치하면 허용
+        if (requiredRoles && Array.isArray(requiredRoles)) {
+          setIsAuthorized(requiredRoles.includes(userRole));
+        } else if (requiredRole && userRole !== requiredRole) {
           setIsAuthorized(false);
         } else {
           setIsAuthorized(true);
@@ -48,7 +51,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     };
 
     checkAuth();
-  }, [requiredRole]);
+  }, [requiredRole, requiredRoles]);
 
   if (isChecking) {
     return (

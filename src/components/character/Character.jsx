@@ -15,7 +15,7 @@ import ChatBubble from './ChatBubble';
  * - 멀티플레이어 위치 동기화
  * - 채팅 말풍선 표시
  */
-function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, chatMessage }) {
+function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage }) {
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
 
@@ -105,6 +105,42 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // initialPosition이 변경되면 RigidBody 위치 업데이트 (지도 모드에서는 제외)
+  useEffect(() => {
+    if (initialPosition && rigidBodyRef.current && modelGroupRef.current && !isMapFull) {
+      const [x, y, z] = initialPosition;
+      const currentPos = rigidBodyRef.current.translation();
+      
+      // 위치 차이 계산
+      const dx = currentPos.x - x;
+      const dy = currentPos.y - y;
+      const dz = currentPos.z - z;
+      const distanceSq = dx * dx + dy * dy + dz * dz;
+      
+      // 거리가 0.1보다 크면 위치 복구
+      if (distanceSq > 0.01) {
+        console.log('🔄 위치 복귀 시작:', initialPosition, '→', [currentPos.x, currentPos.y, currentPos.z]);
+        
+        // 물리 엔진에서 위치 설정
+        rigidBodyRef.current.setTranslation(
+          { x, y, z },
+          true // wake - 절대 필요!
+        );
+        
+        // 모델도 즉시 동기화
+        if (modelGroupRef.current) {
+          modelGroupRef.current.position.set(x, y, z);
+        }
+        
+        // 속도 초기화 (중요)
+        rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        
+        console.log('✅ 위치 복귀 완료:', initialPosition);
+      }
+    }
+  }, [initialPosition, isMapFull]);
+
   useEffect(() => {
     let animToPlay = 'Idle';
     if (forward || backward || left || right) {
@@ -186,6 +222,11 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     // RigidBody의 위치를 모델에 동기화
     const rbPosition = rigidBodyRef.current.translation();
     modelGroupRef.current.position.set(rbPosition.x, rbPosition.y, rbPosition.z);
+
+    // 위치가 업데이트되면 부모 컴포넌트에 알림 (Level1 위치 저장용)
+    if (onPositionUpdate) {
+      onPositionUpdate([rbPosition.x, rbPosition.y, rbPosition.z]);
+    }
 
     // 모델의 회전은 입력에 의한 회전만 적용
     modelGroupRef.current.quaternion.copy(currentRotationRef.current);

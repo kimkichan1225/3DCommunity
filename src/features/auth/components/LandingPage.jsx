@@ -117,6 +117,20 @@ function LandingPage({ onLoginSuccess }) {
             >
               회원가입
             </button>
+            <button
+              className="btn btn-developer"
+              onClick={(e) => {
+                e.stopPropagation();
+                // 로그인 없이 게임 실행
+                onLoginSuccess({
+                  id: 'dev_' + Date.now(),
+                  username: 'Developer',
+                  email: 'developer@local'
+                });
+              }}
+            >
+              🔧 개발자 모드
+            </button>
           </div>
         )}
 

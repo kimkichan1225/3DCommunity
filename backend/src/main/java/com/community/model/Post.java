@@ -58,6 +58,11 @@ public class Post {
     @Builder.Default
     private Boolean isDeleted = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "post_type", nullable = false, length = 20)
+    @Builder.Default
+    private PostType postType = PostType.GENERAL;
+
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();

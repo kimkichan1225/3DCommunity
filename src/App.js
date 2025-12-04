@@ -11,20 +11,25 @@ import Character from './components/character/Character';
 import CameraController from './components/camera/CameraController';
 import CameraLogger from './components/camera/CameraLogger';
 import Level1 from './components/map/Level1';
+import MapFloor from './components/map/MapFloor';
 import GlobalChat from './components/GlobalChat';
 import OtherPlayer from './components/character/OtherPlayer';
 import ProfileAvatar from './components/ProfileAvatar';
 import PhoneUI from './components/PhoneUI';
+import SuspensionNotification from './components/SuspensionNotification';
 import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 
 function App() {
   const characterRef = useRef();
   const mainCameraRef = useRef();
+  const level1PositionRef = useRef(null); // Level1 위치를 ref로 저장 (즉시 접근 용도)
+  const mapReadyCalledRef = useRef(false); // handleMapReady가 한 번만 호출되도록 제어
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [mapHelpers, setMapHelpers] = useState(null);
   const [initialPosition, setInitialPosition] = useState(null);
+  const [level1Position, setLevel1Position] = useState(null); // Level1 위치 저장 (state)
   const [isMapFull, setIsMapFull] = useState(false);
   const [showBoardModal, setShowBoardModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -48,12 +53,29 @@ function App() {
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
   const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
 
+  // 캐릭터 현재 위치 업데이트 콜백
+  const handleCharacterPositionUpdate = (position) => {
+    if (!isMapFull) {
+      // Level1 모드일 때만 위치 저장
+      level1PositionRef.current = position;
+      setLevel1Position(position);
+      console.log('📍 현재 캐릭터 위치 저장:', position);
+    }
+  };
+
   // 캐릭터 이동을 막아야 하는 상태 (모달 열림 또는 채팅 입력 중)
   const shouldBlockMovement = isAnyModalOpen || isChatInputFocused;
 
   // Map가 준비되면 호출됩니다. mapbox의 projection helper를 받아와
   // 현재 위치(geolocation)를 Three.js 월드 좌표로 변환해 캐릭터 초기 위치를 설정합니다.
   const handleMapReady = ({ map, project }) => {
+    // handleMapReady가 여러 번 호출되지 않도록 제어
+    if (mapReadyCalledRef.current) {
+      console.warn('⚠️  handleMapReady already called, skipping');
+      return;
+    }
+    mapReadyCalledRef.current = true;
+
     setMapHelpers({ map, project });
 
     // Try to get browser geolocation; fallback to map center
@@ -79,7 +101,7 @@ function App() {
             const threeZ = -dz;
 
             setInitialPosition([threeX, threeY, threeZ]);
-            console.log('Initial character position (Three.js):', [threeX, threeY, threeZ]);
+            console.log('✅ Initial character position (Three.js):', [threeX, threeY, threeZ]);
           } catch (e) {
             console.warn('map projection failed', e);
           }
@@ -101,8 +123,24 @@ function App() {
 
   const toggleMapFull = (e) => {
     e && e.stopPropagation();
-    // Only toggle the boolean; Mapbox3D will mount when isMapFull becomes true
-    setIsMapFull((v) => !v);
+    
+    if (!isMapFull) {
+      // 지도 진입
+      console.log('🗺️ 지도 진입 - isMapFull:', false, '→ true');
+      setIsMapFull(true);
+      // ⚠️ initialPosition을 건드리지 않음! (자동 위치 복구 방지)
+    } else {
+      // 지도 종료: 저장된 Level1 위치로 복귀
+      console.log('🗺️ 지도 종료 - isMapFull:', true, '→ false');
+      const posToRestore = level1PositionRef.current || level1Position;
+      if (posToRestore) {
+        console.log('📍 저장된 위치로 복귀:', posToRestore);
+        setInitialPosition(posToRestore);
+      } else {
+        console.warn('⚠️ 복귀할 위치가 없습니다');
+      }
+      setIsMapFull(false);
+    }
   };
 
   // Helper: request geolocation and set initialPosition using provided project helper
@@ -336,9 +374,13 @@ function App() {
         <Mapbox3D onMapReady={handleMapReady} isFull={isMapFull} />
       )}
 
-      {/* 프로필 아바타 (좌측 상단, 로그인한 사용자만 표시) */}
+      {/* 프로필 아바타 (로그인한 사용자만 표시) */}
       {isLoggedIn && (
-        <button className="profile-avatar-button" onClick={() => setShowProfileModal(true)} title="프로필">
+        <button
+          className={`profile-avatar-button ${isMapFull ? 'bottom-right' : 'top-left'}`}
+          onClick={() => setShowProfileModal(true)}
+          title="프로필"
+        >
           <ProfileAvatar
             profileImage={userProfile?.selectedProfile}
             outlineImage={userProfile?.selectedOutline}
@@ -348,7 +390,7 @@ function App() {
       )}
 
       {/* 아이콘 메뉴 (로그인한 사용자만 표시) */}
-      {isLoggedIn && (
+      {isLoggedIn && !isMapFull && (
         <div className={`icon-menu-container ${isMenuExpanded ? 'expanded' : ''}`}>
           {/* 토글 화살표 */}
           <button
@@ -403,6 +445,11 @@ function App() {
         className="three-canvas"
         camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
         shadows
+        gl={{ 
+          alpha: true, // 투명 배경 활성화
+          antialias: true,
+          preserveDrawingBuffer: true
+        }}
         style={{ width: '100%', height: '100%' }}
       >
         <ambientLight intensity={0.5} />
@@ -439,6 +486,8 @@ function App() {
                   username={username}
                   userId={userId}
                   multiplayerService={multiplayerService}
+                  isMapFull={isMapFull}
+                  onPositionUpdate={handleCharacterPositionUpdate}
                   chatMessage={myChatMessage}
                 />
                 <CameraLogger />
@@ -466,6 +515,8 @@ function App() {
               mainCameraRef={mainCameraRef}
               isLoggedIn={isLoggedIn}
             />
+            {/* 지도 모드일 때만 MapFloor 렌더링 */}
+            {isMapFull && <MapFloor />}
             <Level1 characterRef={characterRef} mainCameraRef={mainCameraRef} />
           </Physics>
         </Suspense>
@@ -479,7 +530,7 @@ function App() {
 
       {/* 맵 전체화면일 때 뒤로가기 버튼 (왼쪽 상단) */}
       {isMapFull && (
-        <button className="map-back-button" onClick={toggleMapFull}>Back</button>
+        <button className="map-back-button prominent" onClick={toggleMapFull}>Back</button>
       )}
 
       {/* 게시판 모달 */}
@@ -508,6 +559,9 @@ function App() {
         userId={userId}
         username={username}
       />
+
+      {/* 제재 알림 (로그인한 사용자만) */}
+      {isLoggedIn && <SuspensionNotification />}
 
       {/* 전체 채팅 (로그인한 사용자만, 맵 전체화면 아닐 때만 표시) */}
       {isLoggedIn && !isMapFull && (
