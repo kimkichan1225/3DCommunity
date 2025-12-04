@@ -1,6 +1,7 @@
 package com.community.dto;
 
 import com.community.model.Post;
+import com.community.model.PostType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,7 @@ public class PostDto {
         private String title;
         private String content;
         private String images;
+        private PostType postType;  // 게시글 타입 (기본값: GENERAL)
     }
 
     @Data
@@ -27,6 +29,7 @@ public class PostDto {
         private String title;
         private String content;
         private String images;
+        private PostType postType;  // 게시글 타입
     }
 
     @Data
@@ -45,6 +48,7 @@ public class PostDto {
         private Integer viewCount;
         private Integer likeCount;
         private Integer commentCount;
+        private PostType postType;  // 게시글 타입
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -64,6 +68,7 @@ public class PostDto {
                         (int) post.getComments().stream()
                             .filter(c -> !c.getIsDeleted())
                             .count() : 0)
+                    .postType(post.getPostType())
                     .createdAt(post.getCreatedAt())
                     .updatedAt(post.getUpdatedAt())
                     .build();
@@ -82,6 +87,7 @@ public class PostDto {
         private Integer viewCount;
         private Integer likeCount;
         private Integer commentCount;
+        private PostType postType;  // 게시글 타입
         private LocalDateTime createdAt;
 
         public static ListResponse from(Post post) {
@@ -96,6 +102,7 @@ public class PostDto {
                         (int) post.getComments().stream()
                             .filter(c -> !c.getIsDeleted())
                             .count() : 0)
+                    .postType(post.getPostType())
                     .createdAt(post.getCreatedAt())
                     .build();
         }

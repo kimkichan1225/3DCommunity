@@ -5,13 +5,8 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
     todayNewUsers: 0,
-    onlineUsers: 0,
     totalPosts: 0,
     totalComments: 0,
-    pendingReports: 0,
-    activeRooms: 0,
-    todayRevenue: 0,
-    monthlyRevenue: 0,
   });
 
   const [loading, setLoading] = useState(true);
@@ -63,55 +58,45 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon online-icon">🟢</div>
-          <div className="stat-info">
-            <h3>실시간 접속자</h3>
-            <p className="stat-value">{stats.onlineUsers.toLocaleString()}</p>
-            <p className="stat-detail">현재 온라인</p>
-          </div>
-        </div>
-
         {/* 게시판 통계 */}
         <div className="stat-card">
           <div className="stat-icon post-icon">📝</div>
           <div className="stat-info">
-            <h3>게시글</h3>
+            <h3>전체 게시글</h3>
             <p className="stat-value">{stats.totalPosts.toLocaleString()}</p>
             <p className="stat-detail">댓글: {stats.totalComments.toLocaleString()}</p>
           </div>
         </div>
 
-        <div className="stat-card alert">
-          <div className="stat-icon report-icon">🚨</div>
+        {/* 일반 게시글 */}
+        <div className="stat-card small">
           <div className="stat-info">
-            <h3>미처리 신고</h3>
-            <p className="stat-value">{stats.pendingReports}</p>
-            <p className="stat-detail">
-              {stats.pendingReports > 0 ? '확인 필요' : '처리 완료'}
-            </p>
+            <h4>일반</h4>
+            <p className="stat-value-small">{(stats.generalPosts || 0).toLocaleString()}</p>
           </div>
         </div>
 
-        {/* 게임 통계 */}
-        <div className="stat-card">
-          <div className="stat-icon room-icon">🎮</div>
+        {/* 질문 게시글 */}
+        <div className="stat-card small">
           <div className="stat-info">
-            <h3>활성 게임 방</h3>
-            <p className="stat-value">{stats.activeRooms}</p>
-            <p className="stat-detail">현재 진행 중</p>
+            <h4>❓ 질문</h4>
+            <p className="stat-value-small">{(stats.questionPosts || 0).toLocaleString()}</p>
           </div>
         </div>
 
-        {/* 매출 통계 */}
-        <div className="stat-card">
-          <div className="stat-icon revenue-icon">💰</div>
+        {/* 짤 게시글 */}
+        <div className="stat-card small">
           <div className="stat-info">
-            <h3>오늘 매출</h3>
-            <p className="stat-value">₩{stats.todayRevenue.toLocaleString()}</p>
-            <p className="stat-detail">
-              이번 달: ₩{stats.monthlyRevenue.toLocaleString()}
-            </p>
+            <h4>🖼️ 짤</h4>
+            <p className="stat-value-small">{(stats.imagePosts || 0).toLocaleString()}</p>
+          </div>
+        </div>
+
+        {/* 영상 게시글 */}
+        <div className="stat-card small">
+          <div className="stat-info">
+            <h4>🎬 영상</h4>
+            <p className="stat-value-small">{(stats.videoPosts || 0).toLocaleString()}</p>
           </div>
         </div>
       </div>

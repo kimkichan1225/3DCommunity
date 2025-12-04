@@ -1,6 +1,7 @@
 package com.community.repository;
 
 import com.community.model.Post;
+import com.community.model.PostType;
 import com.community.model.Board;
 import com.community.model.User;
 import org.springframework.data.domain.Page;
@@ -29,4 +30,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // 내용 검색
     Page<Post> findByBoardIdAndContentContainingAndIsDeletedFalseOrderByCreatedAtDesc(
             Long boardId, String keyword, Pageable pageable);
+
+    // 타입별 게시글 목록
+    Page<Post> findByBoardIdAndPostTypeAndIsDeletedFalseOrderByCreatedAtDesc(
+            Long boardId, PostType postType, Pageable pageable);
+
+    // 타입별 게시글 수 (관리자용)
+    long countByBoardIdAndPostTypeAndIsDeletedFalse(Long boardId, PostType postType);
 }
