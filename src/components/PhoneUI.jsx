@@ -5,12 +5,21 @@ import ChatList from './phone/ChatList';
 
 function PhoneUI({ isOpen, onClose, userId, username }) {
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' or 'chats'
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 300); // 애니메이션 시간과 동일
+  };
 
   if (!isOpen) return null;
 
   return (
     <div className="phone-ui-overlay">
-      <div className="phone-container">
+      <div className={`phone-container ${isClosing ? 'closing' : ''}`}>
         {/* 폰 상단 (노치) */}
         <div className="phone-notch">
           <div className="notch-speaker"></div>
@@ -19,7 +28,7 @@ function PhoneUI({ isOpen, onClose, userId, username }) {
         {/* 폰 헤더 */}
         <div className="phone-header">
           <h2 className="phone-title">MetaPlaza</h2>
-          <button className="phone-close-btn" onClick={onClose}>×</button>
+          <button className="phone-close-btn" onClick={handleClose}>×</button>
         </div>
 
         {/* 탭 네비게이션 */}

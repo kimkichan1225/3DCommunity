@@ -52,6 +52,22 @@
   }
 }
 
+@keyframes slideOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* 닫기 애니메이션 */
+.phone-container.closing {
+  animation: slideOut 0.3s ease-in forwards;
+}
+
 /* 노치 (상단 카메라 부분) */
 .phone-notch {
   height: 30px;
