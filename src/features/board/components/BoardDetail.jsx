@@ -119,6 +119,19 @@ function BoardDetail({ post, onBack, onEdit, onDelete }) {
   // 수정/삭제 버튼 표시 여부: 작성자 본인이거나 관리자
   const canEdit = isAuthor || isAdmin;
 
+  // 수정 버튼 클릭 시 게시글 상세 정보를 가져와서 전달
+  const handleEditClick = async () => {
+    try {
+      // 게시글 상세 정보 조회 (모든 필드 포함)
+      const fullPostData = await boardService.getPost(post.id);
+      console.log('✅ 수정을 위한 게시글 전체 데이터:', fullPostData);
+      onEdit && onEdit(fullPostData);
+    } catch (err) {
+      console.error('❌ 게시글 상세 조회 실패:', err);
+      alert('게시글 정보를 불러오는데 실패했습니다.');
+    }
+  };
+
   return (
     <div className="board-detail">
       {/* 뒤로가기 버튼 */}
@@ -132,7 +145,7 @@ function BoardDetail({ post, onBack, onEdit, onDelete }) {
           <h2 className="board-detail-title">{post.title}</h2>
           {canEdit && (
             <div className="board-detail-actions-top">
-              <button className="board-action-btn-small edit-btn" onClick={() => onEdit && onEdit(post)}>
+              <button className="board-action-btn-small edit-btn" onClick={handleEditClick}>
                 <FaEdit /> 수정
               </button>
               <button className="board-action-btn-small delete-btn" onClick={() => onDelete && onDelete(post.id)}>
