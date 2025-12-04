@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './FriendList.css';
+import friendService from '../../services/friendService';
 
 function FriendList({ userId, username }) {
   const [friends, setFriends] = useState([]);
@@ -7,49 +8,81 @@ function FriendList({ userId, username }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // TODO: 백엔드 API 연동 후 실제 데이터 가져오기
+  // 친구 목록 및 요청 불러오기
   useEffect(() => {
-    // 임시 더미 데이터
-    setFriends([
-      { id: 1, username: '김철수', isOnline: true, profile: 1 },
-      { id: 2, username: '이영희', isOnline: false, profile: 2 },
-      { id: 3, username: '박민수', isOnline: true, profile: 3 },
-    ]);
-
-    setPendingRequests([
-      { id: 4, username: '최지은', profile: 1 },
-    ]);
+    loadFriends();
+    loadPendingRequests();
   }, [userId]);
 
-  const handleAcceptFriend = (friendId) => {
-    // TODO: 백엔드 API 호출
-    console.log('친구 수락:', friendId);
-    setPendingRequests(prev => prev.filter(req => req.id !== friendId));
-  };
-
-  const handleRejectFriend = (friendId) => {
-    // TODO: 백엔드 API 호출
-    console.log('친구 거절:', friendId);
-    setPendingRequests(prev => prev.filter(req => req.id !== friendId));
-  };
-
-  const handleRemoveFriend = (friendId) => {
-    // TODO: 백엔드 API 호출
-    if (window.confirm('정말 친구를 삭제하시겠습니까?')) {
-      console.log('친구 삭제:', friendId);
-      setFriends(prev => prev.filter(f => f.id !== friendId));
+  const loadFriends = async () => {
+    try {
+      const data = await friendService.getFriends();
+      setFriends(data);
+    } catch (error) {
+      console.error('친구 목록 로드 실패:', error);
     }
   };
 
-  const handleAddFriend = () => {
+  const loadPendingRequests = async () => {
+    try {
+      const data = await friendService.getReceivedRequests();
+      setPendingRequests(data);
+    } catch (error) {
+      console.error('친구 요청 로드 실패:', error);
+    }
+  };
+
+  const handleAcceptFriend = async (friendshipId) => {
+    try {
+      await friendService.acceptFriendRequest(friendshipId);
+      alert('친구 요청을 수락했습니다.');
+      loadFriends();
+      loadPendingRequests();
+    } catch (error) {
+      alert(error.response?.data?.message || '친구 수락에 실패했습니다.');
+    }
+  };
+
+  const handleRejectFriend = async (friendshipId) => {
+    try {
+      await friendService.rejectFriendRequest(friendshipId);
+      alert('친구 요청을 거절했습니다.');
+      loadPendingRequests();
+    } catch (error) {
+      alert(error.response?.data?.message || '친구 거절에 실패했습니다.');
+    }
+  };
+
+  const handleRemoveFriend = async (friendshipId) => {
+    if (!window.confirm('정말 친구를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await friendService.removeFriend(friendshipId);
+      alert('친구를 삭제했습니다.');
+      loadFriends();
+    } catch (error) {
+      alert(error.response?.data?.message || '친구 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleAddFriend = async () => {
     if (!searchQuery.trim()) {
       alert('사용자명을 입력하세요.');
       return;
     }
-    // TODO: 백엔드 API 호출
-    console.log('친구 추가 요청:', searchQuery);
-    alert(`${searchQuery}님에게 친구 요청을 보냈습니다.`);
-    setSearchQuery('');
+
+    try {
+      setLoading(true);
+      await friendService.sendFriendRequest(searchQuery);
+      alert(`${searchQuery}님에게 친구 요청을 보냈습니다.`);
+      setSearchQuery('');
+    } catch (error) {
+      alert(error.response?.data?.message || '친구 요청에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredFriends = friends.filter(friend =>
@@ -63,13 +96,13 @@ function FriendList({ userId, username }) {
         <input
           type="text"
           className="friend-search-input"
-          placeholder="사용자명으로 친구 검색..."
+          placeholder="닉네임으로 친구 검색..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleAddFriend()}
         />
-        <button className="friend-add-btn" onClick={handleAddFriend}>
-          추가
+        <button className="friend-add-btn" onClick={handleAddFriend} disabled={loading}>
+          {loading ? '...' : '추가'}
         </button>
       </div>
 
@@ -81,8 +114,8 @@ function FriendList({ userId, username }) {
           </h3>
           <div className="friend-requests">
             {pendingRequests.map(request => (
-              <div key={request.id} className="friend-request-item">
-                <div className="friend-avatar" data-profile={request.profile}>
+              <div key={request.friendshipId} className="friend-request-item">
+                <div className="friend-avatar" data-profile={request.selectedProfile || 1}>
                   {request.username.charAt(0)}
                 </div>
                 <div className="friend-info">
@@ -92,13 +125,13 @@ function FriendList({ userId, username }) {
                 <div className="friend-actions">
                   <button
                     className="accept-btn"
-                    onClick={() => handleAcceptFriend(request.id)}
+                    onClick={() => handleAcceptFriend(request.friendshipId)}
                   >
                     수락
                   </button>
                   <button
                     className="reject-btn"
-                    onClick={() => handleRejectFriend(request.id)}
+                    onClick={() => handleRejectFriend(request.friendshipId)}
                   >
                     거절
                   </button>
@@ -121,8 +154,8 @@ function FriendList({ userId, username }) {
         ) : (
           <div className="friends-grid">
             {filteredFriends.map(friend => (
-              <div key={friend.id} className="friend-item">
-                <div className="friend-avatar" data-profile={friend.profile}>
+              <div key={friend.friendshipId} className="friend-item">
+                <div className="friend-avatar" data-profile={friend.selectedProfile || 1}>
                   {friend.isOnline && <div className="online-indicator"></div>}
                   {friend.username.charAt(0)}
                 </div>
@@ -134,7 +167,7 @@ function FriendList({ userId, username }) {
                 </div>
                 <button
                   className="remove-friend-btn"
-                  onClick={() => handleRemoveFriend(friend.id)}
+                  onClick={() => handleRemoveFriend(friend.friendshipId)}
                   title="친구 삭제"
                 >
                   ×
