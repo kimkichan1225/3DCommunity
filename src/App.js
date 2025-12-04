@@ -285,7 +285,7 @@ function App() {
       )}
 
       {/* 아이콘 메뉴 (로그인한 사용자만 표시) */}
-      {isLoggedIn && (
+      {isLoggedIn && !isMapFull && (
         <div className={`icon-menu-container ${isMenuExpanded ? 'expanded' : ''}`}>
           {/* 토글 화살표 */}
           <button
@@ -426,7 +426,7 @@ function App() {
 
       {/* 맵 전체화면일 때 뒤로가기 버튼 (왼쪽 상단) */}
       {isMapFull && (
-        <button className="map-back-button" onClick={toggleMapFull}>Back</button>
+        <button className="map-back-button prominent" onClick={toggleMapFull}>Back</button>
       )}
 
       {/* 게시판 모달 */}

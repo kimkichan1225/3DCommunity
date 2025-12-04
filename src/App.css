@@ -68,14 +68,14 @@
   transform: scale(1.05);
 }
 
-/* 프로필 아바타 버튼 (좌측 상단) */
+/* 프로필 아바타 버튼 (우측 하단) */
 .profile-avatar-button {
   position: fixed;
-  top: 20px;
-  left: 20px;
+  bottom: 32px;
+  right: 32px;
   z-index: 100;
-  width: 150px;
-  height: 150px;
+  width: 120px;
+  height: 120px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -106,6 +106,31 @@
   padding: 6px 10px;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.map-back-button.prominent {
+  position: fixed;
+  top: 32px;
+  left: 32px;
+  z-index: 1000;
+  background: linear-gradient(90deg, #ff6b6b 0%, #ff8e53 100%);
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  padding: 18px 40px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+  filter: drop-shadow(0 0 8px #ff8e53);
+}
+
+.map-back-button.prominent:hover {
+  background: linear-gradient(90deg, #ff8e53 0%, #ff6b6b 100%);
+  filter: drop-shadow(0 0 16px #ff6b6b);
+  transform: scale(1.08);
 }
 
 .map-token-warning {
