@@ -14,6 +14,7 @@ import Level1 from './components/map/Level1';
 import GlobalChat from './components/GlobalChat';
 import OtherPlayer from './components/character/OtherPlayer';
 import ProfileAvatar from './components/ProfileAvatar';
+import PhoneUI from './components/PhoneUI';
 import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 
@@ -28,6 +29,7 @@ function App() {
   const [showBoardModal, setShowBoardModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
+  const [showPhoneUI, setShowPhoneUI] = useState(false);
   const [username, setUsername] = useState('');
   const [userId, setUserId] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -44,7 +46,7 @@ function App() {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
-  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showPhoneUI || showLanding;
 
   // 캐릭터 이동을 막아야 하는 상태 (모달 열림 또는 채팅 입력 중)
   const shouldBlockMovement = isAnyModalOpen || isChatInputFocused;
@@ -364,13 +366,13 @@ function App() {
             <button className="icon-button" onClick={() => console.log('알람')} title="알람">
               <img src="/resources/Icon/Alarm-icon.png" alt="Alarm" />
             </button>
-            <button className="icon-button" onClick={() => console.log('채팅')} title="채팅">
+            <button className="icon-button" onClick={() => setShowPhoneUI(true)} title="채팅">
               <img src="/resources/Icon/Chat-icon.png" alt="Chat" />
             </button>
             <button className="icon-button" onClick={() => console.log('이벤트')} title="이벤트">
               <img src="/resources/Icon/Event-icon.png" alt="Event" />
             </button>
-            <button className="icon-button" onClick={() => console.log('친구목록')} title="친구목록">
+            <button className="icon-button" onClick={() => setShowPhoneUI(true)} title="친구목록">
               <img src="/resources/Icon/Friend-icon.png" alt="Friend" />
             </button>
             <button className="icon-button" onClick={() => setShowSettingModal(true)} title="설정">
@@ -501,6 +503,14 @@ function App() {
       {showSettingModal && (
         <SettingModal onClose={() => setShowSettingModal(false)} />
       )}
+
+      {/* Phone UI (친구목록/채팅) */}
+      <PhoneUI
+        isOpen={showPhoneUI}
+        onClose={() => setShowPhoneUI(false)}
+        userId={userId}
+        username={username}
+      />
 
       {/* 전체 채팅 (로그인한 사용자만, 맵 전체화면 아닐 때만 표시) */}
       {isLoggedIn && !isMapFull && (
