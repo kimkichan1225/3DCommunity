@@ -1,49 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import './ChatList.css';
 import ChatRoom from './ChatRoom';
+import messageService from '../../services/messageService';
 
 function ChatList({ userId, username }) {
   const [chatRooms, setChatRooms] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // TODO: 백엔드 API 연동 후 실제 데이터 가져오기
+  // 대화 목록 불러오기
   useEffect(() => {
-    // 임시 더미 데이터
-    setChatRooms([
-      {
-        id: 1,
-        friendId: 1,
-        friendName: '김철수',
-        lastMessage: '안녕하세요! 오늘 광장에서 봤어요',
-        lastMessageTime: new Date(Date.now() - 1000 * 60 * 5), // 5분 전
-        unreadCount: 2,
-        isOnline: true,
-        profile: 1,
-      },
-      {
-        id: 2,
-        friendId: 2,
-        friendName: '이영희',
-        lastMessage: '내일 같이 미니게임 할래요?',
-        lastMessageTime: new Date(Date.now() - 1000 * 60 * 60), // 1시간 전
-        unreadCount: 0,
-        isOnline: false,
-        profile: 2,
-      },
-      {
-        id: 3,
-        friendId: 3,
-        friendName: '박민수',
-        lastMessage: '좋아요! 그럼 그때 봐요~',
-        lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1일 전
-        unreadCount: 0,
-        isOnline: true,
-        profile: 3,
-      },
-    ]);
+    loadConversations();
   }, [userId]);
 
+  const loadConversations = async () => {
+    try {
+      setLoading(true);
+      const data = await messageService.getConversations();
+      // 백엔드 데이터를 프론트엔드 형식으로 변환
+      const formattedData = data.map(conv => ({
+        id: conv.friendId,
+        friendId: conv.friendId,
+        friendName: conv.friendUsername,
+        lastMessage: conv.lastMessage || '대화를 시작해보세요!',
+        lastMessageTime: conv.lastMessageTime ? new Date(conv.lastMessageTime) : null,
+        unreadCount: conv.unreadCount || 0,
+        isOnline: conv.friendIsOnline || false,
+        profile: conv.friendProfile || 1,
+      }));
+      setChatRooms(formattedData);
+    } catch (error) {
+      console.error('대화 목록 로드 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatTime = (date) => {
+    if (!date) return '';
+
     const now = new Date();
     const diff = now - date;
     const minutes = Math.floor(diff / 1000 / 60);
@@ -71,20 +66,26 @@ function ChatList({ userId, username }) {
 
   const handleBackToList = () => {
     setSelectedChat(null);
+    // 목록으로 돌아올 때 대화 목록 새로고침
+    loadConversations();
   };
 
-  const handleSendMessage = (message) => {
-    // TODO: 백엔드 API 호출
-    console.log('메시지 전송:', message);
+  const handleSendMessage = async (message) => {
+    try {
+      await messageService.sendDM(selectedChat.friendId, message);
 
-    // 채팅방 목록 업데이트
-    setChatRooms(prev =>
-      prev.map(room =>
-        room.id === selectedChat.id
-          ? { ...room, lastMessage: message, lastMessageTime: new Date() }
-          : room
-      )
-    );
+      // 채팅방 목록 업데이트
+      setChatRooms(prev =>
+        prev.map(room =>
+          room.id === selectedChat.id
+            ? { ...room, lastMessage: message, lastMessageTime: new Date() }
+            : room
+        )
+      );
+    } catch (error) {
+      console.error('메시지 전송 실패:', error);
+      throw error;
+    }
   };
 
   // 채팅방이 선택되면 ChatRoom 컴포넌트 표시
@@ -103,11 +104,15 @@ function ChatList({ userId, username }) {
   // 채팅 목록 표시
   return (
     <div className="chat-list-container">
-      {chatRooms.length === 0 ? (
+      {loading ? (
+        <div className="empty-state">
+          <div className="empty-text">로딩 중...</div>
+        </div>
+      ) : chatRooms.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">💬</div>
           <div className="empty-text">아직 대화 내역이 없습니다.</div>
-          <div className="empty-subtext">친구에게 메시지를 보내보세요!</div>
+          <div className="empty-subtext">친구 목록에서 친구를 추가한 후<br/>메시지를 보내보세요!</div>
         </div>
       ) : (
         <div className="chat-rooms">

@@ -1,41 +1,42 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChatRoom.css';
+import messageService from '../../services/messageService';
 
 function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // TODO: 백엔드 API 연동 후 실제 대화 내역 가져오기
+  // 대화 내역 불러오기
   useEffect(() => {
-    // 임시 더미 데이터
-    setMessages([
-      {
-        id: 1,
-        senderId: chat.friendId,
-        senderName: chat.friendName,
-        content: '안녕하세요!',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30),
-        isMine: false,
-      },
-      {
-        id: 2,
-        senderId: currentUserId,
-        senderName: currentUsername,
-        content: '안녕하세요! 반가워요',
-        timestamp: new Date(Date.now() - 1000 * 60 * 25),
-        isMine: true,
-      },
-      {
-        id: 3,
-        senderId: chat.friendId,
-        senderName: chat.friendName,
-        content: '오늘 광장에서 봤어요',
-        timestamp: new Date(Date.now() - 1000 * 60 * 5),
-        isMine: false,
-      },
-    ]);
-  }, [chat, currentUserId, currentUsername]);
+    loadMessages();
+  }, [chat.friendId]);
+
+  const loadMessages = async () => {
+    try {
+      setLoading(true);
+      const data = await messageService.getDMHistory(chat.friendId, 50);
+
+      // 백엔드 데이터를 프론트엔드 형식으로 변환
+      const formattedMessages = data.map(msg => ({
+        id: msg.messageId,
+        senderId: msg.senderId,
+        senderName: msg.senderUsername,
+        content: msg.content,
+        timestamp: new Date(msg.sentAt),
+        isMine: msg.senderId === currentUserId,
+      }));
+
+      setMessages(formattedMessages);
+    } catch (error) {
+      console.error('메시지 로드 실패:', error);
+      // 에러 시 빈 배열로 설정
+      setMessages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 새 메시지가 추가되면 스크롤 하단으로
   useEffect(() => {
@@ -54,21 +55,31 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
     });
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputMessage.trim()) return;
 
-    const newMessage = {
-      id: messages.length + 1,
-      senderId: currentUserId,
-      senderName: currentUsername,
-      content: inputMessage.trim(),
-      timestamp: new Date(),
-      isMine: true,
-    };
+    const messageContent = inputMessage.trim();
 
-    setMessages(prev => [...prev, newMessage]);
-    onSendMessage(inputMessage.trim());
-    setInputMessage('');
+    try {
+      // 백엔드에 메시지 전송
+      await onSendMessage(messageContent);
+
+      // 즉시 UI에 메시지 추가 (낙관적 업데이트)
+      const newMessage = {
+        id: Date.now(), // 임시 ID
+        senderId: currentUserId,
+        senderName: currentUsername,
+        content: messageContent,
+        timestamp: new Date(),
+        isMine: true,
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+      setInputMessage('');
+    } catch (error) {
+      console.error('메시지 전송 실패:', error);
+      alert('메시지 전송에 실패했습니다.');
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -99,7 +110,18 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
 
       {/* 메시지 목록 */}
       <div className="messages-container">
-        {messages.map((message, index) => {
+        {loading ? (
+          <div className="empty-state">
+            <div className="empty-text">메시지를 불러오는 중...</div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">💬</div>
+            <div className="empty-text">아직 대화 내역이 없습니다.</div>
+            <div className="empty-subtext">첫 메시지를 보내보세요!</div>
+          </div>
+        ) : (
+          messages.map((message, index) => {
           // 날짜 구분선 표시 (전 메시지와 날짜가 다르면)
           const showDateDivider =
             index === 0 ||
@@ -135,7 +157,8 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
               </div>
             </React.Fragment>
           );
-        })}
+        })
+        )}
         <div ref={messagesEndRef} />
       </div>
 
