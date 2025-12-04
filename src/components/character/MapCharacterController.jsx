@@ -17,7 +17,8 @@ function MapCharacterController({
   username, 
   userId, 
   multiplayerService, 
-  chatMessage 
+  chatMessage,
+  onPositionUpdate
 }) {
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
@@ -116,7 +117,7 @@ function MapCharacterController({
       return;
     }
 
-    const speed = shift ? 18 : 8;
+    const speed = shift ? 20 : 10;
     const direction = new THREE.Vector3();
 
     if (forward) direction.z -= 1;
@@ -168,6 +169,11 @@ function MapCharacterController({
     // 위치 동기화
     const translation = rigidBodyRef.current.translation();
     modelGroupRef.current.position.set(translation.x, translation.y, translation.z);
+
+    // 부모 컴포넌트에 위치 업데이트 전달 (지도 중심 이동용)
+    if (onPositionUpdate) {
+      onPositionUpdate([translation.x, translation.y, translation.z]);
+    }
 
     // 멀티플레이어 위치 업데이트 (100ms마다)
     const now = Date.now();

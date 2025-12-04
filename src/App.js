@@ -2,6 +2,7 @@ import React, { Suspense, useRef, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import './App.css';
 import { Physics } from '@react-three/rapier';
+import mapboxgl from 'mapbox-gl';
 import { Mapbox3D } from './features/map';
 import { LandingPage } from './features/auth';
 import { BoardModal } from './features/board';
@@ -24,6 +25,7 @@ function App() {
   const mainCameraRef = useRef();
   const level1PositionRef = useRef(null); // Level1 위치를 ref로 저장 (즉시 접근 용도)
   const mapReadyCalledRef = useRef(false); // handleMapReady가 한 번만 호출되도록 제어
+  const lastMapUpdateRef = useRef(0); // 지도 업데이트 throttle
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [mapHelpers, setMapHelpers] = useState(null);
@@ -57,6 +59,50 @@ function App() {
       // Level1 모드일 때만 위치 저장
       level1PositionRef.current = position;
       setLevel1Position(position);
+    }
+  };
+
+  // 지도 모드에서 캐릭터 위치 업데이트 - Mapbox 지도 중심 이동 (y축 고정, throttle 적용)
+  const handleMapCharacterPositionUpdate = (position) => {
+    if (!mapHelpers || !mapHelpers.map || !mapHelpers.project) return;
+
+    // 100ms마다만 지도 업데이트 (성능 및 안정성 개선)
+    const now = Date.now();
+    if (now - lastMapUpdateRef.current < 100) {
+      return;
+    }
+    lastMapUpdateRef.current = now;
+
+    const [threeX, threeY, threeZ] = position;
+    
+    try {
+      const map = mapHelpers.map;
+      const project = mapHelpers.project;
+      
+      // 현재 지도 중심을 Mercator 좌표로 변환
+      const center = map.getCenter();
+      const centerMerc = project([center.lng, center.lat], 0);
+      const unitsPerMeter = centerMerc.meterInMercatorCoordinateUnits || 1;
+
+      // Three.js 좌표 차이를 Mercator 단위로 변환 (x, z만 변환 - y축 무시)
+      const dxMeters = threeX;
+      const dzMeters = -threeZ; // Z는 반대 방향
+      const dxMerc = dxMeters * unitsPerMeter;
+      const dzMerc = dzMeters * unitsPerMeter;
+
+      // 새로운 Mercator 좌표 계산
+      const newMercX = centerMerc.translateX + dxMerc;
+      const newMercY = centerMerc.translateY + dzMerc;
+
+      // Mercator 좌표를 LngLat으로 변환
+      // MercatorCoordinate.fromLngLat의 역함수를 사용하여 LngLat 복구
+      const mercatorCoord = new mapboxgl.MercatorCoordinate(newMercX, newMercY, 0);
+      const lngLat = mercatorCoord.toLngLat();
+      
+      // 지도 중심 업데이트
+      map.setCenter(lngLat);
+    } catch (e) {
+      console.warn('Map position update failed:', e);
     }
   };
 
@@ -488,6 +534,7 @@ function App() {
                     userId={userId}
                     multiplayerService={multiplayerService}
                     chatMessage={myChatMessage}
+                    onPositionUpdate={handleMapCharacterPositionUpdate}
                   />
                 ) : (
                   /* Level1 모드: 기존 Character 사용 */
