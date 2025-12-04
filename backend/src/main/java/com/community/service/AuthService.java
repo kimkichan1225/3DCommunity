@@ -19,6 +19,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final ActiveUserService activeUserService;
 
     public AuthResponse register(RegisterRequest request) {
         // 이메일 중복 체크
@@ -55,6 +56,12 @@ public class AuthService {
         // 비밀번호 검증
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 중복 로그인 체크
+        String userId = user.getId().toString();
+        if (activeUserService.isUserActive(userId)) {
+            throw new RuntimeException("현재 접속 중인 아이디입니다.");
         }
 
         // JWT 토큰 생성

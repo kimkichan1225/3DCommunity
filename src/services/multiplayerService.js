@@ -14,6 +14,8 @@ class MultiplayerService {
     this.onPlayerLeaveCallback = null;
     this.onPositionUpdateCallback = null;
     this.onChatMessageCallback = null;
+    this.onDuplicateLoginCallback = null;
+    this.onOnlineCountUpdateCallback = null;
   }
 
   connect(userId, username, isObserver = false) {
@@ -36,19 +38,20 @@ class MultiplayerService {
         // Subscribe to player join/leave events
         this.client.subscribe('/topic/players', (message) => {
           const data = JSON.parse(message.body);
-          console.log('Player event:', data);
 
-          // Compare as strings to handle type differences
-          // In observer mode, show all players; in player mode, hide own join/leave
-          if (data.action === 'join') {
-            if (this.isObserver || String(data.userId) !== String(this.userId)) {
-              this.onPlayerJoinCallback?.(data);
-            }
+          // Handle all actions including 'duplicate'
+          if (data.action === 'join' || data.action === 'duplicate') {
+            this.onPlayerJoinCallback?.(data);
           } else if (data.action === 'leave') {
-            if (this.isObserver || String(data.userId) !== String(this.userId)) {
-              this.onPlayerLeaveCallback?.(data);
-            }
+            // Always handle leave events (observer will see all, player will filter in App.js)
+            this.onPlayerLeaveCallback?.(data);
           }
+        });
+
+        // Subscribe to online count updates
+        this.client.subscribe('/topic/online-count', (message) => {
+          const count = parseInt(message.body);
+          this.onOnlineCountUpdateCallback?.(count);
         });
 
         // Subscribe to position updates
@@ -150,6 +153,14 @@ class MultiplayerService {
 
   onChatMessage(callback) {
     this.onChatMessageCallback = callback;
+  }
+
+  onDuplicateLogin(callback) {
+    this.onDuplicateLoginCallback = callback;
+  }
+
+  onOnlineCountUpdate(callback) {
+    this.onOnlineCountUpdateCallback = callback;
   }
 }
 

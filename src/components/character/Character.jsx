@@ -4,6 +4,7 @@ import { useGLTF, useAnimations, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { RigidBody, CapsuleCollider } from '@react-three/rapier';
 import { useKeyboardControls } from '../../useKeyboardControls';
+import ChatBubble from './ChatBubble';
 
 /**
  * Character 컴포넌트
@@ -12,8 +13,13 @@ import { useKeyboardControls } from '../../useKeyboardControls';
  * - 발걸음 소리 재생
  * - 닉네임 표시
  * - 멀티플레이어 위치 동기화
+ * - 채팅 말풍선 표시
  */
-function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate }) {
+<<<<<<< HEAD
+function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage }) {
+=======
+function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, chatMessage }) {
+>>>>>>> origin/kim
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
 
@@ -302,6 +308,11 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
               {username}
             </Text>
           </Billboard>
+        )}
+
+        {/* 채팅 말풍선 */}
+        {chatMessage && (
+          <ChatBubble message={chatMessage} position={[0, 8.5, 0]} duration={5000} />
         )}
       </group>
     </>

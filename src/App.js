@@ -37,11 +37,20 @@ function App() {
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [otherPlayers, setOtherPlayers] = useState({});
   const [userProfile, setUserProfile] = useState(null); // 사용자 프로필 (selectedProfile, selectedOutline 포함)
+  const [onlineCount, setOnlineCount] = useState(0); // 온라인 인원 수
+  const [playerJoinEvent, setPlayerJoinEvent] = useState(null); // 플레이어 입장 이벤트
+  const [playerLeaveEvent, setPlayerLeaveEvent] = useState(null); // 플레이어 퇴장 이벤트
+  const [isChatInputFocused, setIsChatInputFocused] = useState(false); // 채팅 입력 포커스 상태
+  const [playerChatMessages, setPlayerChatMessages] = useState({}); // 플레이어별 채팅 메시지 { userId: { message, timestamp } }
+  const [myChatMessage, setMyChatMessage] = useState(''); // 내 캐릭터의 채팅 메시지
+  const myMessageTimerRef = useRef(null); // 내 메시지 타이머 참조
+  const playerMessageTimersRef = useRef({}); // 다른 플레이어 메시지 타이머 참조
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인
   const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
 
+<<<<<<< HEAD
   // 캐릭터 현재 위치 업데이트 콜백
   const handleCharacterPositionUpdate = (position) => {
     if (!isMapFull) {
@@ -51,6 +60,10 @@ function App() {
       console.log('📍 현재 캐릭터 위치 저장:', position);
     }
   };
+=======
+  // 캐릭터 이동을 막아야 하는 상태 (모달 열림 또는 채팅 입력 중)
+  const shouldBlockMovement = isAnyModalOpen || isChatInputFocused;
+>>>>>>> origin/kim
 
   // Map가 준비되면 호출됩니다. mapbox의 projection helper를 받아와
   // 현재 위치(geolocation)를 Three.js 월드 좌표로 변환해 캐릭터 초기 위치를 설정합니다.
@@ -184,7 +197,14 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // Call logout API to remove user from active list
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout API error:', error);
+    }
+
     // Disconnect from multiplayer service
     multiplayerService.disconnect();
     setIsLoggedIn(false);
@@ -193,41 +213,96 @@ function App() {
     setUserId('');
     setUserProfile(null);
     setOtherPlayers({});
+    setOnlineCount(0);
+  };
+
+  // 채팅 메시지 처리 함수 (GlobalChat에서 호출됨)
+  const handleChatMessage = (data) => {
+    if (String(data.userId) === String(userId)) {
+      // My own message
+      // 이전 타이머가 있으면 취소
+      if (myMessageTimerRef.current) {
+        clearTimeout(myMessageTimerRef.current);
+      }
+
+      setMyChatMessage(data.message);
+
+      // 새 타이머 설정 - 5초 후 삭제
+      myMessageTimerRef.current = setTimeout(() => {
+        setMyChatMessage('');
+        myMessageTimerRef.current = null;
+      }, 5000);
+    } else {
+      // Other player's message
+      // 이전 타이머가 있으면 취소
+      if (playerMessageTimersRef.current[data.userId]) {
+        clearTimeout(playerMessageTimersRef.current[data.userId]);
+      }
+
+      setPlayerChatMessages((prev) => ({
+        ...prev,
+        [data.userId]: {
+          message: data.message,
+          timestamp: Date.now()
+        }
+      }));
+
+      // 새 타이머 설정 - 5초 후 삭제
+      playerMessageTimersRef.current[data.userId] = setTimeout(() => {
+        setPlayerChatMessages((prev) => {
+          const updated = { ...prev };
+          delete updated[data.userId];
+          return updated;
+        });
+        delete playerMessageTimersRef.current[data.userId];
+      }, 5000);
+    }
   };
 
   // Connect to multiplayer service - even when not logged in (as observer)
   useEffect(() => {
     // Set up callbacks first
     multiplayerService.onPlayerJoin((data) => {
-      console.log('👤 Player joined:', data);
-      // If logged in, ignore own join event
-      if (isLoggedIn && String(data.userId) === String(userId)) {
-        console.log('Ignoring own join event');
+      // 중복 로그인 체크
+      if (data.action === 'duplicate') {
+        // 자신의 중복 로그인 시도인지 확인
+        if (isLoggedIn && String(data.userId) === String(userId)) {
+          alert('현재 접속 중인 아이디입니다.');
+          handleLogout();
+        }
         return;
       }
-      setOtherPlayers((prev) => {
-        const updated = {
-          ...prev,
-          [data.userId]: {
-            userId: data.userId,
-            username: data.username,
-            position: [5, 10, 5], // Higher position to make it visible
-            rotationY: 0,
-            animation: 'idle'
-          }
-        };
-        console.log('[App] Updated otherPlayers:', updated);
-        return updated;
-      });
+
+      // If logged in, ignore own join event
+      if (isLoggedIn && String(data.userId) === String(userId)) {
+        return;
+      }
+
+      // Update otherPlayers state
+      setOtherPlayers((prev) => ({
+        ...prev,
+        [data.userId]: {
+          userId: data.userId,
+          username: data.username,
+          position: [5, 10, 5], // Higher position to make it visible
+          rotationY: 0,
+          animation: 'idle'
+        }
+      }));
+
+      // Notify GlobalChat
+      setPlayerJoinEvent({ ...data, timestamp: Date.now() });
     });
 
     multiplayerService.onPlayerLeave((data) => {
-      console.log('👋 Player left:', data);
       setOtherPlayers((prev) => {
         const updated = { ...prev };
         delete updated[data.userId];
         return updated;
       });
+
+      // Notify GlobalChat
+      setPlayerLeaveEvent({ ...data, timestamp: Date.now() });
     });
 
     multiplayerService.onPositionUpdate((data) => {
@@ -243,9 +318,9 @@ function App() {
       }));
     });
 
-    multiplayerService.onChatMessage((data) => {
-      console.log('💬 Chat message:', data);
-      // Handle chat messages (can integrate with GlobalChat later)
+    // Online count update handler
+    multiplayerService.onOnlineCountUpdate((count) => {
+      setOnlineCount(count);
     });
 
     // Connect as observer if not logged in, or as player if logged in
@@ -264,6 +339,31 @@ function App() {
       multiplayerService.disconnect();
     };
   }, [isLoggedIn, userId, username]);
+
+  // Cleanup on window close or refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isLoggedIn) {
+        // Disconnect WebSocket - this will trigger SessionDisconnectEvent on server
+        multiplayerService.disconnect();
+
+        // Send beacon to logout endpoint (non-blocking)
+        const token = authService.getToken();
+        if (token) {
+          const url = `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/auth/logout`;
+          const blob = new Blob([JSON.stringify({})], { type: 'application/json' });
+          navigator.sendBeacon(url, blob);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isLoggedIn]);
+
 
 
   return (
@@ -380,12 +480,13 @@ function App() {
                 <Character
                   characterRef={characterRef}
                   initialPosition={initialPosition}
-                  isMovementDisabled={isAnyModalOpen && !isMapFull}
+                  isMovementDisabled={shouldBlockMovement && !isMapFull}
                   username={username}
                   userId={userId}
                   multiplayerService={multiplayerService}
                   isMapFull={isMapFull}
                   onPositionUpdate={handleCharacterPositionUpdate}
+                  chatMessage={myChatMessage}
                 />
                 <CameraLogger />
               </>
@@ -402,6 +503,7 @@ function App() {
                   position={player.position}
                   rotationY={player.rotationY}
                   animation={player.animation}
+                  chatMessage={playerChatMessages[player.userId]?.message}
                 />
               ))}
 
@@ -450,7 +552,16 @@ function App() {
 
       {/* 전체 채팅 (로그인한 사용자만, 맵 전체화면 아닐 때만 표시) */}
       {isLoggedIn && !isMapFull && (
-        <GlobalChat isVisible={true} />
+        <GlobalChat
+          isVisible={true}
+          username={username}
+          userId={userId}
+          onlineCount={onlineCount}
+          playerJoinEvent={playerJoinEvent}
+          playerLeaveEvent={playerLeaveEvent}
+          onInputFocusChange={setIsChatInputFocused}
+          onChatMessage={handleChatMessage}
+        />
       )}
     </div>
   );

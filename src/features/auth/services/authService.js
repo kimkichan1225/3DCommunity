@@ -17,9 +17,22 @@ class AuthService {
     return response.data;
   }
 
-  logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  async logout() {
+    try {
+      const token = this.getToken();
+      if (token) {
+        await axios.post(`${API_URL}/api/auth/logout`, {}, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Logout API error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
   }
 
   getCurrentUser() {

@@ -47,5 +47,7 @@ jwt:
 logging:
   level:
     com.community: ${LOG_LEVEL:DEBUG}
-    org.springframework.web: ${LOG_LEVEL:DEBUG}
+    org.springframework.web: INFO
     org.springframework.security: ${LOG_LEVEL:DEBUG}
+    org.springframework.messaging: INFO
+    org.springframework.web.SimpLogging: INFO

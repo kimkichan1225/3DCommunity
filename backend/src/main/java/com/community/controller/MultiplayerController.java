@@ -3,13 +3,22 @@ package com.community.controller;
 import com.community.dto.ChatMessageDto;
 import com.community.dto.PlayerJoinDto;
 import com.community.dto.PlayerPositionDto;
+import com.community.service.ActiveUserService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
 
 @Controller
+@RequiredArgsConstructor
+@Slf4j
 public class MultiplayerController {
+
+    private final ActiveUserService activeUserService;
+    private final SimpMessageSendingOperations messagingTemplate;
 
     /**
      * 플레이어 입장
@@ -19,12 +28,42 @@ public class MultiplayerController {
     @MessageMapping("/player.join")
     @SendTo("/topic/players")
     public PlayerJoinDto playerJoin(PlayerJoinDto joinDto, SimpMessageHeaderAccessor headerAccessor) {
+        String userId = joinDto.getUserId();
+        String sessionId = headerAccessor.getSessionId();
+
+        // 중복 로그인 체크
+        if (activeUserService.isUserActive(userId)) {
+            log.warn("Duplicate login attempt for userId: {}", userId);
+
+            // 중복 로그인 시도를 특별한 action으로 브로드캐스트
+            PlayerJoinDto errorDto = new PlayerJoinDto();
+            errorDto.setUserId(userId);
+            errorDto.setUsername(joinDto.getUsername());
+            errorDto.setAction("duplicate");
+            errorDto.setTimestamp(System.currentTimeMillis());
+
+            return errorDto; // 중복 로그인 알림 브로드캐스트
+        }
+
+        // 사용자 등록
+        boolean added = activeUserService.addUser(userId, sessionId);
+        if (!added) {
+            log.error("Failed to add user {} to active users", userId);
+            return null;
+        }
+
         // Add username in websocket session
         headerAccessor.getSessionAttributes().put("username", joinDto.getUsername());
-        headerAccessor.getSessionAttributes().put("userId", joinDto.getUserId());
+        headerAccessor.getSessionAttributes().put("userId", userId);
 
         joinDto.setAction("join");
         joinDto.setTimestamp(System.currentTimeMillis());
+
+        log.info("User {} joined. Current online count: {}", userId, activeUserService.getActiveUserCount());
+
+        // 온라인 인원 수 브로드캐스트
+        messagingTemplate.convertAndSend("/topic/online-count",
+                activeUserService.getActiveUserCount());
 
         return joinDto;
     }

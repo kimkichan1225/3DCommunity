@@ -88,6 +88,39 @@
   transform: scale(1.1);
 }
 
+/* 탭 메뉴 */
+.chat-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-tab {
+  flex: 1;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.chat-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.chat-tab.active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+}
+
 /* 메시지 영역 */
 .global-chat-messages {
   flex: 1;
@@ -96,8 +129,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 320px;
-  min-height: 320px;
+  max-height: 274px;
+  min-height: 274px;
 }
 
 /* 스크롤바 스타일 */
@@ -132,6 +165,39 @@
 .chat-message:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 시스템 메시지 */
+.chat-message.system-message {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  text-align: center;
+}
+
+.chat-message.system-message .message-text {
+  color: #93c5fd;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* 내 메시지 */
+.chat-message.my-message {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.chat-message.my-message .message-username {
+  color: #34d399;
+  text-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+}
+
+/* 빈 메시지 상태 */
+.chat-empty-message {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  padding: 40px 20px;
+  font-style: italic;
 }
 
 @keyframes messageSlideIn {
@@ -175,7 +241,7 @@
 .global-chat-input-container {
   display: flex;
   gap: 8px;
-  padding: 4px 12px;
+  padding: 6px 12px;
   background: rgba(255, 255, 255, 0.05);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0 0 14px 14px;
