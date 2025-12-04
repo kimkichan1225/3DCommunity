@@ -143,9 +143,9 @@ function BoardManagement() {
             {showPostForm ? (
               <PostForm
                 boardId={activeTab === 'notice' ? 2 : 1}
-                editingPost={editingPost}
+                post={editingPost}
                 onSuccess={handlePostSuccess}
-                onCancel={() => {
+                onClose={() => {
                   setShowPostForm(false);
                   setEditingPost(null);
                 }}
