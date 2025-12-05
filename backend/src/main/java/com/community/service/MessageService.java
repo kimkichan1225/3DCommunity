@@ -10,6 +10,7 @@ import com.community.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class MessageService {
     private final UserRepository userRepository;
     private final FriendshipRepository friendshipRepository;
     private final ActiveUserService activeUserService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * DM 전송
@@ -54,7 +56,11 @@ public class MessageService {
 
         message = messageRepository.save(message);
 
-        return MessageDto.fromEntity(message);
+        // WebSocket 알림: 수신자에게 새 메시지 알림
+        MessageDto messageDto = MessageDto.fromEntity(message);
+        messagingTemplate.convertAndSend("/topic/dm/" + receiverId, messageDto);
+
+        return messageDto;
     }
 
     /**

@@ -3,7 +3,7 @@ import './ChatList.css';
 import ChatRoom from './ChatRoom';
 import messageService from '../../services/messageService';
 
-function ChatList({ userId, username }) {
+function ChatList({ userId, username, onlinePlayers }) {
   const [chatRooms, setChatRooms] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -116,30 +116,37 @@ function ChatList({ userId, username }) {
         </div>
       ) : (
         <div className="chat-rooms">
-          {chatRooms.map(chat => (
-            <div
-              key={chat.id}
-              className="chat-room-item"
-              onClick={() => handleChatClick(chat)}
-            >
-              <div className="chat-avatar" data-profile={chat.profile}>
-                {chat.isOnline && <div className="online-indicator"></div>}
-                {chat.friendName.charAt(0)}
-              </div>
-              <div className="chat-content">
-                <div className="chat-header">
-                  <div className="chat-name">{chat.friendName}</div>
-                  <div className="chat-time">{formatTime(chat.lastMessageTime)}</div>
+          {chatRooms.map(chat => {
+            // 멀티플레이어 데이터에서 실시간 온라인 상태 확인
+            const isOnlineNow = onlinePlayers && Object.values(onlinePlayers).some(
+              player => player.username === chat.friendName
+            );
+
+            return (
+              <div
+                key={chat.id}
+                className="chat-room-item"
+                onClick={() => handleChatClick(chat)}
+              >
+                <div className="chat-avatar" data-profile={chat.profile}>
+                  {isOnlineNow && <div className="online-indicator"></div>}
+                  {chat.friendName.charAt(0)}
                 </div>
-                <div className="chat-preview">
-                  <div className="chat-last-message">{chat.lastMessage}</div>
-                  {chat.unreadCount > 0 && (
-                    <div className="chat-unread-badge">{chat.unreadCount}</div>
-                  )}
+                <div className="chat-content">
+                  <div className="chat-header">
+                    <div className="chat-name">{chat.friendName}</div>
+                    <div className="chat-time">{formatTime(chat.lastMessageTime)}</div>
+                  </div>
+                  <div className="chat-preview">
+                    <div className="chat-last-message">{chat.lastMessage}</div>
+                    {chat.unreadCount > 0 && (
+                      <div className="chat-unread-badge">{chat.unreadCount}</div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

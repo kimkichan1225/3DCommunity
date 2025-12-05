@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './FriendList.css';
 import friendService from '../../services/friendService';
+import multiplayerService from '../../services/multiplayerService';
 import Popup from '../Popup';
 
-function FriendList({ userId, username }) {
+function FriendList({ userId, username, onlinePlayers }) {
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,6 +16,26 @@ function FriendList({ userId, username }) {
   useEffect(() => {
     loadFriends();
     loadPendingRequests();
+
+    // WebSocket: 친구 업데이트 구독
+    multiplayerService.onFriendUpdate((data) => {
+      console.log('Friend update received in FriendList:', data);
+
+      if (data.type === 'FRIEND_REQUEST') {
+        // 새 친구 요청 받음
+        setPopupMessage(`${data.requesterUsername}님이 친구 요청을 보냈습니다.`);
+        loadPendingRequests(); // 목록 새로고침
+      } else if (data.type === 'FRIEND_ACCEPTED') {
+        // 친구 요청이 수락됨
+        setPopupMessage(`${data.acceptorUsername}님이 친구 요청을 수락했습니다.`);
+        loadFriends(); // 친구 목록 새로고침
+      }
+    });
+
+    // Cleanup
+    return () => {
+      multiplayerService.onFriendUpdate(null);
+    };
   }, [userId]);
 
   const loadFriends = async () => {
@@ -157,27 +178,34 @@ function FriendList({ userId, username }) {
           </div>
         ) : (
           <div className="friends-grid">
-            {filteredFriends.map(friend => (
-              <div key={friend.friendshipId} className="friend-item">
-                <div className="friend-avatar" data-profile={friend.selectedProfile || 1}>
-                  {friend.isOnline && <div className="online-indicator"></div>}
-                  {friend.username.charAt(0)}
-                </div>
-                <div className="friend-info">
-                  <div className="friend-name">{friend.username}</div>
-                  <div className={`friend-status ${friend.isOnline ? 'online' : 'offline'}`}>
-                    {friend.isOnline ? '온라인' : '오프라인'}
+            {filteredFriends.map(friend => {
+              // 멀티플레이어 데이터에서 실시간 온라인 상태 확인
+              const isOnlineNow = onlinePlayers && Object.values(onlinePlayers).some(
+                player => player.username === friend.username
+              );
+
+              return (
+                <div key={friend.friendshipId} className="friend-item">
+                  <div className="friend-avatar" data-profile={friend.selectedProfile || 1}>
+                    {isOnlineNow && <div className="online-indicator"></div>}
+                    {friend.username.charAt(0)}
                   </div>
+                  <div className="friend-info">
+                    <div className="friend-name">{friend.username}</div>
+                    <div className={`friend-status ${isOnlineNow ? 'online' : 'offline'}`}>
+                      {isOnlineNow ? '온라인' : '오프라인'}
+                    </div>
+                  </div>
+                  <button
+                    className="remove-friend-btn"
+                    onClick={() => handleRemoveFriend(friend.friendshipId)}
+                    title="친구 삭제"
+                  >
+                    ×
+                  </button>
                 </div>
-                <button
-                  className="remove-friend-btn"
-                  onClick={() => handleRemoveFriend(friend.friendshipId)}
-                  title="친구 삭제"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

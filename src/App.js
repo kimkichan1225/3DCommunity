@@ -558,6 +558,7 @@ function App() {
         onClose={() => setShowPhoneUI(false)}
         userId={userId}
         username={username}
+        onlinePlayers={otherPlayers}
       />
 
       {/* 제재 알림 (로그인한 사용자만) */}

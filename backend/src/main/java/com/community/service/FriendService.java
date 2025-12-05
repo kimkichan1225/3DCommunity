@@ -7,10 +7,13 @@ import com.community.model.User;
 import com.community.repository.FriendshipRepository;
 import com.community.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -21,6 +24,7 @@ public class FriendService {
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
     private final ActiveUserService activeUserService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 친구 요청 보내기 (닉네임으로)
@@ -57,7 +61,18 @@ public class FriendService {
                 .status(FriendshipStatus.PENDING)
                 .build();
 
-        return friendshipRepository.save(friendship);
+        friendship = friendshipRepository.save(friendship);
+
+        // WebSocket 알림: 받는 사람에게 친구 요청 알림
+        Map<String, Object> notification = new HashMap<>();
+        notification.put("type", "FRIEND_REQUEST");
+        notification.put("friendshipId", friendship.getId());
+        notification.put("requesterId", requester.getId());
+        notification.put("requesterUsername", requester.getNickname());
+        notification.put("requesterProfile", requester.getSelectedProfile() != null ? requester.getSelectedProfile().getId().intValue() : null);
+        messagingTemplate.convertAndSend("/topic/friend-updates/" + addressee.getId(), notification);
+
+        return friendship;
     }
 
     /**
@@ -105,6 +120,14 @@ public class FriendService {
 
         friendship.setStatus(FriendshipStatus.ACCEPTED);
         friendshipRepository.save(friendship);
+
+        // WebSocket 알림: 요청자에게 수락 알림
+        Map<String, Object> notification = new HashMap<>();
+        notification.put("type", "FRIEND_ACCEPTED");
+        notification.put("friendshipId", friendship.getId());
+        notification.put("acceptorId", friendship.getAddressee().getId());
+        notification.put("acceptorUsername", friendship.getAddressee().getNickname());
+        messagingTemplate.convertAndSend("/topic/friend-updates/" + friendship.getRequester().getId(), notification);
     }
 
     /**

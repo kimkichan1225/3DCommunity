@@ -3,7 +3,7 @@ import './PhoneUI.css';
 import FriendList from './phone/FriendList';
 import ChatList from './phone/ChatList';
 
-function PhoneUI({ isOpen, onClose, userId, username }) {
+function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' or 'chats'
   const [isClosing, setIsClosing] = useState(false);
 
@@ -52,10 +52,10 @@ function PhoneUI({ isOpen, onClose, userId, username }) {
         {/* 컨텐츠 영역 */}
         <div className="phone-content">
           {activeTab === 'friends' && (
-            <FriendList userId={userId} username={username} />
+            <FriendList userId={userId} username={username} onlinePlayers={onlinePlayers} />
           )}
           {activeTab === 'chats' && (
-            <ChatList userId={userId} username={username} />
+            <ChatList userId={userId} username={username} onlinePlayers={onlinePlayers} />
           )}
         </div>
 

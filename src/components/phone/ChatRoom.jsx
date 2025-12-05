@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChatRoom.css';
 import messageService from '../../services/messageService';
+import multiplayerService from '../../services/multiplayerService';
 import Popup from '../Popup';
 
 function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage }) {
@@ -10,9 +11,33 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
   const [popupMessage, setPopupMessage] = useState(null);
   const messagesEndRef = useRef(null);
 
-  // 대화 내역 불러오기
+  // 대화 내역 불러오기 및 WebSocket 구독
   useEffect(() => {
     loadMessages();
+
+    // WebSocket: DM 메시지 구독
+    multiplayerService.onDMMessage((data) => {
+      console.log('DM message received in ChatRoom:', data);
+
+      // 현재 채팅방의 친구로부터 온 메시지인지 확인
+      if (data.senderId === chat.friendId) {
+        const newMessage = {
+          id: data.id,
+          senderId: data.senderId,
+          senderName: data.senderUsername,
+          content: data.content,
+          timestamp: data.createdAt ? new Date(data.createdAt) : new Date(),
+          isMine: false,
+        };
+
+        setMessages(prev => [...prev, newMessage]);
+      }
+    });
+
+    // Cleanup
+    return () => {
+      multiplayerService.onDMMessage(null);
+    };
   }, [chat.friendId]);
 
   const loadMessages = async () => {
