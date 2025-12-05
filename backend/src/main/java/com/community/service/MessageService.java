@@ -122,4 +122,23 @@ public class MessageService {
 
         return conversations;
     }
+
+    /**
+     * 광장 메시지 저장
+     */
+    @Transactional
+    public Message savePlazaMessage(Long senderId, String content) {
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new RuntimeException("송신자를 찾을 수 없습니다."));
+
+        Message message = Message.builder()
+                .sender(sender)
+                .receiver(null)  // 광장 메시지는 수신자 없음
+                .content(content)
+                .messageType(Message.MessageType.PLAZA)
+                .roomId(null)
+                .build();
+
+        return messageRepository.save(message);
+    }
 }

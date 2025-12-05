@@ -35,4 +35,21 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // 사용자의 읽지 않은 DM 개수
     @Query("SELECT COUNT(m) FROM Message m WHERE m.messageType = 'DM' AND m.receiver.id = :userId AND m.createdAt > :lastCheckTime AND m.isDeleted = false")
     Long countUnreadDMs(@Param("userId") Long userId, @Param("lastCheckTime") LocalDateTime lastCheckTime);
+
+    // 관리자: 7일 이상 된 메시지 삭제
+    void deleteByCreatedAtBefore(LocalDateTime cutoffDate);
+
+    // 관리자: 특정 사용자의 메시지 검색 (페이지네이션)
+    @Query("SELECT m FROM Message m WHERE m.sender.id = :userId ORDER BY m.createdAt DESC")
+    org.springframework.data.domain.Page<Message> findBySenderId(@Param("userId") Long userId, Pageable pageable);
+
+    // 관리자: 키워드로 메시지 검색 (페이지네이션)
+    @Query("SELECT m FROM Message m WHERE m.content LIKE %:keyword% ORDER BY m.createdAt DESC")
+    org.springframework.data.domain.Page<Message> findByContentContaining(@Param("keyword") String keyword, Pageable pageable);
+
+    // 관리자: 메시지 타입별 검색 (페이지네이션)
+    org.springframework.data.domain.Page<Message> findByMessageTypeOrderByCreatedAtDesc(MessageType messageType, Pageable pageable);
+
+    // 관리자: 전체 메시지 조회 (페이지네이션)
+    org.springframework.data.domain.Page<Message> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }

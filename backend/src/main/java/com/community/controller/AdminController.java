@@ -5,6 +5,7 @@ import com.community.model.Role;
 import com.community.model.SuspensionHistory;
 import com.community.model.User;
 import com.community.service.AdminService;
+import com.community.service.AdminMessageService;
 import com.community.service.AuditLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class AdminController {
 
     private final AdminService adminService;
     private final AuditLogService auditLogService;
+    private final AdminMessageService adminMessageService;
 
     /**
      * 대시보드 통계 조회
@@ -191,5 +193,122 @@ public class AdminController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    // ==================== 채팅 로그 관리 API ====================
+
+    /**
+     * 전체 채팅 로그 조회 (페이지네이션)
+     */
+    @GetMapping("/chat-logs")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    public ResponseEntity<Page<ChatLogDto>> getAllChatLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ChatLogDto> logs = adminMessageService.getAllChatLogs(pageable);
+        return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * 메시지 타입별 채팅 로그 조회 (PLAZA, DM, LOCAL_ROOM)
+     */
+    @GetMapping("/chat-logs/type/{messageType}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    public ResponseEntity<Page<ChatLogDto>> getChatLogsByType(
+            @PathVariable String messageType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ChatLogDto> logs = adminMessageService.getChatLogsByType(messageType, pageable);
+            return ResponseEntity.ok(logs);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * 특정 사용자의 채팅 로그 조회
+     */
+    @GetMapping("/chat-logs/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    public ResponseEntity<Page<ChatLogDto>> getChatLogsByUser(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ChatLogDto> logs = adminMessageService.getChatLogsByUser(userId, pageable);
+        return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * 키워드로 채팅 로그 검색
+     */
+    @GetMapping("/chat-logs/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    public ResponseEntity<Page<ChatLogDto>> searchChatLogs(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ChatLogDto> logs = adminMessageService.searchChatLogs(keyword, pageable);
+        return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * 메시지 삭제 (소프트 삭제)
+     */
+    @DeleteMapping("/chat-logs/{messageId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    public ResponseEntity<String> deleteMessage(@PathVariable Long messageId) {
+        try {
+            adminMessageService.deleteMessage(messageId);
+            return ResponseEntity.ok("메시지가 삭제되었습니다.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * 메시지 복구
+     */
+    @PostMapping("/chat-logs/{messageId}/restore")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    public ResponseEntity<String> restoreMessage(@PathVariable Long messageId) {
+        try {
+            adminMessageService.restoreMessage(messageId);
+            return ResponseEntity.ok("메시지가 복구되었습니다.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * 메시지 영구 삭제
+     */
+    @DeleteMapping("/chat-logs/{messageId}/permanent")
+    @PreAuthorize("hasRole('DEVELOPER')")
+    public ResponseEntity<String> permanentlyDeleteMessage(@PathVariable Long messageId) {
+        try {
+            adminMessageService.permanentlyDeleteMessage(messageId);
+            return ResponseEntity.ok("메시지가 영구 삭제되었습니다.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * 7일 이상 된 메시지 수동 삭제
+     */
+    @PostMapping("/chat-logs/cleanup")
+    @PreAuthorize("hasRole('DEVELOPER')")
+    public ResponseEntity<String> manualCleanup() {
+        long deletedCount = adminMessageService.deleteOldMessagesManually();
+        return ResponseEntity.ok(deletedCount + "개의 오래된 메시지가 삭제되었습니다.");
     }
 }

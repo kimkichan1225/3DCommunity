@@ -1,0 +1,325 @@
+.chat-log-management {
+  padding: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.cleanup-button {
+  padding: 10px 20px;
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.cleanup-button:hover {
+  background-color: #ff5252;
+}
+
+.info-box {
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
+.info-box p {
+  margin: 5px 0;
+  color: #1976d2;
+  font-size: 14px;
+}
+
+/* 필터 영역 */
+.filters {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filter-group label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+}
+
+.filter-group select,
+.filter-group input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.reset-button {
+  padding: 8px 16px;
+  background-color: #757575;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.reset-button:hover {
+  background-color: #616161;
+}
+
+/* 에러 메시지 */
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  border-left: 4px solid #c62828;
+}
+
+/* 로딩 */
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+  color: #666;
+}
+
+/* 테이블 */
+.table-container {
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chat-log-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.chat-log-table thead {
+  background-color: #f5f5f5;
+  border-bottom: 2px solid #ddd;
+}
+
+.chat-log-table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+}
+
+.chat-log-table tbody tr {
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.chat-log-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.chat-log-table tbody tr.deleted-row {
+  background-color: #ffebee;
+  opacity: 0.7;
+}
+
+.chat-log-table td {
+  padding: 12px;
+  font-size: 13px;
+  color: #555;
+}
+
+.message-content {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+/* 메시지 타입 뱃지 */
+.message-type {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.message-type.plaza {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.message-type.dm {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.message-type.local_room {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+/* 상태 뱃지 */
+.status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status.active {
+  background-color: #c8e6c9;
+  color: #2e7d32;
+}
+
+.status.deleted {
+  background-color: #ffcdd2;
+  color: #c62828;
+}
+
+/* 작업 버튼 */
+.actions {
+  display: flex;
+  gap: 5px;
+}
+
+.actions button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.delete-button {
+  background-color: #ff9800;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #f57c00;
+}
+
+.restore-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.restore-button:hover {
+  background-color: #43a047;
+}
+
+.permanent-delete-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.permanent-delete-button:hover {
+  background-color: #d32f2f;
+}
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 20px;
+}
+
+.pagination button {
+  padding: 8px 16px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #1976d2;
+}
+
+.pagination button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+  min-width: 120px;
+  text-align: center;
+}
+
+/* 반응형 */
+@media (max-width: 1200px) {
+  .chat-log-table th,
+  .chat-log-table td {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .message-content {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group input,
+  .filter-group select {
+    width: 100%;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+}

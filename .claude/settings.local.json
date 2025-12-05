@@ -27,7 +27,8 @@
       "Bash(git fetch:*)",
       "Bash(git merge:*)",
       "Bash(./gradlew build:*)",
-      "Bash(./gradlew bootRun)"
+      "Bash(./gradlew bootRun)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

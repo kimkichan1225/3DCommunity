@@ -9,7 +9,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "messages")
+@Table(name = "messages", indexes = {
+    @Index(name = "idx_message_sender", columnList = "sender_id"),
+    @Index(name = "idx_message_receiver", columnList = "receiver_id"),
+    @Index(name = "idx_message_type", columnList = "message_type"),
+    @Index(name = "idx_message_created_at", columnList = "created_at"),
+    @Index(name = "idx_message_is_deleted", columnList = "is_deleted")
+})
 @Data
 @Builder
 @NoArgsConstructor
