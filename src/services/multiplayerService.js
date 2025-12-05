@@ -16,6 +16,8 @@ class MultiplayerService {
     this.onChatMessageCallback = null;
     this.onDuplicateLoginCallback = null;
     this.onOnlineCountUpdateCallback = null;
+    this.onFriendUpdateCallback = null;
+    this.onDMMessageCallback = null;
   }
 
   connect(userId, username, isObserver = false) {
@@ -69,6 +71,20 @@ class MultiplayerService {
           const data = JSON.parse(message.body);
           console.log('Chat message:', data);
           this.onChatMessageCallback?.(data);
+        });
+
+        // Subscribe to friend updates (친구 요청, 수락 등)
+        this.client.subscribe('/topic/friend-updates/' + this.userId, (message) => {
+          const data = JSON.parse(message.body);
+          console.log('Friend update:', data);
+          this.onFriendUpdateCallback?.(data);
+        });
+
+        // Subscribe to DM messages
+        this.client.subscribe('/topic/dm/' + this.userId, (message) => {
+          const data = JSON.parse(message.body);
+          console.log('DM message received:', data);
+          this.onDMMessageCallback?.(data);
         });
 
         // Send join message only if not in observer mode
@@ -161,6 +177,14 @@ class MultiplayerService {
 
   onOnlineCountUpdate(callback) {
     this.onOnlineCountUpdateCallback = callback;
+  }
+
+  onFriendUpdate(callback) {
+    this.onFriendUpdateCallback = callback;
+  }
+
+  onDMMessage(callback) {
+    this.onDMMessageCallback = callback;
   }
 }
 

@@ -1,6 +1,7 @@
 package com.community.controller;
 
 import com.community.dto.PostDto;
+import com.community.model.PostType;
 import com.community.model.User;
 import com.community.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -47,15 +48,16 @@ public class PostController {
         }
     }
 
-    // 게시판별 게시글 목록
+    // 게시판별 게시글 목록 (타입 필터링 옵션)
     @GetMapping("/board/{boardId}")
     public ResponseEntity<?> getPostsByBoard(
             @PathVariable Long boardId,
+            @RequestParam(required = false) PostType postType,  // 타입 필터: GENERAL, QUESTION, IMAGE, VIDEO (null이면 전체)
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<PostDto.ListResponse> response = postService.getPostsByBoard(boardId, pageable);
+            Page<PostDto.ListResponse> response = postService.getPostsByBoard(boardId, postType, pageable);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

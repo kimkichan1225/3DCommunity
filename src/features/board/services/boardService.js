@@ -29,10 +29,14 @@ class BoardService {
     return response.data;
   }
 
-  // 게시글 목록 조회
-  async getPosts(boardId, page = 0, size = 10) {
+  // 게시글 목록 조회 (타입 필터링 옵션)
+  async getPosts(boardId, page = 0, size = 10, postType = null) {
+    const params = { page, size };
+    if (postType) {
+      params.postType = postType;
+    }
     const response = await axios.get(`${API_URL}/api/posts/board/${boardId}`, {
-      params: { page, size }
+      params
     });
     return response.data;
   }

@@ -11,6 +11,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -58,11 +61,26 @@ public class AuthService {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
 
+        // 제재 상태 확인
+        if (user.isSuspended()) {
+            if (user.getIsPermanentlySuspended() != null && user.getIsPermanentlySuspended()) {
+                throw new RuntimeException("영구 정지된 계정입니다. 사유: " + user.getSuspensionReason());
+            } else if (user.getSuspendedUntil() != null) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                String suspendedUntil = user.getSuspendedUntil().format(formatter);
+                throw new RuntimeException("계정이 일시 정지되었습니다. 정지 해제일: " + suspendedUntil + " | 사유: " + user.getSuspensionReason());
+            }
+        }
+
         // 중복 로그인 체크
         String userId = user.getId().toString();
         if (activeUserService.isUserActive(userId)) {
             throw new RuntimeException("현재 접속 중인 아이디입니다.");
         }
+
+        // 마지막 로그인 시간 업데이트
+        user.setLastLoginAt(LocalDateTime.now());
+        userRepository.save(user);
 
         // JWT 토큰 생성
         String token = jwtTokenProvider.generateToken(user);
@@ -72,5 +90,12 @@ public class AuthService {
                 .user(UserDto.fromEntity(user))
                 .message("로그인 성공")
                 .build();
+    }
+
+    /**
+     * 닉네임 사용 가능 여부 확인
+     */
+    public boolean isUsernameAvailable(String username) {
+        return !userRepository.existsByUsername(username);
     }
 }

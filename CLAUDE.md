@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Current Branch Strategy:**
 - `main`: Production-ready code
-- `kim`: Current active development branch (as of 2025-11-30)
+- `kim`: Current active development branch (as of 2025-12-04)
 - `kichan`: Feature branch
 - Note: Use `kim` branch for latest development work
 
@@ -64,7 +64,7 @@ netlify deploy --prod        # Deploy to Netlify
 - **Spring Boot 3.2.0** (Java 17)
 - **Database**: PostgreSQL via Supabase
 - **Security**: Spring Security + JWT (JJWT 0.12.3)
-- **WebSocket**: Spring WebSocket (planned)
+- **WebSocket**: Spring WebSocket + STOMP (implemented)
 - **Build Tool**: Gradle
 
 ## Architecture
@@ -81,11 +81,7 @@ src/
 │   │   ├── services/authService.js
 │   │   └── index.js
 │   ├── board/
-│   │   ├── components/
-│   │   │   ├── BoardModal.jsx
-│   │   │   ├── BoardList.jsx
-│   │   │   ├── BoardDetail.jsx
-│   │   │   └── PostForm.jsx
+│   │   ├── components/BoardModal.jsx
 │   │   ├── services/boardService.js
 │   │   └── index.js
 │   ├── profile/
@@ -99,8 +95,11 @@ src/
 │       ├── components/SettingModal.jsx
 │       └── index.js
 │
-├── components/                     # 3D-specific components
-│   ├── character/Character.jsx    # Character model, physics, animations
+├── components/                     # Shared components
+│   ├── character/
+│   │   ├── Character.jsx          # Main player character
+│   │   ├── OtherPlayer.jsx        # Other player rendering
+│   │   └── ChatBubble.jsx         # Chat bubble UI
 │   ├── camera/
 │   │   ├── CameraController.jsx   # Camera following logic
 │   │   └── CameraLogger.jsx       # Debug logger (C key)
@@ -108,14 +107,29 @@ src/
 │   │   ├── Level1.jsx             # Level 1 scene wrapper
 │   │   ├── Level1Map.jsx          # PublicSquare.glb loader
 │   │   └── Sky.jsx                # Sky sphere
+│   ├── board/                     # Board UI components
+│   │   ├── BoardList.jsx
+│   │   ├── PostList.jsx
+│   │   ├── PostDetail.jsx
+│   │   ├── PostForm.jsx
+│   │   └── Comment.jsx
+│   ├── GlobalChat.jsx             # Global chat UI
+│   ├── ProfileAvatar.jsx          # Avatar display
 │   └── ProtectedRoute.jsx         # Route guard for admin
+│
+├── services/                       # Core services
+│   ├── authService.js             # (deprecated, use features/auth/services)
+│   ├── boardService.js            # (deprecated, use features/board/services)
+│   ├── profileService.js          # (deprecated, use features/profile/services)
+│   ├── adminProfileService.js     # Admin profile operations
+│   └── multiplayerService.js      # WebSocket multiplayer service
 │
 ├── pages/                          # Page-level components
 │   └── admin/
 │       ├── AdminLayout.jsx
 │       └── Dashboard.jsx
 │
-├── App.js                          # Main 3D scene
+├── App.js                          # Main 3D scene orchestrator
 ├── AppRouter.jsx                   # React Router config
 ├── useKeyboardControls.js         # Keyboard input hook
 └── index.js                        # Entry point (renders AppRouter)
@@ -267,11 +281,13 @@ App
 | Shift | Sprint (hold with movement) |
 | C | Log camera position to console |
 | ESC | Open/close menu modal |
+| Enter | Focus chat input |
 | Tab | Toggle player list (planned) |
 | E | Interact (planned) |
-| Enter | Open chat (planned) |
 
-**Modal Behavior**: When any modal is open, character movement is automatically disabled.
+**Movement Blocking**: Character movement is automatically disabled when:
+- Any modal is open (Board, Profile, Settings, Landing)
+- Chat input is focused
 
 ## Authentication Flow
 
@@ -458,14 +474,52 @@ const cameraOffset = new THREE.Vector3(-0.00, 28.35, 19.76);
 - Physics debug mode should be disabled in production
 - Use `--legacy-peer-deps` for npm install due to React 19 peer dependency warnings
 
+## Multiplayer System (WebSocket/STOMP)
+
+### Implementation
+- **Service**: `multiplayerService.js` using STOMP over WebSocket
+- **Backend**: Spring WebSocket with STOMP support
+- **Endpoint**: Connects to backend WebSocket server
+
+### Features
+- Real-time position synchronization for all players
+- Player join/leave notifications
+- Online player count tracking
+- Chat message broadcasting with bubble display
+- Character profile synchronization (selectedProfile, selectedOutline)
+
+### Key Components
+- **OtherPlayer.jsx**: Renders other connected players in 3D scene
+- **ChatBubble.jsx**: Displays chat messages above characters
+- **GlobalChat.jsx**: Global chat UI component
+- **multiplayerService.js**: Manages WebSocket connection and events
+
+### Events
+```javascript
+// Connect to multiplayer
+multiplayerService.connect(username, userId, userProfile)
+
+// Update position (sent automatically from Character.jsx)
+multiplayerService.updatePosition(position, rotation)
+
+// Send chat message
+multiplayerService.sendChatMessage(message)
+
+// Listen for events
+multiplayerService.on('playerJoined', callback)
+multiplayerService.on('playerLeft', callback)
+multiplayerService.on('playerMoved', callback)
+multiplayerService.on('chatMessage', callback)
+multiplayerService.on('onlineCount', callback)
+```
+
 ## Planned Features
 
 See `README.md` and `docs/REQUIREMENTS.md` for full roadmap:
-- WebSocket-based real-time multiplayer
 - GPS-based local room creation (5km radius)
 - Friend system and DM chat
 - Minigame lobbies
-- Character customization and shop
+- Expanded character customization and shop
 - Touch controls for mobile
 
 ## Current Features Status
@@ -477,20 +531,22 @@ See `README.md` and `docs/REQUIREMENTS.md` for full roadmap:
 - Profile management
 - Settings modal
 - Map integration (Mapbox 3D)
-- Global chat system
-- Real-time multiplayer (WebSocket via multiplayerService)
+- Global chat system with bubble display
+- Real-time multiplayer (WebSocket/STOMP via multiplayerService)
 - Online player count
 - Character customization (profile/outline selection)
+- Player join/leave notifications
 
 ### Known Issues
 1. Some footstep audio paths may fail to load
 2. Physics debug mode may be enabled (shows collision shapes)
 3. Chat input focus blocks character movement (intended behavior)
+4. Deprecated services in `src/services/` - prefer using feature-based services
 
 ## Repository
 
 - **GitHub**: https://github.com/kimkichan1225/3DCommunity
-- **Current Active Branch**: kim (as of 2025-11-30)
+- **Current Active Branch**: kim (as of 2025-12-04)
 - **Main Branch**: main
 - **Development Platform**: Windows (file paths use backslashes)
 
@@ -509,19 +565,27 @@ Character movement is automatically disabled when:
 - Chat input is focused (`isChatInputFocused === true`)
 - This is controlled by `shouldBlockMovement` state in App.js
 
-### Multiplayer System
-- Uses `multiplayerService` for WebSocket communication
-- Tracks other players in `otherPlayers` state
-- Real-time position updates for all connected players
-- Online count display
-- Player join/leave events
+### Component Communication Patterns
 
-### Component Communication
-- Character state is managed via `characterRef` in App.js
-- Camera follows character via `CameraController.jsx`
-- Modal states control UI overlay rendering
-- Auth state determines whether to show LandingPage or 3D scene
+**App.js State Management:**
+- `characterRef`: Reference to player's Character component for position/rotation access
+- `otherPlayers`: Object storing all connected players `{userId: {username, position, rotation, profile}}`
+- `userProfile`: Current user's profile (selectedProfile, selectedOutline)
+- `isChatInputFocused`: Controls movement blocking when typing
+- `playerChatMessages`: Object storing chat bubbles per player `{userId: {message, timestamp}}`
+- `shouldBlockMovement`: Computed state = `isAnyModalOpen || isChatInputFocused`
+
+**Event Flow:**
+1. User types in chat → `setIsChatInputFocused(true)` → movement blocked
+2. User opens modal → `setShowBoardModal(true)` → movement blocked via `isAnyModalOpen`
+3. Character moves → `characterRef.current.position` → `multiplayerService.updatePosition()` → broadcast to others
+4. Receive chat → `multiplayerService` event → update `playerChatMessages` → ChatBubble renders
+
+**Service Import Pattern:**
+- **Preferred**: `import { authService } from './features/auth'` (feature-based)
+- **Deprecated**: `import authService from './services/authService'` (legacy, still functional)
+- Note: Both patterns exist during migration period
 
 ---
 
-**Last Updated**: 2025-11-30 (kim branch active)
+**Last Updated**: 2025-12-04 (kim branch active)

@@ -107,4 +107,16 @@ public class AuthController {
         response.put("isActive", activeUserService.isUserActive(userId));
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * 닉네임(username) 중복 확인
+     */
+    @GetMapping("/check-username")
+    public ResponseEntity<Map<String, Object>> checkUsername(@RequestParam String username) {
+        Map<String, Object> response = new HashMap<>();
+        boolean isAvailable = authService.isUsernameAvailable(username);
+        response.put("available", isAvailable);
+        response.put("message", isAvailable ? "사용 가능한 닉네임입니다." : "이미 사용 중인 닉네임입니다.");
+        return ResponseEntity.ok(response);
+    }
 }

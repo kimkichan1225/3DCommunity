@@ -17,6 +17,8 @@ import MapFloor from './components/map/MapFloor';
 import GlobalChat from './components/GlobalChat';
 import OtherPlayer from './components/character/OtherPlayer';
 import ProfileAvatar from './components/ProfileAvatar';
+import PhoneUI from './components/PhoneUI';
+import SuspensionNotification from './components/SuspensionNotification';
 import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 
@@ -37,6 +39,7 @@ function App() {
   const [showBoardModal, setShowBoardModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
+  const [showPhoneUI, setShowPhoneUI] = useState(false);
   const [username, setUsername] = useState('');
   const [userId, setUserId] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -52,7 +55,7 @@ function App() {
   const playerMessageTimersRef = useRef({}); // 다른 플레이어 메시지 타이머 참조
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
-  // 모달이 열려있는지 확인
+  // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
   const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
 
   // 캐릭터 현재 위치 업데이트 콜백
@@ -470,14 +473,11 @@ function App() {
             <button className="icon-button" onClick={() => console.log('알람')} title="알람">
               <img src="/resources/Icon/Alarm-icon.png" alt="Alarm" />
             </button>
-            <button className="icon-button" onClick={() => console.log('채팅')} title="채팅">
-              <img src="/resources/Icon/Chat-icon.png" alt="Chat" />
+            <button className="icon-button" onClick={() => setShowPhoneUI(true)} title="모바일 (친구/채팅)">
+              <img src="/resources/Icon/Mobile-icon.png" alt="Mobile" />
             </button>
             <button className="icon-button" onClick={() => console.log('이벤트')} title="이벤트">
               <img src="/resources/Icon/Event-icon.png" alt="Event" />
-            </button>
-            <button className="icon-button" onClick={() => console.log('친구목록')} title="친구목록">
-              <img src="/resources/Icon/Friend-icon.png" alt="Friend" />
             </button>
             <button className="icon-button" onClick={() => setShowSettingModal(true)} title="설정">
               <img src="/resources/Icon/Setting-icon.png" alt="Setting" />
@@ -631,6 +631,18 @@ function App() {
       {showSettingModal && (
         <SettingModal onClose={() => setShowSettingModal(false)} />
       )}
+
+      {/* Phone UI (친구목록/채팅) */}
+      <PhoneUI
+        isOpen={showPhoneUI}
+        onClose={() => setShowPhoneUI(false)}
+        userId={userId}
+        username={username}
+        onlinePlayers={otherPlayers}
+      />
+
+      {/* 제재 알림 (로그인한 사용자만) */}
+      {isLoggedIn && <SuspensionNotification />}
 
       {/* 전체 채팅 (로그인한 사용자만, 맵 전체화면 아닐 때만 표시) */}
       {isLoggedIn && !isMapFull && (

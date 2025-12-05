@@ -73,6 +73,32 @@
   flex-direction: column;
 }
 
+.post-form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.post-form-type-select {
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.post-form-type-select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.post-form-type-select:hover {
+  border-color: #007bff;
+}
+
 .post-form-title-input {
   padding: 14px 16px;
   border: 2px solid #e0e0e0;

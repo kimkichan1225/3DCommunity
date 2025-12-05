@@ -24,13 +24,21 @@ public class UserDto {
     private ProfileItemDto selectedProfile;
     private ProfileItemDto selectedOutline;
 
+    // 제재 관련 정보
+    private Boolean isPermanentlySuspended;
+    private LocalDateTime suspendedUntil;
+    private String suspensionReason;
+
     public static UserDto fromEntity(User user) {
         UserDtoBuilder builder = UserDto.builder()
                 .id(user.getId())
                 .username(user.getNickname()) // 닉네임 사용
                 .email(user.getEmail())
                 .role(user.getRole().name())
-                .createdAt(user.getCreatedAt());
+                .createdAt(user.getCreatedAt())
+                .isPermanentlySuspended(user.getIsPermanentlySuspended())
+                .suspendedUntil(user.getSuspendedUntil())
+                .suspensionReason(user.getSuspensionReason());
 
         // 선택된 프로필/테두리 정보 추가
         if (user.getSelectedProfile() != null) {
