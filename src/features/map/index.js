@@ -1,1 +1,1 @@
-export { default as Mapbox3D } from './components/Mapbox3D';
+export { default as Mapbox3D } from './components/Mapbox3D.jsx';
