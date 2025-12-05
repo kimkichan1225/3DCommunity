@@ -22,6 +22,7 @@ import SuspensionNotification from './components/SuspensionNotification';
 import ContextMenu from './components/ContextMenu';
 import OtherPlayerProfileModal from './components/OtherPlayerProfileModal';
 import Notification from './components/Notification';
+import GameIcon from './components/GameIcon';
 import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
@@ -60,6 +61,7 @@ function App() {
   const [contextMenu, setContextMenu] = useState(null); // 컨텍스트 메뉴 상태 { position: {x, y}, playerData: {userId, username} }
   const [otherPlayerProfile, setOtherPlayerProfile] = useState(null); // 다른 플레이어 프로필 모달 상태 { userId, username }
   const [notification, setNotification] = useState(null); // 알림 상태 { message, type }
+  const [showGameIcon, setShowGameIcon] = useState(false); // 게임 아이콘 표시 상태
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
@@ -376,6 +378,24 @@ function App() {
     }
   };
 
+  // 게임 트리거 진입/이탈 핸들러
+  const handleGameTriggerEnter = () => {
+    console.log('🎮 게임 트리거 진입! 아이콘 표시');
+    setShowGameIcon(true);
+  };
+
+  const handleGameTriggerExit = () => {
+    console.log('🎮 게임 트리거 이탈! 아이콘 숨김');
+    setShowGameIcon(false);
+  };
+
+  // 게임 아이콘 클릭 핸들러
+  const handleGameIconClick = () => {
+    console.log('🎮 Game icon clicked! Opening minigame...');
+    // TODO: 미니게임 모달 또는 씬 열기
+    alert('미니게임 기능은 아직 구현 중입니다!');
+  };
+
   // Connect to multiplayer service - even when not logged in (as observer)
   useEffect(() => {
     // Set up callbacks first
@@ -649,7 +669,14 @@ function App() {
             {/* 지도 모드일 때만 MapFloor 렌더링 */}
             {isMapFull && <MapFloor />}
             {/* Level1은 지도 모드가 아닐 때만 렌더링 */}
-            {!isMapFull && <Level1 characterRef={characterRef} mainCameraRef={mainCameraRef} />}
+            {!isMapFull && (
+              <Level1
+                characterRef={characterRef}
+                mainCameraRef={mainCameraRef}
+                onGameTriggerEnter={handleGameTriggerEnter}
+                onGameTriggerExit={handleGameTriggerExit}
+              />
+            )}
           </Physics>
         </Suspense>
       </Canvas>
@@ -737,6 +764,14 @@ function App() {
           message={notification.message}
           type={notification.type}
           onClose={() => setNotification(null)}
+        />
+      )}
+
+      {/* 게임 아이콘 (cliff_block_rock002 위에 있을 때만 표시) */}
+      {isLoggedIn && !isMapFull && (
+        <GameIcon
+          visible={showGameIcon}
+          onClick={handleGameIconClick}
         />
       )}
     </div>
