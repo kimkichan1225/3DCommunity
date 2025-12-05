@@ -90,10 +90,10 @@ function App() {
       const initialMerc = project([initialCenter.lng, initialCenter.lat], 0);
       const unitsPerMeter = initialMerc.meterInMercatorCoordinateUnits || 1;
 
-      console.log('🗺️ [1] initialCenter:', initialCenter);
-      console.log('🗺️ [2] initialMerc.translateX/Y:', initialMerc.translateX, initialMerc.translateY);
-      console.log('🗺️ [3] unitsPerMeter:', unitsPerMeter);
-      console.log('🗺️ [4] characterPos(Three.js):', threeX, threeZ);
+      // console.log('🗺️ [1] initialCenter:', initialCenter);
+      // console.log('🗺️ [2] initialMerc.translateX/Y:', initialMerc.translateX, initialMerc.translateY);
+      // console.log('🗺️ [3] unitsPerMeter:', unitsPerMeter);
+      // console.log('🗺️ [4] characterPos(Three.js):', threeX, threeZ);
 
       // Three.js 좌표를 Mercator 단위로 변환 (x, z만 변환 - y축 무시)
       const dxMeters = threeX;
@@ -101,23 +101,23 @@ function App() {
       const dxMerc = dxMeters * unitsPerMeter;
       const dzMerc = dzMeters * unitsPerMeter;
 
-      console.log('🗺️ [5] dxMerc/dzMerc:', dxMerc, dzMerc);
+      // console.log('🗺️ [5] dxMerc/dzMerc:', dxMerc, dzMerc);
 
       // 새로운 Mercator 좌표 = 초기 위치 + 이동량
       const newMercX = initialMerc.translateX + dxMerc;
       const newMercY = initialMerc.translateY + dzMerc;
 
-      console.log('🗺️ [6] newMercX/Y:', newMercX, newMercY);
+      // console.log('🗺️ [6] newMercX/Y:', newMercX, newMercY);
 
       // Mercator 좌표를 LngLat으로 변환
       const mercatorCoord = new mapboxgl.MercatorCoordinate(newMercX, newMercY, 0);
       const lngLat = mercatorCoord.toLngLat();
       
-      console.log('🗺️ [7] converted to lngLat:', lngLat);
+      // console.log('🗺️ [7] converted to lngLat:', lngLat);
       
       // 지도 중심 업데이트
       map.setCenter(lngLat);
-      console.log('✅ [8] Map.setCenter() called with:', lngLat);
+      // console.log('✅ [8] Map.setCenter() called with:', lngLat);
     } catch (e) {
       console.warn('❌ Map position update failed:', e);
     }
