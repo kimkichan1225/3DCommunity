@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './FriendList.css';
 import friendService from '../../services/friendService';
+import Popup from '../Popup';
 
 function FriendList({ userId, username }) {
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [popupMessage, setPopupMessage] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   // 친구 목록 및 요청 불러오기
   useEffect(() => {
@@ -35,51 +38,52 @@ function FriendList({ userId, username }) {
   const handleAcceptFriend = async (friendshipId) => {
     try {
       await friendService.acceptFriendRequest(friendshipId);
-      alert('친구 요청을 수락했습니다.');
+      setPopupMessage('친구 요청을 수락했습니다.');
       loadFriends();
       loadPendingRequests();
     } catch (error) {
-      alert(error.response?.data?.message || '친구 수락에 실패했습니다.');
+      setPopupMessage(error.response?.data?.message || '친구 수락에 실패했습니다.');
     }
   };
 
   const handleRejectFriend = async (friendshipId) => {
     try {
       await friendService.rejectFriendRequest(friendshipId);
-      alert('친구 요청을 거절했습니다.');
+      setPopupMessage('친구 요청을 거절했습니다.');
       loadPendingRequests();
     } catch (error) {
-      alert(error.response?.data?.message || '친구 거절에 실패했습니다.');
+      setPopupMessage(error.response?.data?.message || '친구 거절에 실패했습니다.');
     }
   };
 
-  const handleRemoveFriend = async (friendshipId) => {
-    if (!window.confirm('정말 친구를 삭제하시겠습니까?')) {
-      return;
-    }
-
-    try {
-      await friendService.removeFriend(friendshipId);
-      alert('친구를 삭제했습니다.');
-      loadFriends();
-    } catch (error) {
-      alert(error.response?.data?.message || '친구 삭제에 실패했습니다.');
-    }
+  const handleRemoveFriend = (friendshipId) => {
+    setConfirmAction({
+      message: '정말 친구를 삭제하시겠습니까?',
+      onConfirm: async () => {
+        try {
+          await friendService.removeFriend(friendshipId);
+          setPopupMessage('친구를 삭제했습니다.');
+          loadFriends();
+        } catch (error) {
+          setPopupMessage(error.response?.data?.message || '친구 삭제에 실패했습니다.');
+        }
+      }
+    });
   };
 
   const handleAddFriend = async () => {
     if (!searchQuery.trim()) {
-      alert('사용자명을 입력하세요.');
+      setPopupMessage('사용자명을 입력하세요.');
       return;
     }
 
     try {
       setLoading(true);
       await friendService.sendFriendRequest(searchQuery);
-      alert(`${searchQuery}님에게 친구 요청을 보냈습니다.`);
+      setPopupMessage(`${searchQuery}님에게 친구 요청을 보냈습니다.`);
       setSearchQuery('');
     } catch (error) {
-      alert(error.response?.data?.message || '친구 요청에 실패했습니다.');
+      setPopupMessage(error.response?.data?.message || '친구 요청에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -176,6 +180,44 @@ function FriendList({ userId, username }) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* 팝업 메시지 */}
+      {popupMessage && (
+        <Popup message={popupMessage} onClose={() => setPopupMessage(null)} />
+      )}
+
+      {/* 확인 팝업 */}
+      {confirmAction && (
+        <ConfirmPopup
+          message={confirmAction.message}
+          onConfirm={() => {
+            confirmAction.onConfirm();
+            setConfirmAction(null);
+          }}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// 확인 팝업 컴포넌트
+function ConfirmPopup({ message, onConfirm, onCancel }) {
+  return (
+    <div className="popup-overlay" onClick={onCancel}>
+      <div className="popup-container" onClick={(e) => e.stopPropagation()}>
+        <div className="popup-content">
+          <div className="popup-message">{message}</div>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <button className="popup-close-btn" onClick={onConfirm}>
+              확인
+            </button>
+            <button className="popup-close-btn" onClick={onCancel} style={{ background: 'linear-gradient(135deg, #999 0%, #666 100%)' }}>
+              취소
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

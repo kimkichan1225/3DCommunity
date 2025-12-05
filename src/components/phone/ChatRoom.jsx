@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChatRoom.css';
 import messageService from '../../services/messageService';
+import Popup from '../Popup';
 
 function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [popupMessage, setPopupMessage] = useState(null);
   const messagesEndRef = useRef(null);
 
   // 대화 내역 불러오기
@@ -20,11 +22,11 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
 
       // 백엔드 데이터를 프론트엔드 형식으로 변환
       const formattedMessages = data.map(msg => ({
-        id: msg.messageId,
+        id: msg.id,
         senderId: msg.senderId,
         senderName: msg.senderUsername,
         content: msg.content,
-        timestamp: new Date(msg.sentAt),
+        timestamp: msg.createdAt ? new Date(msg.createdAt) : new Date(),
         isMine: msg.senderId === currentUserId,
       }));
 
@@ -78,7 +80,7 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
       setInputMessage('');
     } catch (error) {
       console.error('메시지 전송 실패:', error);
-      alert('메시지 전송에 실패했습니다.');
+      setPopupMessage('메시지 전송에 실패했습니다.');
     }
   };
 
@@ -180,6 +182,11 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
           ➤
         </button>
       </div>
+
+      {/* 팝업 메시지 */}
+      {popupMessage && (
+        <Popup message={popupMessage} onClose={() => setPopupMessage(null)} />
+      )}
     </div>
   );
 }
