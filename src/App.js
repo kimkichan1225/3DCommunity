@@ -19,6 +19,7 @@ import OtherPlayer from './components/character/OtherPlayer';
 import ProfileAvatar from './components/ProfileAvatar';
 import PhoneUI from './components/PhoneUI';
 import SuspensionNotification from './components/SuspensionNotification';
+import ContextMenu from './components/ContextMenu';
 import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 
@@ -53,6 +54,7 @@ function App() {
   const [myChatMessage, setMyChatMessage] = useState(''); // 내 캐릭터의 채팅 메시지
   const myMessageTimerRef = useRef(null); // 내 메시지 타이머 참조
   const playerMessageTimersRef = useRef({}); // 다른 플레이어 메시지 타이머 참조
+  const [contextMenu, setContextMenu] = useState(null); // 컨텍스트 메뉴 상태 { position: {x, y}, playerData: {userId, username} }
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
@@ -325,6 +327,40 @@ function App() {
     }
   };
 
+  // 플레이어 우클릭 핸들러
+  const handlePlayerRightClick = (event, playerData) => {
+    // Three.js 이벤트는 nativeEvent를 통해 브라우저 이벤트에 접근
+    const nativeEvent = event.nativeEvent || event;
+
+    if (nativeEvent.preventDefault) {
+      nativeEvent.preventDefault();
+    }
+
+    // 마우스 위치를 화면 좌표로 변환
+    setContextMenu({
+      position: { x: nativeEvent.clientX, y: nativeEvent.clientY },
+      playerData: playerData
+    });
+  };
+
+  // 프로필 보기
+  const handleViewProfile = (playerData) => {
+    console.log('프로필 보기:', playerData);
+    alert(`${playerData.username}의 프로필을 확인합니다. (구현 예정)`);
+  };
+
+  // 친구 추가
+  const handleAddFriend = (playerData) => {
+    console.log('친구 추가:', playerData);
+    alert(`${playerData.username}에게 친구 요청을 보냅니다. (구현 예정)`);
+  };
+
+  // 메시지 보내기
+  const handleSendMessage = (playerData) => {
+    console.log('메시지 보내기:', playerData);
+    alert(`${playerData.username}에게 메시지를 보냅니다. (구현 예정)`);
+  };
+
   // Connect to multiplayer service - even when not logged in (as observer)
   useEffect(() => {
     // Set up callbacks first
@@ -585,6 +621,7 @@ function App() {
                   rotationY={player.rotationY}
                   animation={player.animation}
                   chatMessage={playerChatMessages[player.userId]?.message}
+                  onRightClick={handlePlayerRightClick}
                 />
               ))}
 
@@ -655,6 +692,18 @@ function App() {
           playerLeaveEvent={playerLeaveEvent}
           onInputFocusChange={setIsChatInputFocused}
           onChatMessage={handleChatMessage}
+        />
+      )}
+
+      {/* 컨텍스트 메뉴 (우클릭) */}
+      {contextMenu && (
+        <ContextMenu
+          position={contextMenu.position}
+          playerData={contextMenu.playerData}
+          onClose={() => setContextMenu(null)}
+          onViewProfile={handleViewProfile}
+          onAddFriend={handleAddFriend}
+          onSendMessage={handleSendMessage}
         />
       )}
     </div>

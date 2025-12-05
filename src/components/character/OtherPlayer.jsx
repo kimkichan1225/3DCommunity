@@ -3,7 +3,7 @@ import { useGLTF, useAnimations, Text, Billboard } from '@react-three/drei';
 import { SkeletonUtils } from 'three-stdlib';
 import ChatBubble from './ChatBubble';
 
-function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage }) {
+function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick }) {
   const groupRef = useRef();
   const modelRef = useRef();
 
@@ -60,8 +60,16 @@ function OtherPlayer({ userId, username, position, rotationY, animation, chatMes
     }
   }, [animation, actions]);
 
+  // 우클릭 핸들러
+  const handleContextMenu = (event) => {
+    event.stopPropagation();
+    if (onRightClick) {
+      onRightClick(event, { userId, username });
+    }
+  };
+
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} onContextMenu={handleContextMenu}>
       <primitive
         ref={modelRef}
         object={clone}
