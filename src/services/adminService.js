@@ -105,6 +105,80 @@ const adminService = {
     const response = await api.delete(`/api/admin/posts/${postId}`);
     return response.data;
   },
+
+  // ==================== 채팅 로그 관리 ====================
+
+  /**
+   * 전체 채팅 로그 조회
+   */
+  getAllChatLogs: async (params = {}) => {
+    const { page = 0, size = 50 } = params;
+    const response = await api.get(`/api/admin/chat-logs?page=${page}&size=${size}`);
+    return response.data;
+  },
+
+  /**
+   * 메시지 타입별 채팅 로그 조회
+   */
+  getChatLogsByType: async (messageType, params = {}) => {
+    const { page = 0, size = 50 } = params;
+    const response = await api.get(`/api/admin/chat-logs/type/${messageType}?page=${page}&size=${size}`);
+    return response.data;
+  },
+
+  /**
+   * 특정 사용자의 채팅 로그 조회
+   */
+  getChatLogsByUser: async (userId, params = {}) => {
+    const { page = 0, size = 50 } = params;
+    const response = await api.get(`/api/admin/chat-logs/user/${userId}?page=${page}&size=${size}`);
+    return response.data;
+  },
+
+  /**
+   * 키워드로 채팅 로그 검색
+   */
+  searchChatLogs: async (params = {}) => {
+    const { keyword, page = 0, size = 50 } = params;
+    const queryParams = new URLSearchParams();
+    queryParams.append('keyword', keyword);
+    queryParams.append('page', page);
+    queryParams.append('size', size);
+    const response = await api.get(`/api/admin/chat-logs/search?${queryParams.toString()}`);
+    return response.data;
+  },
+
+  /**
+   * 메시지 삭제 (소프트 삭제)
+   */
+  deleteMessage: async (messageId) => {
+    const response = await api.delete(`/api/admin/chat-logs/${messageId}`);
+    return response.data;
+  },
+
+  /**
+   * 메시지 복구
+   */
+  restoreMessage: async (messageId) => {
+    const response = await api.post(`/api/admin/chat-logs/${messageId}/restore`);
+    return response.data;
+  },
+
+  /**
+   * 메시지 영구 삭제
+   */
+  permanentlyDeleteMessage: async (messageId) => {
+    const response = await api.delete(`/api/admin/chat-logs/${messageId}/permanent`);
+    return response.data;
+  },
+
+  /**
+   * 7일 이상 된 메시지 수동 삭제
+   */
+  manualCleanupMessages: async () => {
+    const response = await api.post('/api/admin/chat-logs/cleanup');
+    return response;
+  },
 };
 
 export default adminService;
