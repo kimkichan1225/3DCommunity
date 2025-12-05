@@ -355,12 +355,6 @@ function App() {
     alert(`${playerData.username}에게 친구 요청을 보냅니다. (구현 예정)`);
   };
 
-  // 메시지 보내기
-  const handleSendMessage = (playerData) => {
-    console.log('메시지 보내기:', playerData);
-    alert(`${playerData.username}에게 메시지를 보냅니다. (구현 예정)`);
-  };
-
   // Connect to multiplayer service - even when not logged in (as observer)
   useEffect(() => {
     // Set up callbacks first
@@ -703,7 +697,6 @@ function App() {
           onClose={() => setContextMenu(null)}
           onViewProfile={handleViewProfile}
           onAddFriend={handleAddFriend}
-          onSendMessage={handleSendMessage}
         />
       )}
     </div>

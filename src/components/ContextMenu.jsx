@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import './ContextMenu.css';
 
-const ContextMenu = ({ position, playerData, onClose, onViewProfile, onAddFriend, onSendMessage }) => {
+const ContextMenu = ({ position, playerData, onClose, onViewProfile, onAddFriend }) => {
   const menuRef = useRef(null);
 
   // 메뉴 외부 클릭 시 닫기
@@ -66,16 +66,6 @@ const ContextMenu = ({ position, playerData, onClose, onViewProfile, onAddFriend
       >
         <span className="menu-icon">➕</span>
         친구 추가
-      </button>
-      <button
-        className="context-menu-item"
-        onClick={() => {
-          onSendMessage(playerData);
-          onClose();
-        }}
-      >
-        <span className="menu-icon">💬</span>
-        메시지 보내기
       </button>
     </div>
   );
