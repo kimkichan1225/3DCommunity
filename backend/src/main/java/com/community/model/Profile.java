@@ -31,6 +31,15 @@ public class Profile {
     @Column(name = "status_message", length = 200)
     private String statusMessage;
 
+    @Column(name = "level")
+    private Integer level;
+
+    @Column(name = "selected_profile")
+    private Integer selectedProfile;
+
+    @Column(name = "selected_outline")
+    private Integer selectedOutline;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
