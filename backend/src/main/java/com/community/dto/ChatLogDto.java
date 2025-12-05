@@ -27,8 +27,8 @@ public class ChatLogDto {
     public static ChatLogDto fromEntity(Message message) {
         return ChatLogDto.builder()
                 .messageId(message.getId())
-                .senderId(message.getSender().getId())
-                .senderUsername(message.getSender().getNickname())
+                .senderId(message.getSender() != null ? message.getSender().getId() : null)
+                .senderUsername(message.getSender() != null ? message.getSender().getNickname() : "알 수 없음")
                 .receiverId(message.getReceiver() != null ? message.getReceiver().getId() : null)
                 .receiverUsername(message.getReceiver() != null ? message.getReceiver().getNickname() : null)
                 .messageType(message.getMessageType().name())

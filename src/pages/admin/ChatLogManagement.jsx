@@ -28,22 +28,22 @@ const ChatLogManagement = () => {
     try {
       let response;
 
-      if (keywordSearch) {
+      if (keywordSearch && keywordSearch.trim()) {
         // 키워드 검색
         response = await adminService.searchChatLogs({
           keyword: keywordSearch,
           page: currentPage,
           size: pageSize,
         });
-      } else if (messageTypeFilter) {
-        // 메시지 타입별 조회
-        response = await adminService.getChatLogsByType(messageTypeFilter, {
+      } else if (userIdFilter && userIdFilter.toString().trim()) {
+        // 사용자별 조회
+        response = await adminService.getChatLogsByUser(userIdFilter, {
           page: currentPage,
           size: pageSize,
         });
-      } else if (userIdFilter) {
-        // 사용자별 조회
-        response = await adminService.getChatLogsByUser(userIdFilter, {
+      } else if (messageTypeFilter && messageTypeFilter.trim()) {
+        // 메시지 타입별 조회
+        response = await adminService.getChatLogsByType(messageTypeFilter, {
           page: currentPage,
           size: pageSize,
         });

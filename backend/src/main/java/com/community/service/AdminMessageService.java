@@ -32,8 +32,10 @@ public class AdminMessageService {
      * 메시지 타입별 조회 (PLAZA, DM, LOCAL_ROOM)
      */
     public Page<ChatLogDto> getChatLogsByType(String messageType, Pageable pageable) {
+        log.info("메시지 타입별 조회 요청: messageType={}, page={}, size={}", messageType, pageable.getPageNumber(), pageable.getPageSize());
         Message.MessageType type = Message.MessageType.valueOf(messageType);
         Page<Message> messages = messageRepository.findByMessageTypeOrderByCreatedAtDesc(type, pageable);
+        log.info("조회된 메시지 개수: {}", messages.getTotalElements());
         return messages.map(ChatLogDto::fromEntity);
     }
 
