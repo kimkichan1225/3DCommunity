@@ -3,6 +3,7 @@ import './ChatRoom.css';
 import messageService from '../../services/messageService';
 import multiplayerService from '../../services/multiplayerService';
 import Popup from '../Popup';
+import ProfileAvatar from '../ProfileAvatar';
 
 function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage }) {
   const [messages, setMessages] = useState([]);
@@ -123,10 +124,12 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
         <button className="back-btn" onClick={onBack}>
           ←
         </button>
-        <div className="chat-room-avatar" data-profile={chat.profile}>
-          {chat.isOnline && <div className="online-indicator"></div>}
-          {chat.friendName.charAt(0)}
-        </div>
+        <ProfileAvatar
+          profileImage={{ imagePath: chat.profileImagePath }}
+          outlineImage={{ imagePath: chat.outlineImagePath }}
+          size={45}
+          className="chat-room-avatar-img"
+        />
         <div className="chat-room-info">
           <div className="chat-room-name">{chat.friendName}</div>
           <div className={`chat-room-status ${chat.isOnline ? 'online' : 'offline'}`}>
@@ -168,9 +171,12 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
               )}
               <div className={`message-wrapper ${message.isMine ? 'mine' : 'theirs'}`}>
                 {!message.isMine && (
-                  <div className="message-avatar" data-profile={chat.profile}>
-                    {chat.friendName.charAt(0)}
-                  </div>
+                  <ProfileAvatar
+                    profileImage={{ imagePath: chat.profileImagePath }}
+                    outlineImage={{ imagePath: chat.outlineImagePath }}
+                    size={35}
+                    className="message-avatar-img"
+                  />
                 )}
                 <div className="message-content">
                   {!message.isMine && (

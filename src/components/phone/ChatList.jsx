@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './ChatList.css';
 import ChatRoom from './ChatRoom';
 import messageService from '../../services/messageService';
+import ProfileAvatar from '../ProfileAvatar';
 
 function ChatList({ userId, username, onlinePlayers }) {
   const [chatRooms, setChatRooms] = useState([]);
@@ -27,6 +28,8 @@ function ChatList({ userId, username, onlinePlayers }) {
         unreadCount: conv.unreadCount || 0,
         isOnline: conv.friendIsOnline || false,
         profile: conv.friendProfile || 1,
+        profileImagePath: conv.friendProfileImagePath,
+        outlineImagePath: conv.friendOutlineImagePath,
       }));
       setChatRooms(formattedData);
     } catch (error) {
@@ -128,9 +131,14 @@ function ChatList({ userId, username, onlinePlayers }) {
                 className="chat-room-item"
                 onClick={() => handleChatClick(chat)}
               >
-                <div className="chat-avatar" data-profile={chat.profile}>
+                <div className="chat-avatar-wrapper">
                   {isOnlineNow && <div className="online-indicator"></div>}
-                  {chat.friendName.charAt(0)}
+                  <ProfileAvatar
+                    profileImage={{ imagePath: chat.profileImagePath }}
+                    outlineImage={{ imagePath: chat.outlineImagePath }}
+                    size={50}
+                    className="chat-avatar-img"
+                  />
                 </div>
                 <div className="chat-content">
                   <div className="chat-header">

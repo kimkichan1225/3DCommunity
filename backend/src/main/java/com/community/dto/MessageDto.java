@@ -33,6 +33,8 @@ public class MessageDto {
     private boolean friendIsOnline; // 상대방 온라인 여부
     private Integer friendProfile; // 상대방 프로필
     private Integer friendOutline; // 상대방 테두리
+    private String friendProfileImagePath; // 상대방 프로필 이미지 경로
+    private String friendOutlineImagePath; // 상대방 테두리 이미지 경로
 
     public static MessageDto fromEntity(Message message) {
         return MessageDto.builder()
@@ -58,6 +60,8 @@ public class MessageDto {
                 .friendIsOnline(isOnline)
                 .friendProfile(friend.getSelectedProfile() != null ? friend.getSelectedProfile().getId().intValue() : null)
                 .friendOutline(friend.getSelectedOutline() != null ? friend.getSelectedOutline().getId().intValue() : null)
+                .friendProfileImagePath(friend.getSelectedProfile() != null ? friend.getSelectedProfile().getImagePath() : null)
+                .friendOutlineImagePath(friend.getSelectedOutline() != null ? friend.getSelectedOutline().getImagePath() : null)
                 .build();
     }
 }

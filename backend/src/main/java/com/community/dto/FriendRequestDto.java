@@ -23,6 +23,8 @@ public class FriendRequestDto {
     private boolean isOnline; // 온라인 여부
     private Integer selectedProfile; // 프로필 아이템 ID
     private Integer selectedOutline; // 테두리 아이템 ID
+    private String profileImagePath; // 프로필 이미지 경로
+    private String outlineImagePath; // 테두리 이미지 경로
 
     public static FriendRequestDto fromFriendship(Friendship friendship, Long currentUserId, boolean isOnline) {
         // currentUserId와 반대편 사용자 정보를 반환
@@ -40,6 +42,8 @@ public class FriendRequestDto {
                 .isOnline(isOnline)
                 .selectedProfile(friend.getSelectedProfile() != null ? friend.getSelectedProfile().getId().intValue() : null)
                 .selectedOutline(friend.getSelectedOutline() != null ? friend.getSelectedOutline().getId().intValue() : null)
+                .profileImagePath(friend.getSelectedProfile() != null ? friend.getSelectedProfile().getImagePath() : null)
+                .outlineImagePath(friend.getSelectedOutline() != null ? friend.getSelectedOutline().getImagePath() : null)
                 .build();
     }
 
@@ -51,6 +55,8 @@ public class FriendRequestDto {
                 .isOnline(isOnline)
                 .selectedProfile(user.getSelectedProfile() != null ? user.getSelectedProfile().getId().intValue() : null)
                 .selectedOutline(user.getSelectedOutline() != null ? user.getSelectedOutline().getId().intValue() : null)
+                .profileImagePath(user.getSelectedProfile() != null ? user.getSelectedProfile().getImagePath() : null)
+                .outlineImagePath(user.getSelectedOutline() != null ? user.getSelectedOutline().getImagePath() : null)
                 .build();
     }
 }

@@ -3,6 +3,7 @@ import './FriendList.css';
 import friendService from '../../services/friendService';
 import multiplayerService from '../../services/multiplayerService';
 import Popup from '../Popup';
+import ProfileAvatar from '../ProfileAvatar';
 
 function FriendList({ userId, username, onlinePlayers }) {
   const [friends, setFriends] = useState([]);
@@ -140,9 +141,12 @@ function FriendList({ userId, username, onlinePlayers }) {
           <div className="friend-requests">
             {pendingRequests.map(request => (
               <div key={request.friendshipId} className="friend-request-item">
-                <div className="friend-avatar" data-profile={request.selectedProfile || 1}>
-                  {request.username.charAt(0)}
-                </div>
+                <ProfileAvatar
+                  profileImage={{ imagePath: request.profileImagePath }}
+                  outlineImage={{ imagePath: request.outlineImagePath }}
+                  size={50}
+                  className="friend-avatar-img"
+                />
                 <div className="friend-info">
                   <div className="friend-name">{request.username}</div>
                   <div className="friend-status">친구 요청</div>
@@ -186,9 +190,14 @@ function FriendList({ userId, username, onlinePlayers }) {
 
               return (
                 <div key={friend.friendshipId} className="friend-item">
-                  <div className="friend-avatar" data-profile={friend.selectedProfile || 1}>
+                  <div className="friend-avatar-wrapper">
                     {isOnlineNow && <div className="online-indicator"></div>}
-                    {friend.username.charAt(0)}
+                    <ProfileAvatar
+                      profileImage={{ imagePath: friend.profileImagePath }}
+                      outlineImage={{ imagePath: friend.outlineImagePath }}
+                      size={50}
+                      className="friend-avatar-img"
+                    />
                   </div>
                   <div className="friend-info">
                     <div className="friend-name">{friend.username}</div>

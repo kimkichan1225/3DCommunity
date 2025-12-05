@@ -34,6 +34,15 @@
 }
 
 /* 채팅 아바타 */
+.chat-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.chat-avatar-img {
+  flex-shrink: 0;
+}
+
 .chat-avatar {
   width: 52px;
   height: 52px;

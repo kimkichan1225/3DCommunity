@@ -125,6 +125,15 @@
 }
 
 /* 아바타 */
+.friend-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.friend-avatar-img {
+  flex-shrink: 0;
+}
+
 .friend-avatar {
   width: 48px;
   height: 48px;
@@ -154,14 +163,15 @@
 
 .online-indicator {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
+  bottom: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
   background: #00ff88;
   border: 2px solid #1a1a2e;
   border-radius: 50%;
   animation: pulse 2s infinite;
+  z-index: 10;
 }
 
 @keyframes pulse {
