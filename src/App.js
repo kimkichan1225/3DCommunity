@@ -26,6 +26,7 @@ import GameIcon from './components/GameIcon';
 import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
+import { useNavigate } from 'react-router-dom';
 
 function App() {
   const characterRef = useRef();
@@ -63,6 +64,7 @@ function App() {
   const [notification, setNotification] = useState(null); // 알림 상태 { message, type }
   const [showGameIcon, setShowGameIcon] = useState(false); // 게임 아이콘 표시 상태
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
+  const navigate = useNavigate();
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
   const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
@@ -389,11 +391,14 @@ function App() {
     setShowGameIcon(false);
   };
 
-  // 게임 아이콘 클릭 핸들러
+  // 미니게임 버튼 클릭 핸들러
+  const handleMinigameButtonClick = () => {
+    navigate('/minigame-select');
+  };
+
+  // 미니게임 버튼 클릭 핸들러 (GameIcon 등에서 사용)
   const handleGameIconClick = () => {
-    console.log('🎮 Game icon clicked! Opening minigame...');
-    // TODO: 미니게임 모달 또는 씬 열기
-    alert('미니게임 기능은 아직 구현 중입니다!');
+    handleMinigameButtonClick();
   };
 
   // Connect to multiplayer service - even when not logged in (as observer)

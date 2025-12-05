@@ -1,0 +1,132 @@
+.minigame-select-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.minigame-select-modal {
+  background: rgba(40, 50, 60, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  padding: 40px 32px 32px 32px;
+  min-width: 340px;
+  max-width: 90vw;
+  color: #fff;
+  text-align: center;
+}
+
+.minigame-top-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.minigame-action-btn {
+  background: linear-gradient(90deg, #ffb347 0%, #ffcc80 100%);
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 22px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  transition: background 0.2s;
+}
+
+.minigame-action-btn:hover {
+  background: linear-gradient(90deg, #ffcc80 0%, #ffb347 100%);
+}
+
+.minigame-list {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.minigame-item {
+  background: rgba(255,255,255,0.08);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.minigame-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.minigame-desc {
+  font-size: 0.98rem;
+  color: #b0c4de;
+  margin-bottom: 12px;
+}
+
+.minigame-btn {
+  background: linear-gradient(90deg, #4e8cff 0%, #6ed6ff 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  transition: background 0.2s;
+}
+
+.minigame-btn:hover {
+  background: linear-gradient(90deg, #6ed6ff 0%, #4e8cff 100%);
+}
+
+.friend-modal-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.friend-modal {
+  background: #232b36;
+  border-radius: 18px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+  padding: 32px 28px 24px 28px;
+  min-width: 280px;
+  max-width: 90vw;
+  color: #fff;
+  text-align: center;
+}
+
+.friend-list {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 18px 0;
+}
+
+.friend-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #3a4250;
+  font-size: 1.05rem;
+}
+
+.friend-item:last-child {
+  border-bottom: none;
+}
+
+.friend-error {
+  color: #ffb3b3;
+  margin: 12px 0;
+}

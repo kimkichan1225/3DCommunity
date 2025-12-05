@@ -11,6 +11,7 @@ import ReportManagement from './pages/admin/ReportManagement';
 import ChatLogManagement from './pages/admin/ChatLogManagement';
 import { ShopManagement } from './features/shop';
 import ProtectedRoute from './components/ProtectedRoute';
+import MinigameSelectPage from './pages/MinigameSelectPage';
 
 function AppRouter() {
   return (
@@ -43,6 +44,8 @@ function AppRouter() {
           <Route path="profile-items" element={<ProfileItemManager />} />
           <Route path="system" element={<div>시스템 (준비 중)</div>} />
         </Route>
+
+        <Route path="/minigame-select" element={<MinigameSelectPage />} />
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/" replace />} />
