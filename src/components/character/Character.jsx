@@ -174,7 +174,7 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       return;
     }
 
-    const speed = shift ? 18 : 8; // 물리 기반 속도 (걷기: 8, 뛰기: 18)
+    const speed = shift ? 20 : 10; // 물리 기반 속도 (걷기: 10, 뛰기: 20)
     const direction = new THREE.Vector3();
 
     if (forward) direction.z -= 1;
