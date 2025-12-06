@@ -8,6 +8,7 @@ import { LandingPage } from './features/auth';
 import { BoardModal } from './features/board';
 import { ProfileModal } from './features/profile';
 import { SettingModal } from './features/system/settings';
+import { EventModal } from './features/event';
 import Character from './components/character/Character';
 import MapCharacterController from './components/character/MapCharacterController';
 import CameraController from './components/camera/CameraController';
@@ -47,6 +48,7 @@ function App() {
   const [showBoardModal, setShowBoardModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
+  const [showEventModal, setShowEventModal] = useState(false);
   const [showPhoneUI, setShowPhoneUI] = useState(false);
   const [username, setUsername] = useState('');
   const [userId, setUserId] = useState('');
@@ -71,7 +73,7 @@ function App() {
   const navigate = useNavigate();
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
-  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showLanding;
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showLanding;
 
   // 캐릭터 현재 위치 업데이트 콜백
   const handleCharacterPositionUpdate = (position) => {
@@ -593,7 +595,7 @@ function App() {
             <button className="icon-button" onClick={() => setShowPhoneUI(true)} title="모바일 (친구/채팅)">
               <img src="/resources/Icon/Mobile-icon.png" alt="Mobile" />
             </button>
-            <button className="icon-button" onClick={() => console.log('이벤트')} title="이벤트">
+            <button className="icon-button" onClick={() => setShowEventModal(true)} title="이벤트">
               <img src="/resources/Icon/Event-icon.png" alt="Event" />
             </button>
             <button className="icon-button" onClick={() => setShowSettingModal(true)} title="설정">
@@ -755,6 +757,11 @@ function App() {
       {/* 설정 모달 */}
       {showSettingModal && (
         <SettingModal onClose={() => setShowSettingModal(false)} />
+      )}
+
+      {/* 이벤트 모달 */}
+      {showEventModal && (
+        <EventModal onClose={() => setShowEventModal(false)} />
       )}
 
       {/* Phone UI (친구목록/채팅) */}
