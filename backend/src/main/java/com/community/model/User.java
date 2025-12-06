@@ -67,10 +67,25 @@ public class User implements UserDetails {
     @JoinColumn(name = "selected_outline_id")
     private ProfileItem selectedOutline;
 
+    // 재화 관련 필드
+    @Column(name = "silver_coins")
+    private Integer silverCoins = 1000; // 일반 재화 (기본값: 1000)
+
+    @Column(name = "gold_coins")
+    private Integer goldCoins = 0; // 유료 재화 (기본값: 0)
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+
+        // 재화 기본값 설정
+        if (silverCoins == null) {
+            silverCoins = 1000;
+        }
+        if (goldCoins == null) {
+            goldCoins = 0;
+        }
     }
 
     @PreUpdate

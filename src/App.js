@@ -27,6 +27,7 @@ import CurrencyDisplay from './components/CurrencyDisplay';
 import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
+import currencyService from './services/currencyService';
 import { useNavigate } from 'react-router-dom';
 
 function App() {
@@ -254,7 +255,7 @@ function App() {
     }
   };
 
-  const handleLoginSuccess = (user) => {
+  const handleLoginSuccess = async (user) => {
     console.log('로그인 성공:', user);
     setIsLoggedIn(true);
     setShowLanding(false);
@@ -262,9 +263,18 @@ function App() {
     setUserId(user.id || String(Date.now()));
     setUserProfile(user); // 프로필 정보 저장 (selectedProfile, selectedOutline 포함)
 
-    // 재화 정보 설정 (임시로 기본값 설정, 추후 서버에서 가져오도록 수정)
-    setSilverCoins(user.silverCoins || 1000);
-    setGoldCoins(user.goldCoins || 100);
+    // 서버에서 재화 정보 가져오기
+    try {
+      const currency = await currencyService.getCurrency();
+      setSilverCoins(currency.silverCoins || 0);
+      setGoldCoins(currency.goldCoins || 0);
+      console.log('✅ 재화 정보 로드:', currency);
+    } catch (error) {
+      console.error('재화 정보 로드 실패:', error);
+      // 실패 시 기본값 설정
+      setSilverCoins(0);
+      setGoldCoins(0);
+    }
   };
 
   // 프로필 업데이트 시 호출되는 함수
@@ -278,6 +288,18 @@ function App() {
       }
     } catch (error) {
       console.error('Failed to update user profile:', error);
+    }
+  };
+
+  // 재화 업데이트 함수 (다른 컴포넌트에서 호출 가능)
+  const updateCurrency = async () => {
+    try {
+      const currency = await currencyService.getCurrency();
+      setSilverCoins(currency.silverCoins || 0);
+      setGoldCoins(currency.goldCoins || 0);
+      console.log('✅ 재화 업데이트:', currency);
+    } catch (error) {
+      console.error('재화 업데이트 실패:', error);
     }
   };
 
