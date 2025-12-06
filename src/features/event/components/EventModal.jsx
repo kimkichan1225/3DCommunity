@@ -215,25 +215,65 @@ function EventModal({ onClose }) {
                   <h3>{selectedItem.title}</h3>
                 </div>
                 <div className="event-detail-content">
-                  <p className="detail-text">{selectedItem.detailContent || selectedItem.description}</p>
+                  {/* 출석 체크 이벤트의 경우 특별한 레이아웃 */}
+                  {selectedItem.id === 3 ? (
+                    <div className="attendance-check-container">
+                      <p className="detail-text">매일 접속하고 보상을 받아가세요!</p>
 
-                  {/* 기간 표시 (업적 제외) */}
-                  {activeTab !== 'achievements' && selectedItem.startDate && (
-                    <div className="detail-date">
-                      <span>📅 {selectedItem.startDate} ~ {selectedItem.endDate}</span>
-                    </div>
-                  )}
+                      {/* 출석 체크 그리드 (7x2) */}
+                      <div className="attendance-grid">
+                        {Array.from({ length: 14 }, (_, index) => {
+                          const day = index + 1;
+                          const isGoldDay = day === 7 || day === 14;
+                          const coinImage = isGoldDay
+                            ? '/resources/Icon/Gold-Coin.png'
+                            : '/resources/Icon/Silver-Coin.png';
+                          const coinAmount = isGoldDay ? '50' : '10';
 
-                  {/* 보상 표시 */}
-                  {selectedItem.rewards && selectedItem.rewards.length > 0 && (
-                    <div className="detail-rewards">
-                      <h4>🎁 보상</h4>
-                      <ul>
-                        {selectedItem.rewards.map((reward, index) => (
-                          <li key={index}>{reward}</li>
-                        ))}
-                      </ul>
+                          return (
+                            <div key={day} className={`attendance-box ${isGoldDay ? 'gold-box' : 'silver-box'}`}>
+                              <div className="attendance-day">Day {day}</div>
+                              <div className="attendance-reward">
+                                <img src={coinImage} alt="coin" className="coin-icon" />
+                                <span className={isGoldDay ? 'gold-text' : 'silver-text'}>
+                                  {coinAmount}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* 기간 표시 */}
+                      {selectedItem.startDate && (
+                        <div className="detail-date">
+                          <span>📅 {selectedItem.startDate} ~ {selectedItem.endDate}</span>
+                        </div>
+                      )}
                     </div>
+                  ) : (
+                    <>
+                      <p className="detail-text">{selectedItem.detailContent || selectedItem.description}</p>
+
+                      {/* 기간 표시 (업적 제외) */}
+                      {activeTab !== 'achievements' && selectedItem.startDate && (
+                        <div className="detail-date">
+                          <span>📅 {selectedItem.startDate} ~ {selectedItem.endDate}</span>
+                        </div>
+                      )}
+
+                      {/* 보상 표시 */}
+                      {selectedItem.rewards && selectedItem.rewards.length > 0 && (
+                        <div className="detail-rewards">
+                          <h4>🎁 보상</h4>
+                          <ul>
+                            {selectedItem.rewards.map((reward, index) => (
+                              <li key={index}>{reward}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* 업적 진행도 */}

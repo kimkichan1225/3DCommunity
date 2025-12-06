@@ -485,6 +485,99 @@
   font-size: 18px;
 }
 
+/* 출석 체크 컨테이너 */
+.attendance-check-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 출석 체크 그리드 (7x2) */
+.attendance-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 15px;
+  margin: 20px 0;
+}
+
+/* 출석 박스 */
+.attendance-box {
+  border-radius: 12px;
+  padding: 15px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* 골드 박스 */
+.attendance-box.gold-box {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.05));
+  border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.attendance-box.gold-box:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+  border-color: rgba(255, 215, 0, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+/* 실버 박스 */
+.attendance-box.silver-box {
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(169, 169, 169, 0.05));
+  border: 2px solid rgba(192, 192, 192, 0.3);
+}
+
+.attendance-box.silver-box:hover {
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1));
+  border-color: rgba(192, 192, 192, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(192, 192, 192, 0.3);
+}
+
+/* Day 텍스트 */
+.attendance-day {
+  color: #FFD700;
+  font-size: 14px;
+  font-weight: bold;
+  text-shadow: 0 2px 5px rgba(255, 215, 0, 0.3);
+}
+
+/* 보상 영역 */
+.attendance-reward {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 코인 아이콘 */
+.coin-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(255, 215, 0, 0.4));
+}
+
+/* 코인 개수 텍스트 */
+.gold-text {
+  color: #FFD700;
+  font-size: 16px;
+  font-weight: bold;
+  text-shadow: 0 2px 5px rgba(255, 215, 0, 0.5);
+}
+
+.silver-text {
+  color: #C0C0C0;
+  font-size: 16px;
+  font-weight: bold;
+  text-shadow: 0 2px 5px rgba(192, 192, 192, 0.5);
+}
+
 /* 반응형 */
 @media (max-width: 900px) {
   .event-modal-body {
@@ -500,6 +593,12 @@
 
   .event-detail-section {
     max-height: 60%;
+  }
+
+  .attendance-grid {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto;
+    gap: 10px;
   }
 }
 
