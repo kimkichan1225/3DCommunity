@@ -23,6 +23,7 @@ import ContextMenu from './components/ContextMenu';
 import OtherPlayerProfileModal from './components/OtherPlayerProfileModal';
 import Notification from './components/Notification';
 import GameIcon from './components/GameIcon';
+import CurrencyDisplay from './components/CurrencyDisplay';
 import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
@@ -63,6 +64,8 @@ function App() {
   const [otherPlayerProfile, setOtherPlayerProfile] = useState(null); // 다른 플레이어 프로필 모달 상태 { userId, username }
   const [notification, setNotification] = useState(null); // 알림 상태 { message, type }
   const [showGameIcon, setShowGameIcon] = useState(false); // 게임 아이콘 표시 상태
+  const [silverCoins, setSilverCoins] = useState(0); // 일반 재화 (Silver Coin)
+  const [goldCoins, setGoldCoins] = useState(0); // 유료 재화 (Gold Coin)
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
   const navigate = useNavigate();
 
@@ -258,6 +261,10 @@ function App() {
     setUsername(user.username || 'Guest');
     setUserId(user.id || String(Date.now()));
     setUserProfile(user); // 프로필 정보 저장 (selectedProfile, selectedOutline 포함)
+
+    // 재화 정보 설정 (임시로 기본값 설정, 추후 서버에서 가져오도록 수정)
+    setSilverCoins(user.silverCoins || 1000);
+    setGoldCoins(user.goldCoins || 100);
   };
 
   // 프로필 업데이트 시 호출되는 함수
@@ -291,6 +298,8 @@ function App() {
     setUserProfile(null);
     setOtherPlayers({});
     setOnlineCount(0);
+    setSilverCoins(0);
+    setGoldCoins(0);
   };
 
   // 채팅 메시지 처리 함수 (GlobalChat에서 호출됨)
@@ -517,17 +526,27 @@ function App() {
 
       {/* 프로필 아바타 (로그인한 사용자만 표시) */}
       {isLoggedIn && (
-        <button
-          className={`profile-avatar-button ${isMapFull ? 'bottom-right' : 'top-left'}`}
-          onClick={() => setShowProfileModal(true)}
-          title="프로필"
-        >
-          <ProfileAvatar
-            profileImage={userProfile?.selectedProfile}
-            outlineImage={userProfile?.selectedOutline}
-            size={150}
-          />
-        </button>
+        <>
+          <button
+            className={`profile-avatar-button ${isMapFull ? 'bottom-right' : 'top-left'}`}
+            onClick={() => setShowProfileModal(true)}
+            title="프로필"
+          >
+            <ProfileAvatar
+              profileImage={userProfile?.selectedProfile}
+              outlineImage={userProfile?.selectedOutline}
+              size={150}
+            />
+          </button>
+
+          {/* 재화 표시 (프로필 아바타 우측) */}
+          <div className={`currency-display-wrapper ${isMapFull ? 'currency-display-bottom-right' : 'currency-display-top-left'}`}>
+            <CurrencyDisplay
+              silverCoins={silverCoins}
+              goldCoins={goldCoins}
+            />
+          </div>
+        </>
       )}
 
       {/* 아이콘 메뉴 (로그인한 사용자만 표시) */}
