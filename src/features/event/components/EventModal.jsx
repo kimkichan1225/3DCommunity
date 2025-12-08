@@ -200,6 +200,9 @@ function EventModal({ onClose }) {
                       {/* 플라자 패스 테이블 */}
                       <div className="plaza-pass-scroll">
                         <div className="plaza-pass-table">
+                          {/* 강조 구분선 (전체) */}
+                          <div className="plaza-pass-divider-full"></div>
+
                           {Array.from({ length: 30 }, (_, index) => (
                             <div key={index} className="plaza-pass-column">
                               {/* 레벨 번호 */}
@@ -212,9 +215,6 @@ function EventModal({ onClose }) {
                                   <span>100</span>
                                 </div>
                               </div>
-
-                              {/* 강조 구분선 */}
-                              <div className="plaza-pass-divider"></div>
 
                               {/* 프리미엄 보상 */}
                               <div className="plaza-pass-reward-cell premium">
