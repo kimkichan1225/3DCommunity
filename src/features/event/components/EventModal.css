@@ -652,7 +652,7 @@
 
 /* 숫자 셀 (첫 번째 행) */
 .number-cell {
-  height: 40px;
+  height: 25px;
   color: #FFD700;
   font-size: 16px;
   font-weight: bold;
