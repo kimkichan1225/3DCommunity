@@ -499,6 +499,12 @@
   overflow-y: hidden;
   padding: 10px 0;
   scroll-behavior: smooth;
+  cursor: grab;
+  user-select: none;
+}
+
+.plaza-pass-scroll:active {
+  cursor: grabbing;
 }
 
 /* 스크롤바 스타일 */

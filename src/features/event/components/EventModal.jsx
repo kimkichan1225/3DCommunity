@@ -12,6 +12,42 @@ function EventModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('ongoing'); // 'ongoing', 'achievements', or 'ended'
   const [selectedItem, setSelectedItem] = useState(null); // 선택된 이벤트/업적
 
+  // 플라자 패스 드래그 스크롤
+  const scrollRef = React.useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e) => {
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+    scrollRef.current.style.cursor = 'grabbing';
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    if (scrollRef.current) {
+      scrollRef.current.style.cursor = 'grab';
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+    if (scrollRef.current) {
+      scrollRef.current.style.cursor = 'grab';
+    }
+  };
+
   // 더미 데이터 (추후 서버에서 가져올 예정)
   const ongoingEvents = [
     {
@@ -198,7 +234,14 @@ function EventModal({ onClose }) {
                       <p className="detail-text">시즌 미션을 완료하고 특별 보상을 받으세요!</p>
 
                       {/* 플라자 패스 테이블 */}
-                      <div className="plaza-pass-scroll">
+                      <div
+                        className="plaza-pass-scroll"
+                        ref={scrollRef}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseLeave}
+                      >
                         <div className="plaza-pass-table">
                           {/* 강조 구분선 (전체) */}
                           <div className="plaza-pass-divider-full"></div>
