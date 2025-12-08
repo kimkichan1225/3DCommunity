@@ -629,154 +629,50 @@
 
 /* 플라자 패스 테이블 */
 .plaza-pass-table {
-  display: flex;
-  gap: 10px;
-  min-width: max-content;
+  border-collapse: separate;
+  border-spacing: 10px;
   border: 3px solid rgba(255, 215, 0, 0.5);
   border-radius: 15px;
   padding: 10px;
   background: rgba(0, 0, 0, 0.2);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-  position: relative;
 }
 
-/* 각 열 (레벨, 무료, 프리미엄을 세로로 배치) */
-.plaza-pass-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  position: relative;
-  z-index: 1;
-}
-
-/* 레벨 1 세로줄 강조 */
-.plaza-pass-column.level-1 {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.1);
-  z-index: 2;
-}
-
-/* 각 열 사이 세로 구분선 */
-.plaza-pass-column:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: -6px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(180deg, rgba(255, 215, 0, 0.7), rgba(255, 165, 0, 0.7));
-  border-radius: 2px;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-  z-index: -1;
-}
-
-/* 숫자 밑 가로 구분선 */
-.plaza-pass-divider-top {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  top: 42px;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(255, 215, 0, 0.7), rgba(255, 165, 0, 0.7));
-  border-radius: 2px;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-  z-index: 0;
-}
-
-/* 무료/프리미엄 사이 가로 구분선 */
-.plaza-pass-divider-full {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  top: 58%;
-  transform: translateY(-50%);
-  height: 2px;
-  background: linear-gradient(90deg, rgba(255, 215, 0, 0.7), rgba(255, 165, 0, 0.7));
-  border-radius: 2px;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-  z-index: 0;
-}
-
-/* 레벨 셀 */
-.plaza-pass-level-cell {
+/* 모든 셀 기본 스타일 */
+.plaza-pass-cell {
+  text-align: center;
+  vertical-align: middle;
   min-width: 80px;
   width: 80px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 10px;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 숫자 셀 (첫 번째 행) */
+.number-cell {
+  height: 40px;
   color: #FFD700;
   font-size: 16px;
   font-weight: bold;
   text-shadow: 0 2px 5px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.05));
 }
 
-/* 보상 셀 */
-.plaza-pass-reward-cell {
-  min-width: 80px;
-  width: 80px;
+/* 보상 셀 (두 번째, 세 번째 행) */
+.reward-cell {
   height: 80px;
-  border-radius: 10px;
-  padding: 10px 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
-/* 무료 보상 */
-.plaza-pass-reward-cell.free {
-  background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(169, 169, 169, 0.05));
-  border: 2px solid rgba(192, 192, 192, 0.3);
-}
-
-.plaza-pass-reward-cell.free:hover {
-  background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1));
-  border-color: rgba(192, 192, 192, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(192, 192, 192, 0.3);
-}
-
-/* 프리미엄 보상 */
-.plaza-pass-reward-cell.premium {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.05));
-  border: 2px solid rgba(255, 215, 0, 0.3);
-}
-
-.plaza-pass-reward-cell.premium:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+.reward-cell:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));
   border-color: rgba(255, 215, 0, 0.5);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
-}
-
-/* 보상 박스 */
-.reward-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.reward-icon {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 5px rgba(255, 215, 0, 0.4));
-}
-
-.reward-box span {
-  font-size: 14px;
-  font-weight: bold;
-  color: #FFD700;
-  text-shadow: 0 2px 5px rgba(255, 215, 0, 0.3);
 }
 
 /* 출석 체크 컨테이너 */

@@ -259,35 +259,34 @@ function EventModal({ onClose }) {
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseLeave}
                       >
-                        <div className="plaza-pass-table">
-                          {/* 숫자 밑 가로 구분선 */}
-                          <div className="plaza-pass-divider-top"></div>
-                          {/* 무료/프리미엄 사이 가로 구분선 */}
-                          <div className="plaza-pass-divider-full"></div>
-
-                          {Array.from({ length: 30 }, (_, index) => (
-                            <div key={index} className={`plaza-pass-column level-${index + 1}`} data-level={index + 1}>
-                              {/* 레벨 번호 */}
-                              <div className="plaza-pass-level-cell">{index + 1}</div>
-
-                              {/* 무료 보상 */}
-                              <div className="plaza-pass-reward-cell free">
-                                <div className="reward-box">
-                                  <img src="/resources/Icon/Silver-Coin.png" alt="coin" className="reward-icon" />
-                                  <span>100</span>
-                                </div>
-                              </div>
-
-                              {/* 프리미엄 보상 */}
-                              <div className="plaza-pass-reward-cell premium">
-                                <div className="reward-box">
-                                  <img src="/resources/Icon/Gold-Coin.png" alt="coin" className="reward-icon" />
-                                  <span>50</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                        <table className="plaza-pass-table">
+                          <tbody>
+                            {/* 첫 번째 행: 숫자 1-30 */}
+                            <tr>
+                              {Array.from({ length: 30 }, (_, index) => (
+                                <td key={`num-${index}`} className="plaza-pass-cell number-cell">
+                                  {index + 1}
+                                </td>
+                              ))}
+                            </tr>
+                            {/* 두 번째 행: 빈 박스 */}
+                            <tr>
+                              {Array.from({ length: 30 }, (_, index) => (
+                                <td key={`row2-${index}`} className="plaza-pass-cell reward-cell">
+                                  {/* 빈 박스 */}
+                                </td>
+                              ))}
+                            </tr>
+                            {/* 세 번째 행: 빈 박스 */}
+                            <tr>
+                              {Array.from({ length: 30 }, (_, index) => (
+                                <td key={`row3-${index}`} className="plaza-pass-cell reward-cell">
+                                  {/* 빈 박스 */}
+                                </td>
+                              ))}
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   ) : (selectedItem.id === 3 || selectedItem.id === 1) ? (
