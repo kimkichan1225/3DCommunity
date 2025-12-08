@@ -660,7 +660,7 @@
 .plaza-pass-table {
   display: flex;
   gap: 10px;
-  border: 3px solid rgba(255, 215, 0, 0.5);
+  border: none;
   border-radius: 15px;
   padding: 0;
   background: rgba(0, 0, 0, 0.2);
@@ -673,6 +673,13 @@
   flex-direction: column;
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+/* 1번 세로줄 밝게 */
+.plaza-pass-column:first-child .plaza-pass-cell {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
 }
 
 .plaza-pass-column:hover .plaza-pass-cell {
