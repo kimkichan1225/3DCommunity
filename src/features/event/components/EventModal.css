@@ -485,6 +485,152 @@
   font-size: 18px;
 }
 
+/* 플라자 패스 컨테이너 */
+.plaza-pass-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 플라자 패스 가로 스크롤 */
+.plaza-pass-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 20px 0;
+  scroll-behavior: smooth;
+}
+
+/* 스크롤바 스타일 */
+.plaza-pass-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.plaza-pass-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.plaza-pass-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.5), rgba(255, 165, 0, 0.5));
+  border-radius: 4px;
+}
+
+.plaza-pass-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.7), rgba(255, 165, 0, 0.7));
+}
+
+/* 플라자 패스 테이블 */
+.plaza-pass-table {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: max-content;
+}
+
+/* 각 행 (레벨, 무료, 프리미엄) */
+.plaza-pass-level-row,
+.plaza-pass-free-row,
+.plaza-pass-premium-row {
+  display: flex;
+  gap: 15px;
+}
+
+/* 레벨 셀 */
+.plaza-pass-level-cell {
+  min-width: 60px;
+  width: 60px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFD700;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 2px 5px rgba(255, 215, 0, 0.3);
+}
+
+/* 보상 셀 */
+.plaza-pass-reward-cell {
+  min-width: 120px;
+  width: 120px;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  padding: 15px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* 무료 보상 (2행) */
+.plaza-pass-reward-cell.free {
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(169, 169, 169, 0.05));
+  border: 2px solid rgba(192, 192, 192, 0.3);
+}
+
+.plaza-pass-reward-cell.free:hover {
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1));
+  border-color: rgba(192, 192, 192, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(192, 192, 192, 0.3);
+}
+
+/* 프리미엄 보상 (3행) */
+.plaza-pass-reward-cell.premium {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.05));
+  border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.plaza-pass-reward-cell.premium:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+  border-color: rgba(255, 215, 0, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+/* 2행과 3행 사이 강조 줄 */
+.plaza-pass-free-row {
+  position: relative;
+  padding-bottom: 15px;
+  margin-bottom: 5px;
+}
+
+.plaza-pass-free-row::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.7), rgba(255, 165, 0, 0.7));
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+/* 보상 박스 */
+.reward-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.reward-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(255, 215, 0, 0.4));
+}
+
+.reward-box span {
+  font-size: 16px;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 2px 5px rgba(255, 215, 0, 0.3);
+}
+
 /* 출석 체크 컨테이너 */
 .attendance-check-container {
   display: flex;

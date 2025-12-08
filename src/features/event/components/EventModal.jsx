@@ -192,8 +192,48 @@ function EventModal({ onClose }) {
                   <h3>{selectedItem.title}</h3>
                 </div>
                 <div className="event-detail-content">
-                  {/* 출석 체크 이벤트의 경우 특별한 레이아웃 */}
-                  {(selectedItem.id === 3 || selectedItem.id === 1) ? (
+                  {/* 플라자 패스의 경우 특별한 레이아웃 */}
+                  {selectedItem.id === 2 ? (
+                    <div className="plaza-pass-container">
+                      <p className="detail-text">시즌 미션을 완료하고 특별 보상을 받으세요!</p>
+
+                      {/* 플라자 패스 테이블 */}
+                      <div className="plaza-pass-scroll">
+                        <div className="plaza-pass-table">
+                          {/* 1행: 레벨 번호들 */}
+                          <div className="plaza-pass-level-row">
+                            {Array.from({ length: 30 }, (_, index) => (
+                              <div key={index} className="plaza-pass-level-cell">{index + 1}</div>
+                            ))}
+                          </div>
+
+                          {/* 2행: 무료 보상들 */}
+                          <div className="plaza-pass-free-row">
+                            {Array.from({ length: 30 }, (_, index) => (
+                              <div key={index} className="plaza-pass-reward-cell free">
+                                <div className="reward-box">
+                                  <img src="/resources/Icon/Silver-Coin.png" alt="coin" className="reward-icon" />
+                                  <span>100</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* 3행: 프리미엄 보상들 */}
+                          <div className="plaza-pass-premium-row">
+                            {Array.from({ length: 30 }, (_, index) => (
+                              <div key={index} className="plaza-pass-reward-cell premium">
+                                <div className="reward-box">
+                                  <img src="/resources/Icon/Gold-Coin.png" alt="coin" className="reward-icon" />
+                                  <span>50</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (selectedItem.id === 3 || selectedItem.id === 1) ? (
                     <div className="attendance-check-container">
                       <p className="detail-text">{selectedItem.id === 3 ? '매일 접속하고 보상을 받아가세요!' : '메타플라자 오픈을 기념하여 특별 출석 보상을 드립니다!'}</p>
 
