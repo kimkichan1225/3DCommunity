@@ -259,34 +259,24 @@ function EventModal({ onClose }) {
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseLeave}
                       >
-                        <table className="plaza-pass-table">
-                          <tbody>
-                            {/* 첫 번째 행: 숫자 1-30 */}
-                            <tr>
-                              {Array.from({ length: 30 }, (_, index) => (
-                                <td key={`num-${index}`} className="plaza-pass-cell number-cell">
-                                  {index + 1}
-                                </td>
-                              ))}
-                            </tr>
-                            {/* 두 번째 행: 빈 박스 */}
-                            <tr>
-                              {Array.from({ length: 30 }, (_, index) => (
-                                <td key={`row2-${index}`} className="plaza-pass-cell reward-cell">
-                                  {/* 빈 박스 */}
-                                </td>
-                              ))}
-                            </tr>
-                            {/* 세 번째 행: 빈 박스 */}
-                            <tr>
-                              {Array.from({ length: 30 }, (_, index) => (
-                                <td key={`row3-${index}`} className="plaza-pass-cell reward-cell">
-                                  {/* 빈 박스 */}
-                                </td>
-                              ))}
-                            </tr>
-                          </tbody>
-                        </table>
+                        <div className="plaza-pass-table">
+                          {Array.from({ length: 30 }, (_, index) => (
+                            <div key={`column-${index}`} className="plaza-pass-column">
+                              {/* 숫자 셀 */}
+                              <div className="plaza-pass-cell number-cell">
+                                {index + 1}
+                              </div>
+                              {/* 두 번째 행: 빈 박스 */}
+                              <div className="plaza-pass-cell reward-cell">
+                                {/* 빈 박스 */}
+                              </div>
+                              {/* 세 번째 행: 빈 박스 */}
+                              <div className="plaza-pass-cell reward-cell">
+                                {/* 빈 박스 */}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ) : (selectedItem.id === 3 || selectedItem.id === 1) ? (

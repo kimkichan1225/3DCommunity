@@ -629,8 +629,8 @@
 
 /* 플라자 패스 테이블 */
 .plaza-pass-table {
-  border-collapse: separate;
-  border-spacing: 10px 0;
+  display: flex;
+  gap: 10px;
   border: 3px solid rgba(255, 215, 0, 0.5);
   border-radius: 15px;
   padding: 0;
@@ -638,16 +638,36 @@
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
+/* 각 세로줄 (컬럼) */
+.plaza-pass-column {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.plaza-pass-column:hover .plaza-pass-cell {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.plaza-pass-column:hover {
+  transform: translateY(-2px);
+}
+
 /* 모든 셀 기본 스타일 */
 .plaza-pass-cell {
   text-align: center;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 80px;
   width: 80px;
   padding: 10px;
   border: 2px solid rgba(255, 215, 0, 0.3);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
 }
 
 /* 숫자 셀 (첫 번째 행) */
@@ -664,15 +684,6 @@
 .reward-cell {
   height: 80px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.reward-cell:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));
-  border-color: rgba(255, 215, 0, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 }
 
 /* 출석 체크 컨테이너 */
