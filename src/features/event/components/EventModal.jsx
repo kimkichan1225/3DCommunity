@@ -200,36 +200,31 @@ function EventModal({ onClose }) {
                       {/* 플라자 패스 테이블 */}
                       <div className="plaza-pass-scroll">
                         <div className="plaza-pass-table">
-                          {/* 1행: 레벨 번호들 */}
-                          <div className="plaza-pass-level-row">
-                            {Array.from({ length: 30 }, (_, index) => (
-                              <div key={index} className="plaza-pass-level-cell">{index + 1}</div>
-                            ))}
-                          </div>
+                          {Array.from({ length: 30 }, (_, index) => (
+                            <div key={index} className="plaza-pass-column">
+                              {/* 레벨 번호 */}
+                              <div className="plaza-pass-level-cell">{index + 1}</div>
 
-                          {/* 2행: 무료 보상들 */}
-                          <div className="plaza-pass-free-row">
-                            {Array.from({ length: 30 }, (_, index) => (
-                              <div key={index} className="plaza-pass-reward-cell free">
+                              {/* 무료 보상 */}
+                              <div className="plaza-pass-reward-cell free">
                                 <div className="reward-box">
                                   <img src="/resources/Icon/Silver-Coin.png" alt="coin" className="reward-icon" />
                                   <span>100</span>
                                 </div>
                               </div>
-                            ))}
-                          </div>
 
-                          {/* 3행: 프리미엄 보상들 */}
-                          <div className="plaza-pass-premium-row">
-                            {Array.from({ length: 30 }, (_, index) => (
-                              <div key={index} className="plaza-pass-reward-cell premium">
+                              {/* 강조 구분선 */}
+                              <div className="plaza-pass-divider"></div>
+
+                              {/* 프리미엄 보상 */}
+                              <div className="plaza-pass-reward-cell premium">
                                 <div className="reward-box">
                                   <img src="/resources/Icon/Gold-Coin.png" alt="coin" className="reward-icon" />
                                   <span>50</span>
                                 </div>
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
