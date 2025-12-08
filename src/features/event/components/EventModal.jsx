@@ -302,7 +302,7 @@ function EventModal({ onClose }) {
 
                   {/* 버튼 */}
                   <div className="detail-actions">
-                    {activeTab === 'ongoing' && selectedItem.id !== 3 && selectedItem.id !== 1 && (
+                    {activeTab === 'ongoing' && selectedItem.id !== 3 && selectedItem.id !== 1 && selectedItem.id !== 2 && (
                       <button className="btn-participate">참여하기</button>
                     )}
                     {activeTab === 'achievements' && !selectedItem.isCompleted && (
