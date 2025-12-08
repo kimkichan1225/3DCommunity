@@ -524,6 +524,11 @@
   display: flex;
   gap: 15px;
   min-width: max-content;
+  border: 3px solid rgba(255, 215, 0, 0.5);
+  border-radius: 15px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
 /* 각 열 (레벨, 무료, 프리미엄을 세로로 배치) */
