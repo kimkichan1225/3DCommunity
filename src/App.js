@@ -29,6 +29,7 @@ import multiplayerService from './services/multiplayerService';
 import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
 import currencyService from './services/currencyService';
+import attendanceService from './services/attendanceService';
 import { useNavigate } from 'react-router-dom';
 
 function App() {
@@ -273,9 +274,14 @@ function App() {
     setUserId(user.id || String(Date.now()));
     setUserProfile(user); // 프로필 정보 저장 (selectedProfile, selectedOutline 포함)
 
-    // 출석 체크 모달 자동 표시
-    setShowEventModal(true);
-    setShouldAutoAttendance(true);
+    // 오늘 출석 체크 여부 확인
+    const bothAttended = await attendanceService.checkBothAttendedToday();
+
+    if (!bothAttended) {
+      // 오늘 출석하지 않았으면 출석 체크 모달 자동 표시
+      setShowEventModal(true);
+      setShouldAutoAttendance(true);
+    }
 
     // 서버에서 재화 정보 가져오기
     try {
@@ -777,6 +783,10 @@ function App() {
           onClose={() => setShowEventModal(false)}
           shouldAutoAttendance={shouldAutoAttendance}
           onAttendanceComplete={handleAttendanceComplete}
+          onCoinsUpdate={(silver, gold) => {
+            setSilverCoins(silver);
+            setGoldCoins(gold);
+          }}
         />
       )}
 

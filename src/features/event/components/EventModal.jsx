@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './EventModal.css';
+import attendanceService from '../../../services/attendanceService';
 
 /**
  * EventModal 컴포넌트
@@ -8,15 +9,16 @@ import './EventModal.css';
  * - 왼쪽: 목록, 오른쪽: 상세 내용
  * - UI만 구현 (기능은 추후 추가)
  */
-function EventModal({ onClose, shouldAutoAttendance = false, onAttendanceComplete }) {
+function EventModal({ onClose, shouldAutoAttendance = false, onAttendanceComplete, onCoinsUpdate }) {
   const [activeTab, setActiveTab] = useState('ongoing'); // 'ongoing', 'achievements', or 'ended'
   const [selectedItem, setSelectedItem] = useState(null); // 선택된 이벤트/업적
 
   // 출석 체크 상태
-  const [dailyAttendance, setDailyAttendance] = useState([]); // 매일 출석 체크 (id: 3)
-  const [eventAttendance, setEventAttendance] = useState([]); // 오픈 기념 출석 체크 (id: 1)
+  const [dailyAttendance, setDailyAttendance] = useState([]); // 매일 출석 체크 (id: 3) - dayNumber 배열
+  const [eventAttendance, setEventAttendance] = useState([]); // 오픈 기념 출석 체크 (id: 1) - dayNumber 배열
   const [isClaimingReward, setIsClaimingReward] = useState(false); // 보상 수령 중
   const [currentClaimingDay, setCurrentClaimingDay] = useState(null); // 현재 수령 중인 날
+  const [isLoading, setIsLoading] = useState(true); // 데이터 로딩 중
 
   // 플라자 패스 드래그 스크롤
   const scrollRef = React.useRef(null);
@@ -134,6 +136,27 @@ function EventModal({ onClose, shouldAutoAttendance = false, onAttendanceComplet
 
   const currentItems = getCurrentItems();
 
+  // 출석 데이터 로드
+  React.useEffect(() => {
+    const loadAttendanceData = async () => {
+      try {
+        setIsLoading(true);
+        const dailyHistory = await attendanceService.getAttendanceHistory('DAILY');
+        const eventHistory = await attendanceService.getAttendanceHistory('EVENT');
+
+        // dayNumber 배열로 변환
+        setDailyAttendance(dailyHistory.map(a => a.dayNumber));
+        setEventAttendance(eventHistory.map(a => a.dayNumber));
+      } catch (error) {
+        console.error('Failed to load attendance data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAttendanceData();
+  }, []);
+
   // 탭 변경 시 첫 번째 아이템 자동 선택
   React.useEffect(() => {
     if (currentItems.length > 0) {
@@ -145,36 +168,64 @@ function EventModal({ onClose, shouldAutoAttendance = false, onAttendanceComplet
 
   // 자동 출석 체크 로직
   React.useEffect(() => {
-    if (shouldAutoAttendance && !isClaimingReward) {
+    if (shouldAutoAttendance && !isClaimingReward && !isLoading) {
       const performAutoAttendance = async () => {
         setIsClaimingReward(true);
 
-        // 1. 매일 출석 체크 (id: 3) 선택
-        const dailyEvent = ongoingEvents.find(e => e.id === 3);
-        if (dailyEvent) {
-          setSelectedItem(dailyEvent);
+        try {
+          // 1. 매일 출석 체크 (id: 3) 선택
+          const dailyEvent = ongoingEvents.find(e => e.id === 3);
+          if (dailyEvent) {
+            setSelectedItem(dailyEvent);
 
-          // Day 1 보상 수령 애니메이션
-          await new Promise(resolve => setTimeout(resolve, 500));
-          setCurrentClaimingDay(1);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          setDailyAttendance([1]);
-          await new Promise(resolve => setTimeout(resolve, 500));
-          setCurrentClaimingDay(null);
-        }
+            // 서버에 출석 체크 요청
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const dailyResult = await attendanceService.claimAttendance('DAILY');
 
-        // 2. 오픈 기념 출석 체크 (id: 1) 선택
-        const eventEvent = ongoingEvents.find(e => e.id === 1);
-        if (eventEvent) {
-          setSelectedItem(eventEvent);
+            if (dailyResult.success) {
+              setCurrentClaimingDay(dailyResult.attendance.dayNumber);
+              await new Promise(resolve => setTimeout(resolve, 1000));
 
-          // Day 1 보상 수령 애니메이션
-          await new Promise(resolve => setTimeout(resolve, 500));
-          setCurrentClaimingDay(1);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          setEventAttendance([1]);
-          await new Promise(resolve => setTimeout(resolve, 500));
-          setCurrentClaimingDay(null);
+              // 출석 기록 업데이트
+              setDailyAttendance(prev => [...prev, dailyResult.attendance.dayNumber]);
+
+              // 코인 업데이트
+              if (onCoinsUpdate) {
+                onCoinsUpdate(dailyResult.totalSilverCoins, dailyResult.totalGoldCoins);
+              }
+
+              await new Promise(resolve => setTimeout(resolve, 500));
+              setCurrentClaimingDay(null);
+            }
+          }
+
+          // 2. 오픈 기념 출석 체크 (id: 1) 선택
+          const eventEvent = ongoingEvents.find(e => e.id === 1);
+          if (eventEvent) {
+            setSelectedItem(eventEvent);
+
+            // 서버에 출석 체크 요청
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const eventResult = await attendanceService.claimAttendance('EVENT');
+
+            if (eventResult.success) {
+              setCurrentClaimingDay(eventResult.attendance.dayNumber);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+
+              // 출석 기록 업데이트
+              setEventAttendance(prev => [...prev, eventResult.attendance.dayNumber]);
+
+              // 코인 업데이트
+              if (onCoinsUpdate) {
+                onCoinsUpdate(eventResult.totalSilverCoins, eventResult.totalGoldCoins);
+              }
+
+              await new Promise(resolve => setTimeout(resolve, 500));
+              setCurrentClaimingDay(null);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to claim attendance:', error);
         }
 
         setIsClaimingReward(false);
@@ -187,7 +238,7 @@ function EventModal({ onClose, shouldAutoAttendance = false, onAttendanceComplet
 
       performAutoAttendance();
     }
-  }, [shouldAutoAttendance]);
+  }, [shouldAutoAttendance, isLoading]);
 
   return (
     <div className="event-modal-overlay" onClick={onClose}>
