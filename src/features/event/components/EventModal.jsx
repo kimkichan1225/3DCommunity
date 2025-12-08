@@ -16,7 +16,7 @@ function EventModal({ onClose }) {
   const ongoingEvents = [
     {
       id: 3,
-      title: '출석 체크',
+      title: '매일 출석 체크',
       description: '매일 접속 시 보상 획득',
       detailContent: '매일 접속하고 보상을 받아가세요!\n\n연속 출석 시 더 많은 보상을 받을 수 있습니다.\n\n7일 연속 출석: 골드 코인 50개\n30일 연속 출석: 골드 코인 200개',
       startDate: '2025-12-01',
@@ -27,9 +27,9 @@ function EventModal({ onClose }) {
     },
     {
       id: 1,
-      title: '신규 유저 환영 이벤트',
-      description: '회원가입 시 골드 코인 100개를 지급합니다.\n\n새로운 모험을 시작하신 것을 환영합니다!',
-      detailContent: '이벤트 참여 방법:\n1. 회원가입 완료\n2. 자동으로 골드 코인 100개 지급\n\n보상: 골드 코인 100개',
+      title: '오픈 기념 출석 체크',
+      description: '오픈 기념 특별 출석 보상',
+      detailContent: '메타플라자 오픈을 기념하여 특별 출석 보상을 드립니다!\n\n매일 접속하고 보상을 받아가세요!',
       startDate: '2025-12-01',
       endDate: '2025-12-31',
       image: '/resources/Icon/Event-icon.png',
@@ -193,9 +193,9 @@ function EventModal({ onClose }) {
                 </div>
                 <div className="event-detail-content">
                   {/* 출석 체크 이벤트의 경우 특별한 레이아웃 */}
-                  {selectedItem.id === 3 ? (
+                  {(selectedItem.id === 3 || selectedItem.id === 1) ? (
                     <div className="attendance-check-container">
-                      <p className="detail-text">매일 접속하고 보상을 받아가세요!</p>
+                      <p className="detail-text">{selectedItem.id === 3 ? '매일 접속하고 보상을 받아가세요!' : '메타플라자 오픈을 기념하여 특별 출석 보상을 드립니다!'}</p>
 
                       {/* 출석 체크 그리드 (7x2) */}
                       <div className="attendance-grid">
@@ -205,7 +205,7 @@ function EventModal({ onClose }) {
                           const coinImage = isGoldDay
                             ? '/resources/Icon/Gold-Coin.png'
                             : '/resources/Icon/Silver-Coin.png';
-                          const coinAmount = isGoldDay ? '50' : '10';
+                          const coinAmount = isGoldDay ? '50' : '100';
 
                           return (
                             <div key={day} className={`attendance-box ${isGoldDay ? 'gold-box' : 'silver-box'}`}>
@@ -220,13 +220,6 @@ function EventModal({ onClose }) {
                           );
                         })}
                       </div>
-
-                      {/* 기간 표시 */}
-                      {selectedItem.startDate && (
-                        <div className="detail-date">
-                          <span>📅 {selectedItem.startDate} ~ {selectedItem.endDate}</span>
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <>
@@ -272,7 +265,7 @@ function EventModal({ onClose }) {
 
                   {/* 버튼 */}
                   <div className="detail-actions">
-                    {activeTab === 'ongoing' && (
+                    {activeTab === 'ongoing' && selectedItem.id !== 3 && selectedItem.id !== 1 && (
                       <button className="btn-participate">참여하기</button>
                     )}
                     {activeTab === 'achievements' && !selectedItem.isCompleted && (
