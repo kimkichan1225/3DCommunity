@@ -74,9 +74,18 @@ public class AttendanceService {
         if (lastAttendanceOpt.isPresent()) {
             Attendance lastAttendance = lastAttendanceOpt.get();
 
-            // 마지막 출석이 Day 14였으면 Day 1부터 다시 시작
+            // 마지막 출석이 Day 14였을 때
             if (lastAttendance.getDayNumber() == 14) {
-                nextDayNumber = 1;
+                // DAILY는 새 사이클 시작 (Day 1부터 다시)
+                if ("DAILY".equals(eventType)) {
+                    nextDayNumber = 1;
+                } else {
+                    // EVENT는 14일로 종료 (더 이상 출석 불가)
+                    return AttendanceClaimResponse.builder()
+                            .success(false)
+                            .message("Event attendance completed (14 days)")
+                            .build();
+                }
             } else {
                 // 아니면 다음 날짜로 증가 (하루 이상 건너뛰어도 연속 유지)
                 nextDayNumber = lastAttendance.getDayNumber() + 1;
@@ -125,14 +134,14 @@ public class AttendanceService {
         }
 
         // 현재 총 코인 조회
-        var currency = currencyService.getCurrency(userId);
+        var currency = currencyService.getUserCurrency(userId);
 
         return AttendanceClaimResponse.builder()
                 .success(true)
                 .message("Attendance claimed successfully")
                 .attendance(convertToDTO(attendance))
-                .totalSilverCoins(currency.getSilverCoins())
-                .totalGoldCoins(currency.getGoldCoins())
+                .totalSilverCoins(currency.get("silverCoins"))
+                .totalGoldCoins(currency.get("goldCoins"))
                 .build();
     }
 

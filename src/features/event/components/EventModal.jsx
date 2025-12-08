@@ -201,7 +201,8 @@ function EventModal({ onClose, shouldAutoAttendance = false, onAttendanceComplet
 
           // 2. 오픈 기념 출석 체크 (id: 1) 선택
           const eventEvent = ongoingEvents.find(e => e.id === 1);
-          if (eventEvent) {
+          // 오픈 기념 출석은 14일까지만 (이미 14일 완료했으면 스킵)
+          if (eventEvent && !eventAttendance.includes(14)) {
             setSelectedItem(eventEvent);
 
             // 서버에 출석 체크 요청

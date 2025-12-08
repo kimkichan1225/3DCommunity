@@ -36,6 +36,7 @@ public class Attendance {
     private Integer dayNumber; // 연속 출석 일수 (1, 2, 3, ...)
 
     @Column(name = "reward_claimed", nullable = false)
+    @Builder.Default
     private Boolean rewardClaimed = true; // 보상 수령 여부 (항상 true로 저장)
 
     @Column(name = "silver_coins_rewarded")
