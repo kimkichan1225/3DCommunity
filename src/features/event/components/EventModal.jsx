@@ -231,7 +231,10 @@ function EventModal({ onClose }) {
                   {/* 플라자 패스의 경우 특별한 레이아웃 */}
                   {selectedItem.id === 2 ? (
                     <div className="plaza-pass-container">
-                      <p className="detail-text">시즌 미션을 완료하고 특별 보상을 받으세요!</p>
+                      <div className="plaza-pass-header">
+                        <p className="detail-text">시즌 미션을 완료하고 특별 보상을 받으세요!</p>
+                        <button className="btn-daily-mission">일일 미션 확인</button>
+                      </div>
 
                       {/* 플라자 패스 테이블 */}
                       <div
