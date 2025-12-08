@@ -8,9 +8,15 @@ import './EventModal.css';
  * - 왼쪽: 목록, 오른쪽: 상세 내용
  * - UI만 구현 (기능은 추후 추가)
  */
-function EventModal({ onClose }) {
+function EventModal({ onClose, shouldAutoAttendance = false, onAttendanceComplete }) {
   const [activeTab, setActiveTab] = useState('ongoing'); // 'ongoing', 'achievements', or 'ended'
   const [selectedItem, setSelectedItem] = useState(null); // 선택된 이벤트/업적
+
+  // 출석 체크 상태
+  const [dailyAttendance, setDailyAttendance] = useState([]); // 매일 출석 체크 (id: 3)
+  const [eventAttendance, setEventAttendance] = useState([]); // 오픈 기념 출석 체크 (id: 1)
+  const [isClaimingReward, setIsClaimingReward] = useState(false); // 보상 수령 중
+  const [currentClaimingDay, setCurrentClaimingDay] = useState(null); // 현재 수령 중인 날
 
   // 플라자 패스 드래그 스크롤
   const scrollRef = React.useRef(null);
@@ -136,6 +142,52 @@ function EventModal({ onClose }) {
       setSelectedItem(null);
     }
   }, [activeTab]);
+
+  // 자동 출석 체크 로직
+  React.useEffect(() => {
+    if (shouldAutoAttendance && !isClaimingReward) {
+      const performAutoAttendance = async () => {
+        setIsClaimingReward(true);
+
+        // 1. 매일 출석 체크 (id: 3) 선택
+        const dailyEvent = ongoingEvents.find(e => e.id === 3);
+        if (dailyEvent) {
+          setSelectedItem(dailyEvent);
+
+          // Day 1 보상 수령 애니메이션
+          await new Promise(resolve => setTimeout(resolve, 500));
+          setCurrentClaimingDay(1);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          setDailyAttendance([1]);
+          await new Promise(resolve => setTimeout(resolve, 500));
+          setCurrentClaimingDay(null);
+        }
+
+        // 2. 오픈 기념 출석 체크 (id: 1) 선택
+        const eventEvent = ongoingEvents.find(e => e.id === 1);
+        if (eventEvent) {
+          setSelectedItem(eventEvent);
+
+          // Day 1 보상 수령 애니메이션
+          await new Promise(resolve => setTimeout(resolve, 500));
+          setCurrentClaimingDay(1);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          setEventAttendance([1]);
+          await new Promise(resolve => setTimeout(resolve, 500));
+          setCurrentClaimingDay(null);
+        }
+
+        setIsClaimingReward(false);
+
+        // 출석 완료 콜백
+        if (onAttendanceComplete) {
+          onAttendanceComplete();
+        }
+      };
+
+      performAutoAttendance();
+    }
+  }, [shouldAutoAttendance]);
 
   return (
     <div className="event-modal-overlay" onClick={onClose}>
@@ -298,8 +350,13 @@ function EventModal({ onClose }) {
                             ? (selectedItem.id === 1 ? '100' : '50')
                             : (selectedItem.id === 1 ? '200' : '100');
 
+                          // 출석 체크 상태 확인
+                          const attendanceList = selectedItem.id === 3 ? dailyAttendance : eventAttendance;
+                          const isClaimed = attendanceList.includes(day);
+                          const isClaiming = currentClaimingDay === day;
+
                           return (
-                            <div key={day} className={`attendance-box ${isGoldDay ? 'gold-box' : 'silver-box'}`}>
+                            <div key={day} className={`attendance-box ${isGoldDay ? 'gold-box' : 'silver-box'} ${isClaimed ? 'claimed' : ''} ${isClaiming ? 'claiming' : ''}`}>
                               <div className="attendance-day">Day {day}</div>
                               <div className="attendance-reward">
                                 <img src={coinImage} alt="coin" className="coin-icon" />
@@ -307,6 +364,7 @@ function EventModal({ onClose }) {
                                   {coinAmount}
                                 </span>
                               </div>
+                              {isClaimed && <div className="claimed-badge">✓</div>}
                             </div>
                           );
                         })}

@@ -763,6 +763,48 @@
   gap: 10px;
   transition: all 0.3s ease;
   cursor: pointer;
+  position: relative;
+}
+
+/* 출석 완료 상태 */
+.attendance-box.claimed {
+  opacity: 0.6;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.3), rgba(76, 175, 80, 0.2)) !important;
+  border-color: rgba(76, 175, 80, 0.5) !important;
+}
+
+/* 출석 체크 중 애니메이션 */
+.attendance-box.claiming {
+  animation: claimPulse 1s ease-in-out;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+  transform: scale(1.1);
+}
+
+@keyframes claimPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 215, 0, 1);
+  }
+}
+
+/* 출석 완료 배지 */
+.attendance-box .claimed-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
 }
 
 /* 골드 박스 */

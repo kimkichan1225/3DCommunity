@@ -49,6 +49,7 @@ function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
+  const [shouldAutoAttendance, setShouldAutoAttendance] = useState(false);
   const [showPhoneUI, setShowPhoneUI] = useState(false);
   const [username, setUsername] = useState('');
   const [userId, setUserId] = useState('');
@@ -257,6 +258,13 @@ function App() {
     }
   };
 
+  // 출석 체크 완료 핸들러
+  const handleAttendanceComplete = () => {
+    console.log('출석 체크 완료');
+    setShouldAutoAttendance(false);
+    // 모달은 열어둠 - 사용자가 직접 닫을 수 있도록
+  };
+
   const handleLoginSuccess = async (user) => {
     console.log('로그인 성공:', user);
     setIsLoggedIn(true);
@@ -264,6 +272,10 @@ function App() {
     setUsername(user.username || 'Guest');
     setUserId(user.id || String(Date.now()));
     setUserProfile(user); // 프로필 정보 저장 (selectedProfile, selectedOutline 포함)
+
+    // 출석 체크 모달 자동 표시
+    setShowEventModal(true);
+    setShouldAutoAttendance(true);
 
     // 서버에서 재화 정보 가져오기
     try {
@@ -761,7 +773,11 @@ function App() {
 
       {/* 이벤트 모달 */}
       {showEventModal && (
-        <EventModal onClose={() => setShowEventModal(false)} />
+        <EventModal
+          onClose={() => setShowEventModal(false)}
+          shouldAutoAttendance={shouldAutoAttendance}
+          onAttendanceComplete={handleAttendanceComplete}
+        />
       )}
 
       {/* Phone UI (친구목록/채팅) */}
