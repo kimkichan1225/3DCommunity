@@ -38,14 +38,14 @@ function EventModal({ onClose }) {
     },
     {
       id: 2,
-      title: '크리스마스 특별 이벤트',
-      description: '미니게임 클리어 시 실버 코인 2배 지급!',
-      detailContent: '크리스마스를 맞이하여 특별 보상을 드립니다.\n\n이벤트 기간 동안 모든 미니게임에서 획득하는 실버 코인이 2배로 증가합니다.',
-      startDate: '2025-12-20',
-      endDate: '2025-12-26',
+      title: '플라자 패스',
+      description: '시즌 미션을 완료하고 특별 보상을 받으세요!',
+      detailContent: '플라자 패스를 통해 다양한 미션을 완료하고 풍성한 보상을 획득하세요.\n\n시즌 기간 동안 매일 새로운 미션이 제공되며, 미션을 완료할 때마다 경험치와 보상을 받을 수 있습니다.\n\n프리미엄 패스를 구매하면 추가 보상을 받을 수 있습니다!',
+      startDate: '2025-12-01',
+      endDate: '2025-12-31',
       image: '/resources/Icon/Event-icon.png',
       status: 'ongoing',
-      rewards: ['실버 코인 2배']
+      rewards: ['골드 코인', '실버 코인', '특별 스킨', '아이템']
     }
   ];
 
@@ -205,7 +205,9 @@ function EventModal({ onClose }) {
                           const coinImage = isGoldDay
                             ? '/resources/Icon/Gold-Coin.png'
                             : '/resources/Icon/Silver-Coin.png';
-                          const coinAmount = isGoldDay ? '50' : '100';
+                          const coinAmount = isGoldDay
+                            ? (selectedItem.id === 1 ? '100' : '50')
+                            : (selectedItem.id === 1 ? '200' : '100');
 
                           return (
                             <div key={day} className={`attendance-box ${isGoldDay ? 'gold-box' : 'silver-box'}`}>
