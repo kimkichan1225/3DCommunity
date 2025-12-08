@@ -650,6 +650,16 @@
   z-index: 1;
 }
 
+/* 레벨 1 세로줄 강조 */
+.plaza-pass-column.level-1 {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.1);
+  z-index: 2;
+}
+
 /* 각 열 사이 세로 구분선 */
 .plaza-pass-column:not(:last-child)::after {
   content: '';

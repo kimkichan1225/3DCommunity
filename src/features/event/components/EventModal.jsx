@@ -266,7 +266,7 @@ function EventModal({ onClose }) {
                           <div className="plaza-pass-divider-full"></div>
 
                           {Array.from({ length: 30 }, (_, index) => (
-                            <div key={index} className="plaza-pass-column">
+                            <div key={index} className={`plaza-pass-column level-${index + 1}`} data-level={index + 1}>
                               {/* 레벨 번호 */}
                               <div className="plaza-pass-level-cell">{index + 1}</div>
 
