@@ -16,7 +16,7 @@ function EventModal({ onClose }) {
   const ongoingEvents = [
     {
       id: 3,
-      title: '출석 체크 이벤트',
+      title: '출석 체크',
       description: '매일 접속 시 보상 획득',
       detailContent: '매일 접속하고 보상을 받아가세요!\n\n연속 출석 시 더 많은 보상을 받을 수 있습니다.\n\n7일 연속 출석: 골드 코인 50개\n30일 연속 출석: 골드 코인 200개',
       startDate: '2025-12-01',
@@ -82,30 +82,7 @@ function EventModal({ onClose }) {
     }
   ];
 
-  const endedEvents = [
-    {
-      id: 4,
-      title: '오픈 기념 이벤트',
-      description: '오픈 첫 주 특별 보상',
-      detailContent: '메타플라자 오픈을 기념하여 특별 보상을 지급했습니다.\n\n보상: 골드 코인 500개',
-      startDate: '2025-11-01',
-      endDate: '2025-11-07',
-      image: '/resources/Icon/Event-icon.png',
-      status: 'ended',
-      rewards: ['골드 코인 500개']
-    },
-    {
-      id: 5,
-      title: '추석 특별 이벤트',
-      description: '추석 연휴 기념 아이템 지급',
-      detailContent: '추석 연휴를 맞이하여 특별 아이템을 지급했습니다.\n\n보상: 한복 스킨',
-      startDate: '2025-09-15',
-      endDate: '2025-09-18',
-      image: '/resources/Icon/Event-icon.png',
-      status: 'ended',
-      rewards: ['한복 스킨']
-    }
-  ];
+  const endedEvents = [];
 
   const getCurrentItems = () => {
     if (activeTab === 'ongoing') return ongoingEvents;
