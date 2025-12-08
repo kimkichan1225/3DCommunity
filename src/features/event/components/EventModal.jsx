@@ -245,8 +245,11 @@ function EventModal({ onClose }) {
                               <span className="pass-exp-text">0/100</span>
                             </div>
                           </div>
-                          {/* 일일 미션 버튼 */}
-                          <button className="btn-daily-mission">일일 미션 확인</button>
+                          {/* 버튼 그룹 */}
+                          <div className="plaza-pass-buttons">
+                            <button className="btn-daily-mission">일일 미션 확인</button>
+                            <button className="btn-premium-pass">프리미엄 패스 구매</button>
+                          </div>
                         </div>
                       </div>
 
@@ -270,9 +273,9 @@ function EventModal({ onClose }) {
                               <div className="plaza-pass-cell reward-cell">
                                 {/* 빈 박스 */}
                               </div>
-                              {/* 세 번째 행: 빈 박스 */}
-                              <div className="plaza-pass-cell reward-cell">
-                                {/* 빈 박스 */}
+                              {/* 세 번째 행: 잠금 박스 */}
+                              <div className="plaza-pass-cell reward-cell locked-cell">
+                                <span className="lock-icon">🔒</span>
                               </div>
                             </div>
                           ))}

@@ -572,6 +572,12 @@
   z-index: 1;
 }
 
+/* 버튼 그룹 */
+.plaza-pass-buttons {
+  display: flex;
+  gap: 10px;
+}
+
 /* 일일 미션 버튼 */
 .btn-daily-mission {
   padding: 10px 20px;
@@ -592,6 +598,29 @@
   border-color: rgba(255, 215, 0, 0.7);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+/* 프리미엄 패스 구매 버튼 */
+.btn-premium-pass {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border: 2px solid #FFD700;
+  border-radius: 8px;
+  color: #1a1a2e;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+}
+
+.btn-premium-pass:hover {
+  background: linear-gradient(135deg, #FFA500, #FF8C00);
+  border-color: #FFA500;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.7);
 }
 
 /* 플라자 패스 가로 스크롤 */
@@ -684,6 +713,20 @@
 .reward-cell {
   height: 80px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+}
+
+/* 잠금 셀 (세 번째 행) */
+.locked-cell {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.3));
+  border-color: rgba(150, 150, 150, 0.3);
+  position: relative;
+  opacity: 0.7;
+}
+
+.lock-icon {
+  font-size: 24px;
+  opacity: 0.6;
+  filter: grayscale(100%);
 }
 
 /* 출석 체크 컨테이너 */
