@@ -260,7 +260,9 @@ function EventModal({ onClose }) {
                         onMouseLeave={handleMouseLeave}
                       >
                         <div className="plaza-pass-table">
-                          {/* 강조 구분선 (전체) */}
+                          {/* 숫자 밑 가로 구분선 */}
+                          <div className="plaza-pass-divider-top"></div>
+                          {/* 무료/프리미엄 사이 가로 구분선 */}
                           <div className="plaza-pass-divider-full"></div>
 
                           {Array.from({ length: 30 }, (_, index) => (
