@@ -630,7 +630,7 @@
 /* 플라자 패스 테이블 */
 .plaza-pass-table {
   border-collapse: separate;
-  border-spacing: 10px;
+  border-spacing: 10px 0;
   border: 3px solid rgba(255, 215, 0, 0.5);
   border-radius: 15px;
   padding: 10px;
