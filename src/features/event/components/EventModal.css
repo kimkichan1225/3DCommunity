@@ -650,6 +650,20 @@
   z-index: 1;
 }
 
+/* 각 열 사이 세로 구분선 */
+.plaza-pass-column:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.7), rgba(255, 165, 0, 0.7));
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+  z-index: -1;
+}
+
 /* 전체 가로 구분선 */
 .plaza-pass-divider-full {
   position: absolute;
@@ -657,7 +671,7 @@
   right: 20px;
   top: 58%;
   transform: translateY(-50%);
-  height: 4px;
+  height: 2px;
   background: linear-gradient(90deg, rgba(255, 215, 0, 0.7), rgba(255, 165, 0, 0.7));
   border-radius: 2px;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
