@@ -233,7 +233,21 @@ function EventModal({ onClose }) {
                     <div className="plaza-pass-container">
                       <div className="plaza-pass-header">
                         <p className="detail-text">시즌 미션을 완료하고 특별 보상을 받으세요!</p>
-                        <button className="btn-daily-mission">일일 미션 확인</button>
+                        <div className="plaza-pass-info">
+                          {/* 패스 레벨 & 경험치 바 */}
+                          <div className="pass-level-container">
+                            <div className="pass-level-display">
+                              <span className="pass-level-label">패스 레벨</span>
+                              <span className="pass-level-value">1</span>
+                            </div>
+                            <div className="pass-exp-bar">
+                              <div className="pass-exp-fill" style={{ width: '0%' }}></div>
+                              <span className="pass-exp-text">0/100</span>
+                            </div>
+                          </div>
+                          {/* 일일 미션 버튼 */}
+                          <button className="btn-daily-mission">일일 미션 확인</button>
+                        </div>
                       </div>
 
                       {/* 플라자 패스 테이블 */}
