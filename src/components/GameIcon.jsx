@@ -12,8 +12,7 @@ function GameIcon({ onClick, visible = true }) {
   return (
     <div className="game-icon-container">
       <button className="game-icon-button" onClick={onClick} title="미니게임">
-        {/* TODO: Game-icon.png 추가 필요 - 현재는 Shop-icon.png 사용 */}
-        <img src="/resources/Icon/Shop-icon.png" alt="Game" />
+        <img src="/resources/Icon/Game-icon.png" alt="Game" />
         <div className="game-icon-label">미니게임</div>
       </button>
     </div>
