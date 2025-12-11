@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MinigameModal.css';
 import ProfileAvatar from '../../../components/ProfileAvatar';
-import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen } from 'react-icons/fa';
 import friendService from '../../../services/friendService';
 
 function MinigameModal({ onClose, userProfile, onlinePlayers }) {
@@ -111,7 +111,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers }) {
           {/* 헤더 */}
           <div className="minigame-header">
             <h2>
-              <FaGamepad /> 미니게임 로비
+              <FaDoorOpen /> 미니게임 로비
             </h2>
             <button className="minigame-close-btn" onClick={onClose}>
               <FaTimes />

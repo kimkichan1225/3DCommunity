@@ -444,8 +444,15 @@ function App() {
 
   // 미니게임 아이콘 클릭 핸들러
   const handleGameIconClick = () => {
-    console.log('🎮 미니게임 아이콘 클릭');
+    console.log('🎮 미니게임 로비 아이콘 클릭');
     setShowMinigameModal(true);
+  };
+
+  // 방 생성 아이콘 클릭 핸들러
+  const handleCreateRoomIconClick = () => {
+    console.log('🎮 방 생성 아이콘 클릭');
+    // TODO: 방 생성 모달 열기
+    alert('방 생성 기능 준비 중입니다!');
   };
 
   // Connect to multiplayer service - even when not logged in (as observer)
@@ -856,6 +863,7 @@ function App() {
         <GameIcon
           visible={showGameIcon}
           onClick={handleGameIconClick}
+          onCreateRoom={handleCreateRoomIconClick}
         />
       )}
     </div>

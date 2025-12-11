@@ -5,6 +5,8 @@
   transform: translateX(-50%);
   z-index: 900;
   pointer-events: auto;
+  display: flex;
+  gap: 20px;
 }
 
 .game-icon-button {
