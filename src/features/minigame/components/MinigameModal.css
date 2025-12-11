@@ -287,6 +287,7 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
 }
 
 .friend-item:hover {
@@ -295,7 +296,12 @@
 }
 
 .friend-item.offline {
-  opacity: 0.5;
+  opacity: 0.6;
+}
+
+/* 친구 아바타 */
+.friend-avatar {
+  flex-shrink: 0;
 }
 
 /* 친구 상태 점 */
@@ -304,15 +310,26 @@
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .friend-item.online .friend-status-dot {
   background: #10b981;
   box-shadow: 0 0 8px #10b981;
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .friend-item.offline .friend-status-dot {
   background: #6b7280;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* 친구 정보 */
@@ -333,12 +350,33 @@
   text-overflow: ellipsis;
 }
 
+.friend-level {
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.friend-status-online {
+  color: #10b981;
+  font-size: 11px;
+  font-weight: 500;
+}
+
 .friend-room {
   color: #667eea;
   font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 친구 목록 로딩/빈 상태 */
+.friends-loading,
+.friends-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 20px;
+  font-size: 14px;
 }
 
 /* 스크롤바 스타일링 */

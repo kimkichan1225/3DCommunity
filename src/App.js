@@ -791,6 +791,7 @@ function App() {
         <MinigameModal
           onClose={() => setShowMinigameModal(false)}
           userProfile={userProfile}
+          onlinePlayers={otherPlayers}
         />
       )}
 

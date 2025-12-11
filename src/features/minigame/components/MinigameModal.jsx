@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './MinigameModal.css';
 import ProfileAvatar from '../../../components/ProfileAvatar';
 import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock } from 'react-icons/fa';
+import friendService from '../../../services/friendService';
 
-function MinigameModal({ onClose, userProfile }) {
+function MinigameModal({ onClose, userProfile, onlinePlayers }) {
   // 더미 데이터 - 방 목록
   const [rooms] = useState([
     {
@@ -48,14 +49,28 @@ function MinigameModal({ onClose, userProfile }) {
     }
   ]);
 
-  // 더미 데이터 - 친구 목록
-  const [friends] = useState([
-    { id: 1, username: '친구1', isOnline: true, currentRoom: '두더지 잡기 방' },
-    { id: 2, username: '친구2', isOnline: true, currentRoom: null },
-    { id: 3, username: '친구3', isOnline: false, currentRoom: null },
-    { id: 4, username: '친구4', isOnline: true, currentRoom: '고수들의 대결' },
-    { id: 5, username: '친구5', isOnline: false, currentRoom: null }
-  ]);
+  // 실제 친구 목록
+  const [friends, setFriends] = useState([]);
+  const [isLoadingFriends, setIsLoadingFriends] = useState(true);
+
+  // 친구 목록 불러오기
+  useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        setIsLoadingFriends(true);
+        const friendsData = await friendService.getFriends();
+        setFriends(friendsData);
+        console.log('친구 목록:', friendsData);
+      } catch (error) {
+        console.error('친구 목록 불러오기 실패:', error);
+        setFriends([]);
+      } finally {
+        setIsLoadingFriends(false);
+      }
+    };
+
+    fetchFriends();
+  }, []);
 
   const handleRoomClick = (room) => {
     if (room.isLocked) {
@@ -78,6 +93,14 @@ function MinigameModal({ onClose, userProfile }) {
   const handleFriendClick = (friend) => {
     console.log('친구 클릭:', friend);
     // TODO: 친구 프로필 보기 또는 초대 등
+  };
+
+  // 친구의 온라인 상태 확인
+  const isFriendOnline = (friendUsername) => {
+    if (!onlinePlayers) return false;
+    return Object.values(onlinePlayers).some(
+      (player) => player.username === friendUsername
+    );
   };
 
   return (
@@ -161,23 +184,39 @@ function MinigameModal({ onClose, userProfile }) {
 
           {/* 친구 목록 */}
           <div className="sidebar-friends">
-            <h3 className="friends-title">친구 목록</h3>
+            <h3 className="friends-title">친구 목록 ({friends.length})</h3>
             <div className="friends-list">
-              {friends.map((friend) => (
-                <div
-                  key={friend.id}
-                  className={`friend-item ${friend.isOnline ? 'online' : 'offline'}`}
-                  onClick={() => handleFriendClick(friend)}
-                >
-                  <div className="friend-status-dot"></div>
-                  <div className="friend-info">
-                    <div className="friend-name">{friend.username}</div>
-                    {friend.isOnline && friend.currentRoom && (
-                      <div className="friend-room">{friend.currentRoom}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {isLoadingFriends ? (
+                <div className="friends-loading">로딩 중...</div>
+              ) : friends.length === 0 ? (
+                <div className="friends-empty">친구가 없습니다</div>
+              ) : (
+                friends.map((friend) => {
+                  const isOnline = isFriendOnline(friend.username);
+                  return (
+                    <div
+                      key={friend.id}
+                      className={`friend-item ${isOnline ? 'online' : 'offline'}`}
+                      onClick={() => handleFriendClick(friend)}
+                    >
+                      <ProfileAvatar
+                        profileImage={friend.selectedProfile}
+                        outlineImage={friend.selectedOutline}
+                        size={40}
+                        className="friend-avatar"
+                      />
+                      <div className="friend-info">
+                        <div className="friend-name">{friend.username}</div>
+                        <div className="friend-level">Lv. {friend.level || 1}</div>
+                        {isOnline && (
+                          <div className="friend-status-online">온라인</div>
+                        )}
+                      </div>
+                      <div className="friend-status-dot"></div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
