@@ -9,6 +9,7 @@ import { BoardModal } from './features/board';
 import { ProfileModal } from './features/profile';
 import { SettingModal } from './features/system/settings';
 import { EventModal } from './features/event';
+import { MinigameModal } from './features/minigame';
 import Character from './components/character/Character';
 import MapCharacterController from './components/character/MapCharacterController';
 import CameraController from './components/camera/CameraController';
@@ -30,7 +31,6 @@ import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
 import currencyService from './services/currencyService';
 import attendanceService from './services/attendanceService';
-import { useNavigate } from 'react-router-dom';
 
 function App() {
   const characterRef = useRef();
@@ -50,6 +50,7 @@ function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showMinigameModal, setShowMinigameModal] = useState(false);
   const [shouldAutoAttendance, setShouldAutoAttendance] = useState(false);
   const [showPhoneUI, setShowPhoneUI] = useState(false);
   const [username, setUsername] = useState('');
@@ -72,10 +73,9 @@ function App() {
   const [silverCoins, setSilverCoins] = useState(0); // 일반 재화 (Silver Coin)
   const [goldCoins, setGoldCoins] = useState(0); // 유료 재화 (Gold Coin)
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
-  const navigate = useNavigate();
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
-  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showLanding;
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showMinigameModal || showLanding;
 
   // 캐릭터 현재 위치 업데이트 콜백
   const handleCharacterPositionUpdate = (position) => {
@@ -442,14 +442,9 @@ function App() {
     setShowGameIcon(false);
   };
 
-  // 미니게임 버튼 클릭 핸들러
-  const handleMinigameButtonClick = () => {
-    navigate('/minigame-select');
-  };
-
-  // 미니게임 버튼 클릭 핸들러 (GameIcon 등에서 사용)
+  // 미니게임 아이콘 클릭 핸들러 - 모달 열기
   const handleGameIconClick = () => {
-    handleMinigameButtonClick();
+    setShowMinigameModal(true);
   };
 
   // Connect to multiplayer service - even when not logged in (as observer)
@@ -788,6 +783,11 @@ function App() {
             setGoldCoins(gold);
           }}
         />
+      )}
+
+      {/* 미니게임 모달 */}
+      {showMinigameModal && (
+        <MinigameModal onClose={() => setShowMinigameModal(false)} />
       )}
 
       {/* Phone UI (친구목록/채팅) */}
