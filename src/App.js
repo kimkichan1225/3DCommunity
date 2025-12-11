@@ -442,8 +442,9 @@ function App() {
     setShowGameIcon(false);
   };
 
-  // 미니게임 아이콘 클릭 핸들러 - 모달 열기
+  // 미니게임 아이콘 클릭 핸들러
   const handleGameIconClick = () => {
+    console.log('🎮 미니게임 아이콘 클릭');
     setShowMinigameModal(true);
   };
 
@@ -787,7 +788,10 @@ function App() {
 
       {/* 미니게임 모달 */}
       {showMinigameModal && (
-        <MinigameModal onClose={() => setShowMinigameModal(false)} />
+        <MinigameModal
+          onClose={() => setShowMinigameModal(false)}
+          userProfile={userProfile}
+        />
       )}
 
       {/* Phone UI (친구목록/채팅) */}

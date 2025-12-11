@@ -10,216 +10,392 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
 /* 미니게임 모달 */
 .minigame-modal {
-  width: 500px;
-  max-width: 90%;
+  width: 85%;
+  height: 90%;
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
+  display: flex;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* 왼쪽: 방 목록 영역 */
+.minigame-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f8f9fa;
 }
 
 /* 헤더 */
-.minigame-modal-header {
+.minigame-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 30px;
-  border-bottom: 2px solid #e0e0e0;
+  padding: 24px 30px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-.minigame-header-left {
+.minigame-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.minigame-icon {
-  font-size: 24px;
-}
-
-.minigame-header-left h2 {
-  margin: 0;
-  font-size: 22px;
-}
-
-.minigame-modal-close {
+.minigame-close-btn {
   width: 40px;
   height: 40px;
   border: none;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  font-size: 28px;
+  font-size: 20px;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.2s;
+  transition: all 0.3s;
   color: white;
 }
 
-.minigame-modal-close:hover {
+.minigame-close-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: rotate(90deg);
 }
 
-/* 콘텐츠 영역 */
-.minigame-modal-content {
-  padding: 30px;
-  max-height: 70vh;
+/* 방 목록 */
+.minigame-room-list {
+  flex: 1;
+  padding: 20px;
   overflow-y: auto;
-}
-
-/* 폼 스타일 */
-.minigame-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
-.form-group {
+/* 방 아이템 */
+.room-item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.room-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border-color: #667eea;
+}
+
+.room-item.playing {
+  border-color: #fbbf24;
+  background: linear-gradient(to right, #fffbeb, white);
+}
+
+.room-item.full {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.room-item.full:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* 방 헤더 */
+.room-header {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
 }
 
-.form-group label {
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
+.room-title {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.form-input,
-.form-select {
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 15px;
-  transition: all 0.2s;
-  outline: none;
+.room-title h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
 }
 
-.form-input:focus,
-.form-select:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.room-lock-icon {
+  color: #ef4444;
+  font-size: 16px;
 }
 
-.form-input::placeholder {
-  color: #aaa;
-}
-
-/* 라디오 그룹 */
-.radio-group {
+/* 방 상태 배지 */
+.room-status {
   display: flex;
-  gap: 12px;
+  align-items: center;
 }
 
-.radio-option {
-  flex: 1;
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.waiting {
+  background: #10b981;
+  color: white;
+}
+
+.status-badge.playing {
+  background: #fbbf24;
+  color: #78350f;
+}
+
+/* 방 정보 */
+.room-info {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.room-info > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  font-size: 14px;
+}
+
+.room-info svg {
+  color: #667eea;
+  font-size: 16px;
+}
+
+/* 오른쪽: 사이드바 */
+.minigame-sidebar {
+  width: 300px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+/* 사이드바 프로필 */
+.sidebar-profile {
+  padding: 30px 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.profile-username {
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.profile-level {
+  color: #fbbf24;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(251, 191, 36, 0.2);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+/* 방 생성 버튼 */
+.create-room-btn {
+  margin: 20px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: white;
-  font-weight: 500;
-  color: #666;
+  gap: 10px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
 }
 
-.radio-option input[type="radio"] {
-  display: none;
-}
-
-.radio-option:hover {
-  border-color: #667eea;
-  background: #f8f9ff;
-}
-
-.radio-option.active {
-  border-color: #667eea;
-  background: #667eea;
-  color: white;
-}
-
-.radio-icon {
-  font-size: 18px;
-}
-
-/* 버튼 */
-.form-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.btn {
-  flex: 1;
-  padding: 14px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-cancel {
-  background: #e0e0e0;
-  color: #666;
-}
-
-.btn-cancel:hover {
-  background: #d0d0d0;
-  color: #333;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.btn-primary:hover {
+.create-room-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 24px rgba(102, 126, 234, 0.6);
 }
 
-.btn-primary:active {
+.create-room-btn:active {
   transform: translateY(0);
 }
 
+/* 친구 목록 */
+.sidebar-friends {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 20px 20px 20px;
+}
+
+.friends-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.friends-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 친구 아이템 */
+.friend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.friend-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+}
+
+.friend-item.offline {
+  opacity: 0.5;
+}
+
+/* 친구 상태 점 */
+.friend-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.friend-item.online .friend-status-dot {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.friend-item.offline .friend-status-dot {
+  background: #6b7280;
+}
+
+/* 친구 정보 */
+.friend-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.friend-name {
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friend-room {
+  color: #667eea;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 스크롤바 스타일링 */
+.minigame-room-list::-webkit-scrollbar,
+.friends-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.minigame-room-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.minigame-room-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.minigame-room-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.friends-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.friends-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.friends-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 /* 반응형 */
-@media (max-width: 600px) {
+@media (max-width: 900px) {
   .minigame-modal {
     width: 95%;
-  }
-
-  .minigame-modal-content {
-    padding: 20px;
-  }
-
-  .radio-group {
+    height: 95%;
     flex-direction: column;
   }
 
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .btn {
+  .minigame-sidebar {
     width: 100%;
+    max-height: 300px;
+  }
+
+  .sidebar-profile {
+    flex-direction: row;
+    padding: 20px;
+    justify-content: flex-start;
+  }
+
+  .profile-username,
+  .profile-level {
+    text-align: left;
   }
 }

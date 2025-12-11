@@ -28,7 +28,10 @@
       "Bash(git merge:*)",
       "Bash(./gradlew build:*)",
       "Bash(./gradlew bootRun)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(echo.:*)",
+      "Bash(touch:*)"
     ],
     "deny": [],
     "ask": []
