@@ -12,6 +12,8 @@ import ChatLogManagement from './pages/admin/ChatLogManagement';
 import { ShopManagement } from './features/shop';
 import ProtectedRoute from './components/ProtectedRoute';
 import MinigameSelectPage from './pages/MinigameSelectPage';
+import PaymentSuccess from './features/payment/components/PaymentSuccess';
+import PaymentFail from './features/payment/components/PaymentFail';
 
 function AppRouter() {
   return (
@@ -46,6 +48,10 @@ function AppRouter() {
         </Route>
 
         <Route path="/minigame-select" element={<MinigameSelectPage />} />
+
+        {/* 결제 결과 페이지 */}
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/fail" element={<PaymentFail />} />
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/" replace />} />

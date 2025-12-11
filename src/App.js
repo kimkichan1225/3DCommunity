@@ -31,6 +31,8 @@ import friendService from './services/friendService';
 import currencyService from './services/currencyService';
 import attendanceService from './services/attendanceService';
 import { useNavigate } from 'react-router-dom';
+import { ShopModal } from './features/shop';
+import { GoldChargeModal } from './features/payment';
 
 function App() {
   const characterRef = useRef();
@@ -50,6 +52,8 @@ function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showShopModal, setShowShopModal] = useState(false);
+  const [showGoldChargeModal, setShowGoldChargeModal] = useState(false);
   const [shouldAutoAttendance, setShouldAutoAttendance] = useState(false);
   const [showPhoneUI, setShowPhoneUI] = useState(false);
   const [username, setUsername] = useState('');
@@ -75,7 +79,7 @@ function App() {
   const navigate = useNavigate();
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
-  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showLanding;
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showShopModal || showGoldChargeModal || showLanding;
 
   // 캐릭터 현재 위치 업데이트 콜백
   const handleCharacterPositionUpdate = (position) => {
@@ -586,6 +590,7 @@ function App() {
             <CurrencyDisplay
               silverCoins={silverCoins}
               goldCoins={goldCoins}
+              onChargeGold={() => setShowGoldChargeModal(true)}
             />
           </div>
         </>
@@ -619,7 +624,7 @@ function App() {
             <button className="icon-button" onClick={() => setShowSettingModal(true)} title="설정">
               <img src="/resources/Icon/Setting-icon.png" alt="Setting" />
             </button>
-            <button className="icon-button" onClick={() => console.log('상점')} title="상점">
+            <button className="icon-button" onClick={() => setShowShopModal(true)} title="상점">
               <img src="/resources/Icon/Shop-icon.png" alt="Shop" />
             </button>
           </div>
@@ -851,6 +856,27 @@ function App() {
         <GameIcon
           visible={showGameIcon}
           onClick={handleGameIconClick}
+        />
+      )}
+
+      {showShopModal && (
+          <ShopModal
+            onClose={() => setShowShopModal(false)}
+            userCoins={{ silver: silverCoins, gold: goldCoins }}
+            onCoinsUpdate={(silver, gold) => {
+              setSilverCoins(silver);
+              setGoldCoins(gold);
+            }}
+          />
+        )}
+
+      {showGoldChargeModal && (
+        <GoldChargeModal
+          onClose={() => setShowGoldChargeModal(false)}
+          onChargeSuccess={(newGoldCoins) => {
+            setGoldCoins(newGoldCoins);
+            setShowGoldChargeModal(false);
+          }}
         />
       )}
     </div>

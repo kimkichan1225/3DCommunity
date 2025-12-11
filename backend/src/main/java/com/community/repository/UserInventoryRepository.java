@@ -9,5 +9,7 @@ import java.util.List;
 public interface UserInventoryRepository extends JpaRepository<UserInventory, Long> {
     List<UserInventory> findByUserId(Long userId);
     List<UserInventory> findByUserIdAndIsEquippedTrue(Long userId);
+    List<UserInventory> findByUserIdAndIsNewTrue(Long userId);
     boolean existsByUserIdAndShopItemId(Long userId, Long shopItemId);
+    UserInventory findByUserIdAndShopItemId(Long userId, Long shopItemId);
 }
