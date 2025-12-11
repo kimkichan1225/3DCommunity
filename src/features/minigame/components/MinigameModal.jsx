@@ -191,11 +191,11 @@ function MinigameModal({ onClose, userProfile, onlinePlayers }) {
               ) : friends.length === 0 ? (
                 <div className="friends-empty">친구가 없습니다</div>
               ) : (
-                friends.map((friend) => {
+                friends.map((friend, index) => {
                   const isOnline = isFriendOnline(friend.username);
                   return (
                     <div
-                      key={friend.id}
+                      key={friend.friendshipId || friend.id || `friend-${index}`}
                       className={`friend-item ${isOnline ? 'online' : 'offline'}`}
                       onClick={() => handleFriendClick(friend)}
                     >
