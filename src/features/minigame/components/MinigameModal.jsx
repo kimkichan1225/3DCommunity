@@ -208,10 +208,10 @@ function MinigameModal({ onClose, userProfile, onlinePlayers }) {
                       <div className="friend-info">
                         <div className="friend-name">{friend.username}</div>
                         <div className="friend-level">Lv. {friend.level || 1}</div>
-                        {isOnline && (
-                          <div className="friend-status-online">온라인</div>
-                        )}
                       </div>
+                      {isOnline && (
+                        <div className="friend-status-online">온라인</div>
+                      )}
                       <div className="friend-status-dot"></div>
                     </div>
                   );
