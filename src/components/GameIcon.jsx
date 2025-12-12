@@ -16,9 +16,9 @@ function GameIcon({ onClick, onCreateRoom, visible = true }) {
         <img src="/resources/Icon/Game-icon.png" alt="Game" />
         <div className="game-icon-label">미니게임 로비</div>
       </button>
-      <button className="create-room-button" onClick={onCreateRoom} title="방 생성">
+      <button className="create-room-button" onClick={onCreateRoom} title="방 만들기">
         <FaPlus className="create-room-icon" />
-        <div className="create-room-label">방 생성</div>
+        <div className="create-room-label">방 만들기</div>
       </button>
     </div>
   );

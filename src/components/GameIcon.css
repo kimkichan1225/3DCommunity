@@ -14,7 +14,7 @@
 .game-icon-button,
 .create-room-button {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.7);
@@ -23,16 +23,12 @@
   cursor: pointer;
   transition: all 0.3s ease;
   animation: pulse 2s infinite;
-  padding: 15px 18px;
+  padding: 15px 25px;
+  gap: 12px;
+  min-width: 200px;
 }
 
 /* 미니게임 로비 아이콘 (메인) */
-.game-icon-button {
-  flex-direction: row;
-  gap: 15px;
-  padding: 15px 25px;
-}
-
 .game-icon-button:hover {
   background: rgba(255, 215, 0, 0.3);
   border-color: #FFA500;
@@ -61,17 +57,17 @@
 }
 
 .create-room-icon {
-  font-size: 26px;
+  font-size: 45px;
   color: #FFD700;
-  margin-bottom: 6px;
   filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
 }
 
 .create-room-label {
   color: #FFD700;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: bold;
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
 }
 
 /* 펄스 애니메이션 */
