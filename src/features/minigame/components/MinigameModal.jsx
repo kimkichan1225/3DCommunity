@@ -743,8 +743,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                         onClick={() => handleFriendClick(friend)}
                       >
                         <ProfileAvatar
-                          profileImage={friend.selectedProfile}
-                          outlineImage={friend.selectedOutline}
+                          profileImage={{ imagePath: friend.profileImagePath }}
+                          outlineImage={{ imagePath: friend.outlineImagePath }}
                           size={40}
                           className="friend-avatar"
                         />
@@ -790,8 +790,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                         onClick={() => isOnline && handleInviteFriendToRoom(friend)}
                       >
                         <ProfileAvatar
-                          profileImage={friend.selectedProfile ? { imagePath: friend.selectedProfile } : null}
-                          outlineImage={friend.selectedOutline ? { imagePath: friend.selectedOutline } : null}
+                          profileImage={{ imagePath: friend.profileImagePath }}
+                          outlineImage={{ imagePath: friend.outlineImagePath }}
                           size={40}
                           className="friend-avatar"
                         />
