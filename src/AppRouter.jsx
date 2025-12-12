@@ -14,6 +14,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import MinigameSelectPage from './pages/MinigameSelectPage';
 import PaymentSuccess from './features/payment/components/PaymentSuccess';
 import PaymentFail from './features/payment/components/PaymentFail';
+import MapGamePageNew from './pages/MapGamePageNew';
 
 function AppRouter() {
   return (
@@ -48,6 +49,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/minigame-select" element={<MinigameSelectPage />} />
+        <Route path="/map-game" element={<MapGamePageNew />} />
 
         {/* 결제 결과 페이지 */}
         <Route path="/payment/success" element={<PaymentSuccess />} />
