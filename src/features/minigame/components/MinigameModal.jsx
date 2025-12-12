@@ -3,6 +3,7 @@ import './MinigameModal.css';
 import ProfileAvatar from '../../../components/ProfileAvatar';
 import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen } from 'react-icons/fa';
 import friendService from '../../../services/friendService';
+import minigameService from '../../../services/minigameService';
 
 function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby' }) {
   // 뷰 전환 상태 ('lobby', 'create', 'waiting')
@@ -34,55 +35,14 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   const [roomChatMessages, setRoomChatMessages] = useState([]);
   const [roomChatInput, setRoomChatInput] = useState('');
 
-  // 더미 데이터 - 방 목록
-  const [rooms] = useState([
-    {
-      id: 1,
-      name: '친구들과 즐기는 미니게임',
-      gameName: '오목',
-      hostName: '플레이어123',
-      currentPlayers: 3,
-      maxPlayers: 4,
-      isLocked: false,
-      isPlaying: false
-    },
-    {
-      id: 2,
-      name: '초보 환영 방',
-      gameName: '끝말잇기',
-      hostName: '게임마스터',
-      currentPlayers: 2,
-      maxPlayers: 6,
-      isLocked: false,
-      isPlaying: false
-    },
-    {
-      id: 3,
-      name: '고수들의 대결',
-      gameName: '에임 맞추기',
-      hostName: 'SpeedKing',
-      currentPlayers: 4,
-      maxPlayers: 4,
-      isLocked: true,
-      isPlaying: true
-    },
-    {
-      id: 4,
-      name: '누구나 참여 가능!',
-      gameName: '스무고개',
-      hostName: 'QuizMaster',
-      currentPlayers: 1,
-      maxPlayers: 8,
-      isLocked: false,
-      isPlaying: false
-    }
-  ]);
+  // 방 목록 (WebSocket으로 받음)
+  const [rooms, setRooms] = useState([]);
 
   // 실제 친구 목록
   const [friends, setFriends] = useState([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(true);
 
-  // 친구 목록 불러오기
+  // WebSocket 연결 및 친구 목록 불러오기
   useEffect(() => {
     const fetchFriends = async () => {
       try {
@@ -99,7 +59,80 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     };
 
     fetchFriends();
-  }, []);
+
+    // Minigame WebSocket 연결
+    if (!minigameService.connected) {
+      minigameService.connect(
+        userProfile?.id || 'guest',
+        userProfile?.username || '게스트'
+      );
+    }
+
+    // 방 목록 업데이트 이벤트
+    minigameService.on('roomsList', (roomsList) => {
+      console.log('방 목록 받음:', roomsList);
+      setRooms(roomsList);
+    });
+
+    // 방 업데이트 이벤트
+    minigameService.on('roomUpdate', (roomData) => {
+      console.log('방 업데이트:', roomData);
+      setRooms(prevRooms => {
+        const existingIndex = prevRooms.findIndex(r => r.roomId === roomData.roomId);
+        if (existingIndex >= 0) {
+          // 기존 방 업데이트
+          const newRooms = [...prevRooms];
+          newRooms[existingIndex] = roomData;
+          return newRooms;
+        } else {
+          // 새 방 추가
+          return [...prevRooms, roomData];
+        }
+      });
+
+      // 방 생성 이벤트인 경우, 내가 만든 방이면 자동으로 입장
+      if (roomData.action === 'create' && roomData.hostId === (userProfile?.id || 'guest')) {
+        console.log('내가 만든 방으로 자동 입장:', roomData.roomId);
+        setCurrentRoom(roomData);
+        setCurrentView('waiting');
+      }
+    });
+
+    // 방 삭제 이벤트
+    minigameService.on('roomDelete', (roomData) => {
+      console.log('방 삭제:', roomData);
+      setRooms(prevRooms => prevRooms.filter(r => r.roomId !== roomData.roomId));
+    });
+
+    // 방 입장/업데이트 이벤트
+    minigameService.on('roomJoin', (roomData) => {
+      console.log('방 이벤트:', roomData);
+      if (roomData.action === 'join' || roomData.action === 'update' || roomData.action === 'ready' || roomData.action === 'leave') {
+        setCurrentRoom(roomData);
+      } else if (roomData.action === 'start') {
+        // TODO: 게임 시작 처리
+        console.log('게임 시작!');
+      }
+    });
+
+    // 방 채팅 이벤트
+    minigameService.on('roomChat', (chatData) => {
+      console.log('방 채팅:', chatData);
+      const newMessage = {
+        id: chatData.timestamp,
+        username: chatData.username,
+        message: chatData.message,
+        timestamp: new Date(chatData.timestamp)
+      };
+      setRoomChatMessages(prev => [...prev, newMessage]);
+    });
+
+    // 컴포넌트 언마운트 시 정리
+    return () => {
+      // WebSocket 연결 유지 (다른 곳에서도 사용할 수 있으므로)
+      // minigameService.disconnect();
+    };
+  }, [userProfile]);
 
   const handleRoomClick = (room) => {
     if (room.isLocked) {
@@ -111,15 +144,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       return;
     }
     console.log('방 입장:', room);
-    // 방 입장 - 대기방으로 전환
-    setCurrentRoom({
-      ...room,
-      players: [
-        { id: 1, username: room.hostName, isHost: true, level: 10 },
-        { id: 2, username: userProfile?.username || '게스트', isHost: false, level: userProfile?.level || 1 }
-      ],
-      spectators: []
-    });
+    // 실제 방 입장
+    minigameService.joinRoom(room.roomId, userProfile?.level || 1);
     setCurrentView('waiting');
   };
 
@@ -162,34 +188,28 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
   const handleSubmitCreateRoom = () => {
     console.log('방 생성:', roomForm);
-    // TODO: 실제 방 생성 API 호출
-    // 방 생성 후 대기방으로 이동
-    const newRoom = {
-      id: Date.now(),
-      name: roomForm.roomName,
-      gameName: roomForm.gameType,
-      hostName: userProfile?.username || '게스트',
-      currentPlayers: 1,
-      maxPlayers: roomForm.maxPlayers,
-      isLocked: roomForm.isPrivate,
-      isPlaying: false,
-      players: [
-        { id: 1, username: userProfile?.username || '게스트', isHost: true, level: userProfile?.level || 1 }
-      ],
-      spectators: []
-    };
-    setCurrentRoom(newRoom);
-    setCurrentView('waiting');
+    // 실제 방 생성
+    minigameService.createRoom(
+      roomForm.roomName,
+      roomForm.gameType,
+      roomForm.maxPlayers,
+      roomForm.isPrivate
+    );
+
+    // 폼 초기화 및 대기 (방 생성 완료 이벤트를 받으면 자동으로 입장)
     setRoomForm({
       roomName: '',
       gameType: '오목',
-      maxPlayers: 4,
+      maxPlayers: 2,
       isPrivate: false
     });
   };
 
   const handleLeaveRoom = () => {
     console.log('방 나가기');
+    if (currentRoom?.roomId) {
+      minigameService.leaveRoom(currentRoom.roomId);
+    }
     setCurrentRoom(null);
     setCurrentView('lobby');
     setRoomChatMessages([]);
@@ -197,14 +217,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   };
 
   const handleSendRoomChat = () => {
-    if (!roomChatInput.trim()) return;
-    const newMessage = {
-      id: Date.now(),
-      username: userProfile?.username || '게스트',
-      message: roomChatInput,
-      timestamp: new Date()
-    };
-    setRoomChatMessages(prev => [...prev, newMessage]);
+    if (!roomChatInput.trim() || !currentRoom?.roomId) return;
+    minigameService.sendRoomChat(currentRoom.roomId, roomChatInput);
     setRoomChatInput('');
   };
 
@@ -216,14 +230,16 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
   const handleGameStart = () => {
     console.log('게임 시작 클릭');
-    // TODO: 게임 시작 로직 구현
-    alert('게임을 시작합니다!');
+    if (currentRoom?.roomId) {
+      minigameService.startGame(currentRoom.roomId);
+    }
   };
 
   const handleReady = () => {
     console.log('준비 버튼 클릭');
-    // TODO: 준비 상태 토글 구현
-    alert('준비 완료!');
+    if (currentRoom?.roomId) {
+      minigameService.toggleReady(currentRoom.roomId);
+    }
   };
 
   // 현재 유저가 방장인지 확인
@@ -252,7 +268,13 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
   const handleSaveRoomSettings = () => {
     console.log('방 설정 저장:', currentRoom);
-    // TODO: 실제 방 설정 업데이트 API 호출
+    if (currentRoom?.roomId) {
+      minigameService.updateRoom(
+        currentRoom.roomId,
+        currentRoom.gameName,
+        currentRoom.maxPlayers
+      );
+    }
     setIsEditingRoomSettings(false);
   };
 
@@ -514,7 +536,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             <div className="minigame-room-list">
             {rooms.map((room) => (
               <div
-                key={room.id}
+                key={room.roomId}
                 className={`room-item ${room.isPlaying ? 'playing' : ''} ${
                   room.currentPlayers >= room.maxPlayers ? 'full' : ''
                 }`}
