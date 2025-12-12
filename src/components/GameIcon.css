@@ -6,12 +6,13 @@
   z-index: 900;
   pointer-events: auto;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 15px;
 }
 
-/* 미니게임 로비 아이콘 (메인) */
-.game-icon-button {
+/* 공통 스타일 */
+.game-icon-button,
+.create-room-button {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -19,71 +20,61 @@
   background: rgba(0, 0, 0, 0.7);
   border: 3px solid #FFD700;
   border-radius: 15px;
-  padding: 15px 20px;
   cursor: pointer;
   transition: all 0.3s ease;
   animation: pulse 2s infinite;
+  padding: 15px 18px;
+}
+
+/* 미니게임 로비 아이콘 (메인) */
+.game-icon-button {
+  flex-direction: row;
+  gap: 15px;
+  padding: 15px 25px;
 }
 
 .game-icon-button:hover {
   background: rgba(255, 215, 0, 0.3);
   border-color: #FFA500;
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .game-icon-button img {
-  width: 60px;
-  height: 60px;
-  margin-bottom: 8px;
+  width: 45px;
+  height: 45px;
   filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
 }
 
 .game-icon-label {
   color: #FFD700;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+
+/* 방 생성 버튼 */
+.create-room-button:hover {
+  background: rgba(255, 215, 0, 0.3);
+  border-color: #FFA500;
+  transform: scale(1.05);
+}
+
+.create-room-icon {
+  font-size: 26px;
+  color: #FFD700;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+}
+
+.create-room-label {
+  color: #FFD700;
+  font-size: 13px;
   font-weight: bold;
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
 }
 
-/* 방 생성 버튼 (보조) */
-.create-room-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  padding: 12px 18px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-.create-room-button:hover {
-  background: linear-gradient(135deg, #7c8ef8 0%, #8a5bb8 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-}
-
-.create-room-button:active {
-  transform: translateY(-1px);
-}
-
-.create-room-icon {
-  font-size: 24px;
-  color: white;
-  margin-bottom: 4px;
-}
-
-.create-room-label {
-  color: white;
-  font-size: 12px;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* 펄스 애니메이션 (로비 아이콘만) */
+/* 펄스 애니메이션 */
 @keyframes pulse {
   0%, 100% {
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
