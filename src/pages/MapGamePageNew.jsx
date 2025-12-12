@@ -70,7 +70,7 @@ function MapGamePageNew() {
           accessToken: mapboxToken,
           style: 'mapbox://styles/mapbox/streets-v12',
           center: mapCenter,
-          zoom: 19.2,
+          zoom: 25.2,
           pitch: 30,
           bearing: 0
         });
