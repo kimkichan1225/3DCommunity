@@ -71,7 +71,7 @@ function MapGamePageNew() {
           style: 'mapbox://styles/mapbox/streets-v12',
           center: mapCenter,
           zoom: 19.2,
-          pitch: 78,
+          pitch: 30,
           bearing: 0
         });
 
@@ -98,45 +98,32 @@ function MapGamePageNew() {
     };
   }, [mapboxToken, userLocation]);
 
-  // 캐릭터 위치를 지도에 마커로 표시하고 업데이트
+  // 캐릭터 위치를 지도에 마커로 표시 - 초기 생성만
   useEffect(() => {
     if (!mapboxManagerRef.current || !isReady) return;
 
     const map = mapboxManagerRef.current.getMap();
 
-    // 마커용 업데이트 인터벌
-    const updateInterval = setInterval(() => {
-      if (!characterStateRef.current) return;
-
+    // 마커 생성 (처음 한번만)
+    if (!window.characterMarker && characterStateRef.current) {
       const [charX, charY, charZ] = characterStateRef.current.position;
-      
-      // 3D 좌표를 지도상의 화면 좌표로 변환
-      // 기본적으로 캐릭터의 X, Z를 지도의 lng, lat으로 사용
-      // (간단한 선형 변환 - 실제 프로젝션 필요시 CoordinateSystem 사용)
       const characterLng = userLocation[0] + (charX / 1000);
-      const characterLat = userLocation[1] + (charZ / 1000);
+      const characterLat = userLocation[1] - (charZ / 1000);  // Z축은 부호 반대
 
-      // 마커가 없으면 생성
-      if (!window.characterMarker) {
-        const markerElement = document.createElement('div');
-        markerElement.style.width = '16px';
-        markerElement.style.height = '16px';
-        markerElement.style.borderRadius = '50%';
-        markerElement.style.backgroundColor = '#ff0000';
-        markerElement.style.border = '2px solid #ffffff';
-        markerElement.style.boxShadow = '0 0 8px rgba(255, 0, 0, 0.8)';
+      const markerElement = document.createElement('div');
+      markerElement.style.width = '16px';
+      markerElement.style.height = '16px';
+      markerElement.style.borderRadius = '50%';
+      markerElement.style.backgroundColor = '#ff0000';
+      markerElement.style.border = '2px solid #ffffff';
+      markerElement.style.boxShadow = '0 0 8px rgba(255, 0, 0, 0.8)';
 
-        window.characterMarker = new mapboxgl.Marker(markerElement)
-          .setLngLat([characterLng, characterLat])
-          .addTo(map);
-      } else {
-        // 기존 마커 위치 업데이트
-        window.characterMarker.setLngLat([characterLng, characterLat]);
-      }
-    }, 50); // 50ms마다 업데이트 (약 20fps)
+      window.characterMarker = new mapboxgl.Marker(markerElement)
+        .setLngLat([characterLng, characterLat])
+        .addTo(map);
+    }
 
     return () => {
-      clearInterval(updateInterval);
       if (window.characterMarker) {
         window.characterMarker.remove();
         window.characterMarker = null;
@@ -206,11 +193,11 @@ function MapGamePageNew() {
           {/* 캐릭터 */}
           <CharacterViewer characterStateRef={characterStateRef} />
           
-          {/* 현재 위치 마커 */}
-          <PositionMarker characterStateRef={characterStateRef} />
-          
           {/* 카메라 제어 */}
           <CameraTracker characterStateRef={characterStateRef} />
+          
+          {/* 지도 마커 업데이트 (실시간) */}
+          <MarkerUpdater characterStateRef={characterStateRef} mapboxManagerRef={mapboxManagerRef} userLocation={userLocation} isReady={isReady} />
         </Canvas>
         
         {!isReady && (
@@ -414,25 +401,27 @@ function CameraTracker({ characterStateRef }) {
 }
 
 /**
- * 현재 위치 마커 컴포넌트
- * 캐릭터 위치에 작은 점을 표시
+ * 지도 마커 업데이트 컴포넌트
+ * useFrame으로 실시간 마커 위치 업데이트 (WASD 입력과 동기화)
  */
-function PositionMarker({ characterStateRef }) {
-  const markerRef = useRef(null);
-
+function MarkerUpdater({ characterStateRef, mapboxManagerRef, userLocation, isReady }) {
   useFrame(() => {
-    if (!markerRef.current || !characterStateRef.current) return;
+    if (!mapboxManagerRef.current || !isReady || !userLocation) return;
 
-    // 캐릭터 위치에 마커 위치 업데이트
+    const map = mapboxManagerRef.current.getMap();
+    if (!map || !characterStateRef.current) return;
+
     const [charX, charY, charZ] = characterStateRef.current.position;
-    markerRef.current.position.set(charX, charY + 0.5, charZ);
+
+    // 3D 좌표를 지도상의 GPS 좌표로 변환
+    const characterLng = userLocation[0] + (charX / 1000);
+    const characterLat = userLocation[1] - (charZ / 1000);  // Z축은 부호 반대 (Three.js Z가 음수 = 북쪽)
+
+    // 마커 업데이트 (매 프레임마다 실시간 동기화)
+    if (window.characterMarker) {
+      window.characterMarker.setLngLat([characterLng, characterLat]);
+    }
   });
 
-  return (
-    // 빨간 구체로 위치 표시
-    <mesh ref={markerRef} position={[0, 0.5, 0]}>
-      <sphereGeometry args={[0.3, 16, 16]} />
-      <meshStandardMaterial color={0xff0000} emissive={0xff0000} emissiveIntensity={0.5} />
-    </mesh>
-  );
+  return null;
 }
