@@ -981,7 +981,7 @@
     text-align: left;
   }
 }
-/* Ä£±¸ ÃÊ´ë ¸ğ´Ş */
+/* ì¹œêµ¬ ì´ˆëŒ€ ëª¨ë‹¬ */
 .friend-invite-modal-overlay {
   position: fixed;
   top: 0;
@@ -1090,7 +1090,7 @@
   font-size: 14px;
 }
 
-/* Ä£±¸ ÃÊ´ë ¸ğ´Ş - Ä£±¸ Á¤º¸ ÅØ½ºÆ® ½ºÅ¸ÀÏ */
+/* ì¹œêµ¬ ì´ˆëŒ€ ëª¨ë‹¬ - ì¹œêµ¬ ì •ë³´ í…ìŠ¤íŠ¸ ìŠ¤íƒ€ì¼ */
 .friend-invite-item .friend-info {
   flex: 1;
 }
@@ -1105,4 +1105,39 @@
 .friend-invite-item .friend-level {
   font-size: 12px;
   color: #666;
+}
+
+/* ì´ˆëŒ€ ì•Œë¦¼ íŒì—… */
+.invite-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px 40px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  z-index: 10000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+.invite-notification.success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.invite-notification.error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }

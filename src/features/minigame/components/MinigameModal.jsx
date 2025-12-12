@@ -45,6 +45,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   // 친구 초대 모달
   const [showFriendInviteModal, setShowFriendInviteModal] = useState(false);
 
+  // 친구 초대 알림 팝업
+  const [inviteNotification, setInviteNotification] = useState(null);
+
   // WebSocket 연결 및 친구 목록 불러오기
   useEffect(() => {
     const fetchFriends = async () => {
@@ -190,8 +193,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     minigameService.joinRoom(
       room.roomId,
       userProfile?.level || 1,
-      userProfile?.selectedProfile || null,
-      userProfile?.selectedOutline || null
+      userProfile?.selectedProfile?.imagePath || userProfile?.selectedProfile || null,
+      userProfile?.selectedOutline?.imagePath || userProfile?.selectedOutline || null
     );
   };
 
@@ -241,8 +244,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       roomForm.maxPlayers,
       roomForm.isPrivate,
       userProfile?.level || 1,
-      userProfile?.selectedProfile || null,
-      userProfile?.selectedOutline || null
+      userProfile?.selectedProfile?.imagePath || userProfile?.selectedProfile || null,
+      userProfile?.selectedOutline?.imagePath || userProfile?.selectedOutline || null
     );
 
     // 폼 초기화 및 대기 (방 생성 완료 이벤트를 받으면 자동으로 입장)
@@ -279,13 +282,21 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   const handleInviteFriendToRoom = (friend) => {
     const isOnline = isFriendOnline(friend.username);
     if (!isOnline) {
-      alert('오프라인 상태의 친구는 초대할 수 없습니다.');
+      setInviteNotification({
+        type: 'error',
+        message: '오프라인 상태의 친구는 초대할 수 없습니다.'
+      });
+      setTimeout(() => setInviteNotification(null), 3000);
       return;
     }
 
     // TODO: 실제 초대 시스템 구현 시 여기에 초대 메시지 전송 로직 추가
     // 예: notificationService.sendInvite(friend.id, currentRoom.roomId)
-    alert(`${friend.username}님에게 초대를 보냈습니다!`);
+    setInviteNotification({
+      type: 'success',
+      message: `${friend.username}님에게 초대를 보냈습니다!`
+    });
+    setTimeout(() => setInviteNotification(null), 3000);
     console.log('초대 전송:', { friendId: friend.id, roomId: currentRoom.roomId });
     setShowFriendInviteModal(false);
   };
@@ -521,10 +532,10 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 <h3>참가 인원 ({currentRoom?.players?.length || 0}/{currentRoom?.maxPlayers})</h3>
                 <div className="players-grid">
                   {currentRoom?.players?.map((player) => (
-                    <div key={player.id} className={`player-card ${player.isReady ? 'ready' : ''}`}>
+                    <div key={player.userId} className={`player-card ${player.isReady ? 'ready' : ''}`}>
                       <ProfileAvatar
-                        profileImage={player.selectedProfile}
-                        outlineImage={player.selectedOutline}
+                        profileImage={player.selectedProfile ? { imagePath: player.selectedProfile } : null}
+                        outlineImage={player.selectedOutline ? { imagePath: player.selectedOutline } : null}
                         size={50}
                       />
                       <div className="player-info">
@@ -779,8 +790,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                         onClick={() => isOnline && handleInviteFriendToRoom(friend)}
                       >
                         <ProfileAvatar
-                          profileImage={friend.selectedProfile}
-                          outlineImage={friend.selectedOutline}
+                          profileImage={friend.selectedProfile ? { imagePath: friend.selectedProfile } : null}
+                          outlineImage={friend.selectedOutline ? { imagePath: friend.selectedOutline } : null}
                           size={40}
                           className="friend-avatar"
                         />
@@ -800,6 +811,13 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 초대 알림 팝업 */}
+      {inviteNotification && (
+        <div className={`invite-notification ${inviteNotification.type}`}>
+          {inviteNotification.message}
         </div>
       )}
     </div>
