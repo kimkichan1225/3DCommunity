@@ -546,6 +546,223 @@
   box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
 }
 
+/* 방 나가기 버튼 */
+.leave-room-btn {
+  width: 100%;
+  padding: 14px 20px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
+.leave-room-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(239, 68, 68, 0.6);
+}
+
+/* 대기방 */
+.waiting-room {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.waiting-room-info {
+  display: flex;
+  gap: 20px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  flex-wrap: wrap;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.info-item svg {
+  color: #667eea;
+  font-size: 16px;
+}
+
+.waiting-room-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+}
+
+.waiting-room-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.player-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.player-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.host-icon {
+  color: #fbbf24;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.player-level {
+  font-size: 12px;
+  color: #666;
+}
+
+.spectators-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spectator-item {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #666;
+}
+
+.waiting-room-chat {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+}
+
+.waiting-room-chat h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  min-height: 150px;
+  max-height: 200px;
+}
+
+.chat-message {
+  display: flex;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.chat-username {
+  font-weight: 600;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.chat-text {
+  color: #333;
+  word-break: break-word;
+}
+
+.chat-input-container {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input-container input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.chat-input-container input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.chat-input-container button {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.chat-input-container button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
 /* 반응형 */
 @media (max-width: 900px) {
   .minigame-modal {

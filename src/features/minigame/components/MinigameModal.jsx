@@ -5,8 +5,11 @@ import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen } from
 import friendService from '../../../services/friendService';
 
 function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby' }) {
-  // 뷰 전환 상태 (false: 방 목록, true: 방 만들기)
-  const [isCreatingRoom, setIsCreatingRoom] = useState(initialMode === 'create');
+  // 뷰 전환 상태 ('lobby', 'create', 'waiting')
+  const [currentView, setCurrentView] = useState(initialMode === 'create' ? 'create' : 'lobby');
+
+  // 현재 참여 중인 방 정보
+  const [currentRoom, setCurrentRoom] = useState(null);
 
   // 방 생성 폼 데이터
   const [roomForm, setRoomForm] = useState({
@@ -15,6 +18,10 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     maxPlayers: 4,
     isPrivate: false
   });
+
+  // 대기방 채팅 메시지
+  const [roomChatMessages, setRoomChatMessages] = useState([]);
+  const [roomChatInput, setRoomChatInput] = useState('');
 
   // 더미 데이터 - 방 목록
   const [rooms] = useState([
@@ -93,15 +100,24 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       return;
     }
     console.log('방 입장:', room);
-    // TODO: 방 입장 로직 구현
+    // 방 입장 - 대기방으로 전환
+    setCurrentRoom({
+      ...room,
+      players: [
+        { id: 1, username: room.hostName, isHost: true, level: 10 },
+        { id: 2, username: userProfile?.username || '게스트', isHost: false, level: userProfile?.level || 1 }
+      ],
+      spectators: []
+    });
+    setCurrentView('waiting');
   };
 
   const handleCreateRoom = () => {
-    setIsCreatingRoom(true);
+    setCurrentView('create');
   };
 
   const handleCancelCreateRoom = () => {
-    setIsCreatingRoom(false);
+    setCurrentView('lobby');
     setRoomForm({
       roomName: '',
       gameType: '두더지 잡기',
@@ -120,7 +136,49 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   const handleSubmitCreateRoom = () => {
     console.log('방 생성:', roomForm);
     // TODO: 실제 방 생성 API 호출
-    handleCancelCreateRoom();
+    // 방 생성 후 대기방으로 이동
+    const newRoom = {
+      id: Date.now(),
+      name: roomForm.roomName,
+      gameName: roomForm.gameType,
+      hostName: userProfile?.username || '게스트',
+      currentPlayers: 1,
+      maxPlayers: roomForm.maxPlayers,
+      isLocked: roomForm.isPrivate,
+      isPlaying: false,
+      players: [
+        { id: 1, username: userProfile?.username || '게스트', isHost: true, level: userProfile?.level || 1 }
+      ],
+      spectators: []
+    };
+    setCurrentRoom(newRoom);
+    setCurrentView('waiting');
+    setRoomForm({
+      roomName: '',
+      gameType: '두더지 잡기',
+      maxPlayers: 4,
+      isPrivate: false
+    });
+  };
+
+  const handleLeaveRoom = () => {
+    console.log('방 나가기');
+    setCurrentRoom(null);
+    setCurrentView('lobby');
+    setRoomChatMessages([]);
+    setRoomChatInput('');
+  };
+
+  const handleSendRoomChat = () => {
+    if (!roomChatInput.trim()) return;
+    const newMessage = {
+      id: Date.now(),
+      username: userProfile?.username || '게스트',
+      message: roomChatInput,
+      timestamp: new Date()
+    };
+    setRoomChatMessages(prev => [...prev, newMessage]);
+    setRoomChatInput('');
   };
 
   const handleFriendClick = (friend) => {
@@ -144,9 +202,13 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
           {/* 헤더 */}
           <div className="minigame-header">
             <h2>
-              {isCreatingRoom ? (
+              {currentView === 'create' ? (
                 <>
                   <FaPlus /> 방 만들기
+                </>
+              ) : currentView === 'waiting' ? (
+                <>
+                  <FaUsers /> {currentRoom?.name || '대기방'}
                 </>
               ) : (
                 <>
@@ -159,8 +221,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             </button>
           </div>
 
-          {/* 방 목록 또는 방 만들기 폼 */}
-          {isCreatingRoom ? (
+          {/* 방 목록 / 방 만들기 폼 / 대기방 */}
+          {currentView === 'create' ? (
             <div className="create-room-form">
               <div className="form-group">
                 <label>방 이름</label>
@@ -223,6 +285,84 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 </button>
               </div>
             </div>
+          ) : currentView === 'waiting' ? (
+            <div className="waiting-room">
+              {/* 게임 정보 */}
+              <div className="waiting-room-info">
+                <div className="info-item">
+                  <FaGamepad />
+                  <span>게임: {currentRoom?.gameName}</span>
+                </div>
+                <div className="info-item">
+                  <FaCrown />
+                  <span>방장: {currentRoom?.hostName}</span>
+                </div>
+                <div className="info-item">
+                  <FaLock />
+                  <span>{currentRoom?.isLocked ? '비공개' : '공개'}</span>
+                </div>
+              </div>
+
+              {/* 참가 인원 */}
+              <div className="waiting-room-section">
+                <h3>참가 인원 ({currentRoom?.players?.length || 0}/{currentRoom?.maxPlayers})</h3>
+                <div className="players-grid">
+                  {currentRoom?.players?.map((player) => (
+                    <div key={player.id} className="player-card">
+                      <ProfileAvatar
+                        profileImage={player.selectedProfile}
+                        outlineImage={player.selectedOutline}
+                        size={50}
+                      />
+                      <div className="player-info">
+                        <div className="player-name">
+                          {player.isHost && <FaCrown className="host-icon" />}
+                          {player.username}
+                        </div>
+                        <div className="player-level">Lv. {player.level}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 관전자 */}
+              {currentRoom?.spectators && currentRoom.spectators.length > 0 && (
+                <div className="waiting-room-section">
+                  <h3>관전자 ({currentRoom.spectators.length})</h3>
+                  <div className="spectators-list">
+                    {currentRoom.spectators.map((spectator) => (
+                      <div key={spectator.id} className="spectator-item">
+                        <span>{spectator.username}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 대기방 채팅 */}
+              <div className="waiting-room-chat">
+                <h3>채팅</h3>
+                <div className="chat-messages">
+                  {roomChatMessages.map((msg) => (
+                    <div key={msg.id} className="chat-message">
+                      <span className="chat-username">{msg.username}:</span>
+                      <span className="chat-text">{msg.message}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="chat-input-container">
+                  <input
+                    type="text"
+                    placeholder="메시지를 입력하세요..."
+                    value={roomChatInput}
+                    onChange={(e) => setRoomChatInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendRoomChat()}
+                  />
+                  <button onClick={handleSendRoomChat}>전송</button>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="minigame-room-list">
             {rooms.map((room) => (
@@ -282,23 +422,32 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             <div className="profile-level">Lv. {userProfile?.level || 1}</div>
           </div>
 
-          {/* 네비게이션 버튼들 */}
-          <div className="sidebar-nav-buttons">
-            <button
-              className={`nav-btn ${!isCreatingRoom ? 'active' : ''}`}
-              onClick={() => setIsCreatingRoom(false)}
-            >
-              <FaDoorOpen />
-              <span>로비</span>
-            </button>
-            <button
-              className={`nav-btn ${isCreatingRoom ? 'active' : ''}`}
-              onClick={handleCreateRoom}
-            >
-              <FaPlus />
-              <span>방 만들기</span>
-            </button>
-          </div>
+          {/* 네비게이션 버튼들 - 대기방이 아닐 때만 표시 */}
+          {currentView !== 'waiting' ? (
+            <div className="sidebar-nav-buttons">
+              <button
+                className={`nav-btn ${currentView === 'lobby' ? 'active' : ''}`}
+                onClick={() => setCurrentView('lobby')}
+              >
+                <FaDoorOpen />
+                <span>로비</span>
+              </button>
+              <button
+                className={`nav-btn ${currentView === 'create' ? 'active' : ''}`}
+                onClick={handleCreateRoom}
+              >
+                <FaPlus />
+                <span>방 만들기</span>
+              </button>
+            </div>
+          ) : (
+            <div className="sidebar-nav-buttons">
+              <button className="leave-room-btn" onClick={handleLeaveRoom}>
+                <FaTimes />
+                <span>방 나가기</span>
+              </button>
+            </div>
+          )}
 
           {/* 친구 목록 */}
           <div className="sidebar-friends">
