@@ -26,6 +26,7 @@
   padding: 15px 25px;
   gap: 12px;
   min-width: 200px;
+  min-height: 85px;
 }
 
 /* 미니게임 로비 아이콘 (메인) */
@@ -57,7 +58,7 @@
 }
 
 .create-room-icon {
-  font-size: 45px;
+  font-size: 32px;
   color: #FFD700;
   filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
 }
