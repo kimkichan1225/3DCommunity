@@ -4,12 +4,14 @@ import com.community.dto.*;
 import com.community.model.User;
 import com.community.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/payment")
 @RequiredArgsConstructor
@@ -51,8 +53,36 @@ public class PaymentController {
     public ResponseEntity<PaymentResponseDTO> createDirectPaymentRequest(
             @RequestBody DirectPaymentRequestDTO request,
             Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(paymentService.createDirectPaymentRequest(user.getId(), request));
+        try {
+            log.info("직접 결제 요청 수신: {}", request);
+            log.info("Authentication: {}", authentication);
+
+            if (authentication == null || authentication.getPrincipal() == null) {
+                log.warn("인증 정보 없음");
+                return ResponseEntity.status(401).body(
+                    PaymentResponseDTO.builder()
+                        .success(false)
+                        .message("Authentication required")
+                        .build()
+                );
+            }
+
+            User user = (User) authentication.getPrincipal();
+            log.info("사용자 ID: {}, 금액: {}, 주문ID: {}", user.getId(), request.getAmount(), request.getOrderId());
+
+            PaymentResponseDTO response = paymentService.createDirectPaymentRequest(user.getId(), request);
+            log.info("결제 요청 생성 완료: {}", response);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("결제 요청 생성 중 오류 발생", e);
+            return ResponseEntity.status(500).body(
+                PaymentResponseDTO.builder()
+                    .success(false)
+                    .message("Internal server error: " + e.getMessage())
+                    .build()
+            );
+        }
     }
 
     /**

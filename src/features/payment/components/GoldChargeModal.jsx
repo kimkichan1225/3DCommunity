@@ -5,18 +5,21 @@ import './GoldChargeModal.css';
 function GoldChargeModal({ onClose, onChargeSuccess }) {
   const [selectedAmount, setSelectedAmount] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [ready, setReady] = useState(false);
 
-  // 금화 충전 옵션 (금화 수량: 가격 1:1 비율)
+  // 금화 충전 옵션
   const goldOptions = [
-    { gold: 100, price: 100, popular: false },
-    { gold: 500, price: 500, popular: true },
-    { gold: 1000, price: 1000, popular: false },
-    { gold: 5000, price: 5000, popular: false },
-    { gold: 10000, price: 10000, popular: false },
+    { gold: 100, price: 1000, popular: false },
+    { gold: 500, price: 5000, popular: true },
+    { gold: 1000, price: 10000, popular: false },
+    { gold: 5000, price: 50000, popular: false },
+    { gold: 10000, price: 100000, popular: false },
   ];
 
+  // 금액 선택
   const handleSelectAmount = (option) => {
     setSelectedAmount(option);
+    setReady(true); // 금액 선택 시 바로 준비 완료
   };
 
   const handleCharge = async () => {
@@ -28,30 +31,35 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
     setProcessing(true);
 
     try {
-      // 주문 ID 생성 (타임스탬프 + 랜덤)
+      // 주문 ID 생성 (영문 대소문자, 숫자, -, _, = 조합, 6-64자)
       const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const username = localStorage.getItem('username') || 'Guest';
 
-      // 결제 요청 생성
-      const paymentRequest = await paymentService.createDirectPaymentRequest(
+      // 백엔드에 결제 요청 기록
+      console.log('결제 요청 데이터:', {
+        goldAmount: selectedAmount.gold,
+        orderId: orderId,
+        amount: selectedAmount.price
+      });
+
+      const paymentRequestResult = await paymentService.createDirectPaymentRequest(
         selectedAmount.gold,
         orderId,
         selectedAmount.price
       );
 
-      if (!paymentRequest.success) {
-        alert(paymentRequest.message || '결제 요청 생성에 실패했습니다.');
-        setProcessing(false);
-        return;
-      }
+      console.log('결제 요청 결과:', paymentRequestResult);
 
-      // 토스페이먼츠 결제창 호출
-      const tossPayments = window.TossPayments(process.env.REACT_APP_TOSS_CLIENT_KEY || 'test_ck_dummy');
+      // 토스페이먼츠 결제창 방식 (v1)
+      const clientKey = process.env.REACT_APP_TOSS_CLIENT_KEY || 'test_ck_DnyRpQWGrNDQv6ZKaMPe3Kwv1M9E';
+      const tossPayments = window.TossPayments(clientKey);
 
-      await tossPayments.requestPayment('카드', {
+      // v1 결제 요청
+      tossPayments.requestPayment('카드', {
         amount: selectedAmount.price,
         orderId: orderId,
         orderName: `금화 ${selectedAmount.gold.toLocaleString()}개`,
-        customerName: localStorage.getItem('username') || 'Guest',
+        customerName: username,
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
       });
@@ -67,7 +75,7 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
     <div className="gold-charge-modal-overlay" onClick={onClose}>
       <div className="gold-charge-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>금화 충전</h2>
+          <h2>💰 금화 충전</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
@@ -77,6 +85,7 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
             <p className="info-text">💳 1골드 = 1원 (부가세 포함)</p>
           </div>
 
+          {/* 금화 선택 옵션 */}
           <div className="packages-grid">
             {goldOptions.map((option, index) => (
               <div
@@ -100,6 +109,14 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
               </div>
             ))}
           </div>
+
+          {/* 안내 문구 */}
+          {selectedAmount && (
+            <div className="payment-info">
+              <p>✅ <strong>{selectedAmount.gold.toLocaleString()}금화</strong>를 선택하셨습니다.</p>
+              <p>결제하기 버튼을 클릭하면 토스페이먼츠 결제창이 열립니다.</p>
+            </div>
+          )}
         </div>
 
         <div className="modal-footer">
@@ -111,7 +128,7 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
             onClick={handleCharge}
             disabled={!selectedAmount || processing}
           >
-            {processing ? '처리 중...' : selectedAmount ? `₩${selectedAmount.price.toLocaleString()} 충전하기` : '금액 선택'}
+            {processing ? '처리 중...' : selectedAmount ? `₩${selectedAmount.price.toLocaleString()} 결제하기` : '금액 선택'}
           </button>
         </div>
       </div>
