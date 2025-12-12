@@ -301,3 +301,25 @@
 .gold-charge-modal::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 215, 0, 0.5);
 }
+
+/* 결제 안내 영역 */
+.payment-info {
+  margin-top: 30px;
+  padding: 20px;
+  background: rgba(255, 215, 0, 0.1);
+  border-left: 4px solid #ffd700;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.payment-info p {
+  margin: 8px 0;
+  color: #f0f0f0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.payment-info strong {
+  color: #ffd700;
+  font-size: 18px;
+}

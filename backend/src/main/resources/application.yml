@@ -46,8 +46,8 @@ jwt:
 # 토스페이먼츠 설정
 toss:
   payments:
-    secret-key: ${TOSS_SECRET_KEY:test_sk_dummy}
-    client-key: ${TOSS_CLIENT_KEY:test_ck_dummy}
+    secret-key: ${TOSS_SECRET_KEY:test_sk_d46qopOB8922kNGRa1Bg3ZmM75y0}
+    client-key: ${TOSS_CLIENT_KEY:test_ck_DnyRpQWGrNDQv6ZKaMPe3Kwv1M9E}
     api-url: https://api.tosspayments.com/v1/payments
 
 # 로깅 설정
