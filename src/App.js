@@ -372,7 +372,7 @@ function App() {
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    multiplayerService.onFriendUpdate((data) => {
+    const unsubscribe = multiplayerService.onFriendUpdate((data) => {
       console.log('친구 업데이트 이벤트:', data);
 
       if (data.type === 'FRIEND_REQUEST') {
@@ -384,25 +384,21 @@ function App() {
       }
     });
 
-    return () => {
-      multiplayerService.onFriendUpdate(null);
-    };
+    return unsubscribe;
   }, [isLoggedIn]);
 
   // DM 메시지 이벤트 구독 (알림 생성)
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    multiplayerService.onDMMessage((data) => {
+    const unsubscribe = multiplayerService.onDMMessage((data) => {
       console.log('DM 메시지 수신:', data);
 
       // DM 메시지 알림 생성
       notificationService.createChatNotification(data.senderUsername, data.message);
     });
 
-    return () => {
-      multiplayerService.onDMMessage(null);
-    };
+    return unsubscribe;
   }, [isLoggedIn]);
 
   // 게임 초대 이벤트 구독 (알림 생성)
@@ -624,10 +620,13 @@ function App() {
         return;
       }
 
-      // If logged in, ignore own join event
-      if (isLoggedIn && String(data.userId) === String(userId)) {
+      // 자신의 join 이벤트는 무시 (multiplayerService의 userId와 비교)
+      if (String(data.userId) === String(multiplayerService.userId)) {
+        console.log('Ignoring own join event:', data.userId);
         return;
       }
+
+      console.log('Adding other player:', data.username, data.userId);
 
       // Update otherPlayers state
       setOtherPlayers((prev) => ({
@@ -635,7 +634,7 @@ function App() {
         [data.userId]: {
           userId: data.userId,
           username: data.username,
-          position: [5, 10, 5], // Higher position to make it visible
+          position: [5, 1, 5], // 지면 위치
           rotationY: 0,
           animation: 'idle'
         }

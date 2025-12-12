@@ -1,8 +1,8 @@
-/* 알림 토스트 (화면 좌측 상단 아이콘들 밑에 표시) */
+/* 알림 토스트 (화면 우측 상단에 표시) */
 .notification-toast {
   position: fixed;
-  top: 140px; /* 아이콘들 밑에 위치 */
-  left: 20px;
+  top: 20px;
+  right: 20px;
   width: 350px;
   background: white;
   border-radius: 12px;
@@ -10,15 +10,14 @@
   padding: 16px;
   display: flex;
   gap: 12px;
-  animation: slideInLeft 0.3s ease-out;
+  animation: slideInRight 0.3s ease-out;
   z-index: 2000;
-  position: relative;
   overflow: hidden;
 }
 
-@keyframes slideInLeft {
+@keyframes slideInRight {
   from {
-    transform: translateX(-100%);
+    transform: translateX(100%);
     opacity: 0;
   }
   to {
