@@ -656,11 +656,17 @@
   color: #666;
   font-size: 14px;
   font-weight: 500;
+  padding: 0px 0;
 }
 
 .info-item svg {
   color: #667eea;
   font-size: 16px;
+  flex-shrink: 0;
+}
+
+.info-item span {
+  line-height: 1.4;
 }
 
 .room-settings-btn {
