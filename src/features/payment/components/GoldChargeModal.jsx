@@ -74,12 +74,12 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
   return (
     <div className="gold-charge-modal-overlay" onClick={onClose}>
       <div className="gold-charge-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+        <div className="gold-charge-modal__header">
           <h2>💰 금화 충전</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
-        <div className="modal-content">
+        <div className="gold-charge-modal__content">
           <div className="info-section">
             <p className="info-text">💰 금화는 프리미엄 아이템 구매에 사용됩니다</p>
             <p className="info-text">💳 1골드 = 1원 (부가세 포함)</p>
@@ -119,7 +119,7 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
           )}
         </div>
 
-        <div className="modal-footer">
+        <div className="gold-charge-modal__footer">
           <button className="cancel-button" onClick={onClose} disabled={processing}>
             취소
           </button>
