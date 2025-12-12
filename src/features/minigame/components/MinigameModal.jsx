@@ -4,7 +4,18 @@ import ProfileAvatar from '../../../components/ProfileAvatar';
 import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen } from 'react-icons/fa';
 import friendService from '../../../services/friendService';
 
-function MinigameModal({ onClose, userProfile, onlinePlayers }) {
+function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby' }) {
+  // 뷰 전환 상태 (false: 방 목록, true: 방 만들기)
+  const [isCreatingRoom, setIsCreatingRoom] = useState(initialMode === 'create');
+
+  // 방 생성 폼 데이터
+  const [roomForm, setRoomForm] = useState({
+    roomName: '',
+    gameType: '두더지 잡기',
+    maxPlayers: 4,
+    isPrivate: false
+  });
+
   // 더미 데이터 - 방 목록
   const [rooms] = useState([
     {
@@ -86,8 +97,30 @@ function MinigameModal({ onClose, userProfile, onlinePlayers }) {
   };
 
   const handleCreateRoom = () => {
-    console.log('방 생성 클릭');
-    // TODO: 방 생성 모달 열기
+    setIsCreatingRoom(true);
+  };
+
+  const handleCancelCreateRoom = () => {
+    setIsCreatingRoom(false);
+    setRoomForm({
+      roomName: '',
+      gameType: '두더지 잡기',
+      maxPlayers: 4,
+      isPrivate: false
+    });
+  };
+
+  const handleFormChange = (field, value) => {
+    setRoomForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmitCreateRoom = () => {
+    console.log('방 생성:', roomForm);
+    // TODO: 실제 방 생성 API 호출
+    handleCancelCreateRoom();
   };
 
   const handleFriendClick = (friend) => {
@@ -111,15 +144,87 @@ function MinigameModal({ onClose, userProfile, onlinePlayers }) {
           {/* 헤더 */}
           <div className="minigame-header">
             <h2>
-              <FaDoorOpen /> 미니게임 로비
+              {isCreatingRoom ? (
+                <>
+                  <FaPlus /> 방 만들기
+                </>
+              ) : (
+                <>
+                  <FaDoorOpen /> 미니게임 로비
+                </>
+              )}
             </h2>
             <button className="minigame-close-btn" onClick={onClose}>
               <FaTimes />
             </button>
           </div>
 
-          {/* 방 목록 */}
-          <div className="minigame-room-list">
+          {/* 방 목록 또는 방 만들기 폼 */}
+          {isCreatingRoom ? (
+            <div className="create-room-form">
+              <div className="form-group">
+                <label>방 이름</label>
+                <input
+                  type="text"
+                  placeholder="방 이름을 입력하세요"
+                  value={roomForm.roomName}
+                  onChange={(e) => handleFormChange('roomName', e.target.value)}
+                  maxLength={30}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>게임 종류</label>
+                <select
+                  value={roomForm.gameType}
+                  onChange={(e) => handleFormChange('gameType', e.target.value)}
+                >
+                  <option value="두더지 잡기">두더지 잡기</option>
+                  <option value="숨바꼭질">숨바꼭질</option>
+                  <option value="레이싱">레이싱</option>
+                  <option value="퀴즈쇼">퀴즈쇼</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>최대 인원</label>
+                <select
+                  value={roomForm.maxPlayers}
+                  onChange={(e) => handleFormChange('maxPlayers', parseInt(e.target.value))}
+                >
+                  <option value={2}>2명</option>
+                  <option value={4}>4명</option>
+                  <option value={6}>6명</option>
+                  <option value={8}>8명</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={roomForm.isPrivate}
+                    onChange={(e) => handleFormChange('isPrivate', e.target.checked)}
+                  />
+                  <FaLock /> 비공개 방 (잠금)
+                </label>
+              </div>
+
+              <div className="form-actions">
+                <button className="btn-cancel" onClick={handleCancelCreateRoom}>
+                  취소
+                </button>
+                <button
+                  className="btn-submit"
+                  onClick={handleSubmitCreateRoom}
+                  disabled={!roomForm.roomName.trim()}
+                >
+                  방 만들기
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="minigame-room-list">
             {rooms.map((room) => (
               <div
                 key={room.id}
@@ -161,6 +266,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers }) {
               </div>
             ))}
           </div>
+          )}
         </div>
 
         {/* 오른쪽: 프로필 + 방 생성 + 친구 목록 */}
@@ -176,11 +282,23 @@ function MinigameModal({ onClose, userProfile, onlinePlayers }) {
             <div className="profile-level">Lv. {userProfile?.level || 1}</div>
           </div>
 
-          {/* 방 생성 버튼 */}
-          <button className="create-room-btn" onClick={handleCreateRoom}>
-            <FaPlus />
-            <span>방 만들기</span>
-          </button>
+          {/* 네비게이션 버튼들 */}
+          <div className="sidebar-nav-buttons">
+            <button
+              className={`nav-btn ${!isCreatingRoom ? 'active' : ''}`}
+              onClick={() => setIsCreatingRoom(false)}
+            >
+              <FaDoorOpen />
+              <span>로비</span>
+            </button>
+            <button
+              className={`nav-btn ${isCreatingRoom ? 'active' : ''}`}
+              onClick={handleCreateRoom}
+            >
+              <FaPlus />
+              <span>방 만들기</span>
+            </button>
+          </div>
 
           {/* 친구 목록 */}
           <div className="sidebar-friends">

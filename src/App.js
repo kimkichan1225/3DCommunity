@@ -51,6 +51,7 @@ function App() {
   const [showSettingModal, setShowSettingModal] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showMinigameModal, setShowMinigameModal] = useState(false);
+  const [minigameModalMode, setMinigameModalMode] = useState('lobby'); // 'lobby' or 'create'
   const [shouldAutoAttendance, setShouldAutoAttendance] = useState(false);
   const [showPhoneUI, setShowPhoneUI] = useState(false);
   const [username, setUsername] = useState('');
@@ -445,14 +446,15 @@ function App() {
   // 미니게임 아이콘 클릭 핸들러
   const handleGameIconClick = () => {
     console.log('🎮 미니게임 로비 아이콘 클릭');
+    setMinigameModalMode('lobby'); // 로비 모드로 설정
     setShowMinigameModal(true);
   };
 
   // 방 생성 아이콘 클릭 핸들러
   const handleCreateRoomIconClick = () => {
     console.log('🎮 방 생성 아이콘 클릭');
-    // TODO: 방 생성 모달 열기
-    alert('방 생성 기능 준비 중입니다!');
+    setShowMinigameModal(true);
+    setMinigameModalMode('create'); // 방 생성 모드로 열기
   };
 
   // Connect to multiplayer service - even when not logged in (as observer)
@@ -796,9 +798,13 @@ function App() {
       {/* 미니게임 모달 */}
       {showMinigameModal && (
         <MinigameModal
-          onClose={() => setShowMinigameModal(false)}
+          onClose={() => {
+            setShowMinigameModal(false);
+            setMinigameModalMode('lobby'); // 모달 닫을 때 로비 모드로 초기화
+          }}
           userProfile={userProfile}
           onlinePlayers={otherPlayers}
+          initialMode={minigameModalMode}
         />
       )}
 
