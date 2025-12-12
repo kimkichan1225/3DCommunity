@@ -91,8 +91,11 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       });
 
       // 방 생성 이벤트인 경우, 내가 만든 방이면 자동으로 입장
-      if (roomData.action === 'create' && roomData.hostId === (userProfile?.id || 'guest')) {
+      if (roomData.action === 'create' && String(roomData.hostId) === String(userProfile?.id || 'guest')) {
         console.log('내가 만든 방으로 자동 입장:', roomData.roomId);
+        // 방 구독 (방 업데이트 받기 위해)
+        minigameService.subscribeToRoom(roomData.roomId);
+        minigameService.currentRoomId = roomData.roomId;
         setCurrentRoom(roomData);
         setCurrentView('waiting');
       }
@@ -102,6 +105,13 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     minigameService.on('roomDelete', (roomData) => {
       console.log('방 삭제:', roomData);
       setRooms(prevRooms => prevRooms.filter(r => r.roomId !== roomData.roomId));
+
+      // 내가 있던 방이 삭제되면 로비로 돌아가기
+      if (currentRoom?.roomId === roomData.roomId) {
+        setCurrentRoom(null);
+        setCurrentView('lobby');
+        setRoomChatMessages([]);
+      }
     });
 
     // 방 입장/업데이트 이벤트
@@ -109,6 +119,14 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       console.log('방 이벤트:', roomData);
       if (roomData.action === 'join' || roomData.action === 'update' || roomData.action === 'ready' || roomData.action === 'leave') {
         setCurrentRoom(roomData);
+        // 내가 방에 있는지 확인 (join 액션일 때만 화면 전환)
+        if (roomData.action === 'join') {
+          const myUserId = String(userProfile?.id || 'guest');
+          const isInRoom = roomData.players?.some(p => String(p.userId) === myUserId);
+          if (isInRoom && currentView !== 'waiting') {
+            setCurrentView('waiting');
+          }
+        }
       } else if (roomData.action === 'start') {
         // TODO: 게임 시작 처리
         console.log('게임 시작!');
@@ -144,9 +162,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       return;
     }
     console.log('방 입장:', room);
-    // 실제 방 입장
+    // 실제 방 입장 (서버 응답을 받으면 roomJoin 이벤트에서 화면 전환)
     minigameService.joinRoom(room.roomId, userProfile?.level || 1);
-    setCurrentView('waiting');
   };
 
   const handleCreateRoom = () => {
@@ -545,7 +562,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 <div className="room-header">
                   <div className="room-title">
                     {room.isLocked && <FaLock className="room-lock-icon" />}
-                    <h3>{room.name}</h3>
+                    <h3>{room.roomName}</h3>
                   </div>
                   <div className="room-status">
                     {room.isPlaying ? (
