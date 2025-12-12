@@ -10,4 +10,5 @@ public class CreateRoomRequest {
     private String hostName;
     private int maxPlayers;
     private boolean isLocked;
+    private int hostLevel;
 }

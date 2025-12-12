@@ -18,7 +18,7 @@ public class MinigameRoomService {
      * 방 생성
      */
     public MinigameRoomDto createRoom(String roomName, String gameName, String hostId, String hostName,
-                                       int maxPlayers, boolean isLocked) {
+                                       int maxPlayers, boolean isLocked, int hostLevel) {
         String roomId = UUID.randomUUID().toString();
 
         MinigameRoomDto room = new MinigameRoomDto();
@@ -35,6 +35,7 @@ public class MinigameRoomService {
         MinigamePlayerDto host = new MinigamePlayerDto();
         host.setUserId(hostId);
         host.setUsername(hostName);
+        host.setLevel(hostLevel);
         host.setHost(true);
         host.setReady(true);
 

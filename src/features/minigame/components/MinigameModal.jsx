@@ -42,6 +42,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   const [friends, setFriends] = useState([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(true);
 
+  // 친구 초대 모달
+  const [showFriendInviteModal, setShowFriendInviteModal] = useState(false);
+
   // WebSocket 연결 및 친구 목록 불러오기
   useEffect(() => {
     const fetchFriends = async () => {
@@ -147,10 +150,31 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     // 컴포넌트 언마운트 시 정리
     return () => {
+      // 방에 있으면 나가기
+      if (minigameService.currentRoomId) {
+        console.log('모달 종료 - 방에서 나가기:', minigameService.currentRoomId);
+        minigameService.leaveRoom(minigameService.currentRoomId);
+      }
       // WebSocket 연결 유지 (다른 곳에서도 사용할 수 있으므로)
       // minigameService.disconnect();
     };
   }, [userProfile]);
+
+  // 브라우저 종료/새로고침 시 방에서 나가기
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (minigameService.currentRoomId) {
+        console.log('브라우저 종료 - 방에서 나가기:', minigameService.currentRoomId);
+        minigameService.leaveRoom(minigameService.currentRoomId);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   const handleRoomClick = (room) => {
     if (room.isLocked) {
@@ -210,7 +234,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       roomForm.roomName,
       roomForm.gameType,
       roomForm.maxPlayers,
-      roomForm.isPrivate
+      roomForm.isPrivate,
+      userProfile?.level || 1
     );
 
     // 폼 초기화 및 대기 (방 생성 완료 이벤트를 받으면 자동으로 입장)
@@ -241,8 +266,21 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
   const handleInviteFriend = () => {
     console.log('친구 초대 클릭');
-    // TODO: 친구 초대 기능 구현
-    alert('친구 초대 기능 준비 중입니다!');
+    setShowFriendInviteModal(true);
+  };
+
+  const handleInviteFriendToRoom = (friend) => {
+    const isOnline = isFriendOnline(friend.username);
+    if (!isOnline) {
+      alert('오프라인 상태의 친구는 초대할 수 없습니다.');
+      return;
+    }
+
+    // TODO: 실제 초대 시스템 구현 시 여기에 초대 메시지 전송 로직 추가
+    // 예: notificationService.sendInvite(friend.id, currentRoom.roomId)
+    alert(`${friend.username}님에게 초대를 보냈습니다!`);
+    console.log('초대 전송:', { friendId: friend.id, roomId: currentRoom.roomId });
+    setShowFriendInviteModal(false);
   };
 
   const handleGameStart = () => {
@@ -297,7 +335,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
   const handleFriendClick = (friend) => {
     console.log('친구 클릭:', friend);
-    // TODO: 친구 프로필 보기 또는 초대 등
+    // 로비 화면에서는 친구 프로필 보기 등 다른 기능
+    // (대기방 화면에서는 친구 목록이 관전자 목록으로 대체되므로 이 함수가 호출되지 않음)
   };
 
   // 친구의 온라인 상태 확인
@@ -475,7 +514,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 <h3>참가 인원 ({currentRoom?.players?.length || 0}/{currentRoom?.maxPlayers})</h3>
                 <div className="players-grid">
                   {currentRoom?.players?.map((player) => (
-                    <div key={player.id} className="player-card">
+                    <div key={player.id} className={`player-card ${player.isReady ? 'ready' : ''}`}>
                       <ProfileAvatar
                         profileImage={player.selectedProfile}
                         outlineImage={player.selectedOutline}
@@ -488,6 +527,11 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                         </div>
                         <div className="player-level">Lv. {player.level}</div>
                       </div>
+                      {!player.isHost && (
+                        <div className={`player-ready-badge ${player.isReady ? 'ready' : 'waiting'}`}>
+                          {player.isReady ? '✓ 준비' : '대기'}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -703,6 +747,54 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
           )}
         </div>
       </div>
+
+      {/* 친구 초대 모달 */}
+      {showFriendInviteModal && (
+        <div className="friend-invite-modal-overlay" onClick={() => setShowFriendInviteModal(false)}>
+          <div className="friend-invite-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="friend-invite-header">
+              <h3>친구 초대</h3>
+              <button className="close-btn" onClick={() => setShowFriendInviteModal(false)}>×</button>
+            </div>
+            <div className="friend-invite-body">
+              {isLoadingFriends ? (
+                <div className="loading">친구 목록을 불러오는 중...</div>
+              ) : friends.length === 0 ? (
+                <div className="no-friends">친구가 없습니다.</div>
+              ) : (
+                <div className="friend-invite-list">
+                  {friends.map((friend, index) => {
+                    const isOnline = isFriendOnline(friend.username);
+                    return (
+                      <div
+                        key={friend.friendshipId || friend.id || `friend-${index}`}
+                        className={`friend-invite-item ${isOnline ? 'online' : 'offline'}`}
+                        onClick={() => isOnline && handleInviteFriendToRoom(friend)}
+                      >
+                        <ProfileAvatar
+                          profileImage={friend.selectedProfile}
+                          outlineImage={friend.selectedOutline}
+                          size={40}
+                          className="friend-avatar"
+                        />
+                        <div className="friend-info">
+                          <div className="friend-name">{friend.username}</div>
+                          <div className="friend-level">Lv. {friend.level || 1}</div>
+                        </div>
+                        {isOnline ? (
+                          <div className="friend-status-online">온라인</div>
+                        ) : (
+                          <div className="friend-status-offline">오프라인</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

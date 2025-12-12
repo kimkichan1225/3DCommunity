@@ -95,7 +95,7 @@ class MinigameService {
   /**
    * 방 생성
    */
-  createRoom(roomName, gameName, maxPlayers, isLocked) {
+  createRoom(roomName, gameName, maxPlayers, isLocked, hostLevel) {
     if (!this.connected || !this.client) {
       console.error('WebSocket not connected');
       return;
@@ -107,7 +107,8 @@ class MinigameService {
       hostId: this.userId,
       hostName: this.username,
       maxPlayers,
-      isLocked
+      isLocked,
+      hostLevel: hostLevel || 1
     };
 
     this.client.publish({

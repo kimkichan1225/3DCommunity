@@ -35,7 +35,8 @@ public class MinigameController {
             request.getHostId(),
             request.getHostName(),
             request.getMaxPlayers(),
-            request.isLocked()
+            request.isLocked(),
+            request.getHostLevel()
         );
         room.setAction("create");
         room.setTimestamp(System.currentTimeMillis());

@@ -778,6 +778,30 @@
   color: #666;
 }
 
+.player-ready-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.player-ready-badge.ready {
+  background: #10b981;
+  color: white;
+}
+
+.player-ready-badge.waiting {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.player-card.ready {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
 .spectators-list {
   display: flex;
   flex-direction: column;
@@ -956,4 +980,112 @@
   .profile-level {
     text-align: left;
   }
+}
+/* 친구 초대 모달 */
+.friend-invite-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.friend-invite-modal {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.friend-invite-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.friend-invite-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+.friend-invite-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.friend-invite-header .close-btn:hover {
+  color: #333;
+}
+
+.friend-invite-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.friend-invite-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.friend-invite-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.friend-invite-item.online:hover {
+  background: #e8f5e9;
+  transform: translateX(4px);
+}
+
+.friend-invite-item.offline {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.friend-status-offline {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e0e0e0;
+  color: #666;
+}
+
+.loading,
+.no-friends {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 14px;
 }
