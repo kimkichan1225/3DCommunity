@@ -451,7 +451,7 @@
 /* 게임 종류 선택 그리드 */
 .game-type-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 

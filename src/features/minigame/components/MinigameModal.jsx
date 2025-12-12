@@ -13,10 +13,10 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
   // 게임 종류 목록
   const gameTypes = [
-    { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png' },
-    { id: 'word', name: '끝말잇기', image: '/resources/GameIllust/Word.png' },
-    { id: 'aim', name: '에임 맞추기', image: '/resources/GameIllust/Aim.png' },
-    { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png' }
+    { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
+    { id: 'word', name: '끝말잇기', image: '/resources/GameIllust/Word.png', maxPlayers: [2, 4, 6, 8] },
+    { id: 'aim', name: '에임 맞추기', image: '/resources/GameIllust/Aim.png', maxPlayers: [2, 4] },
+    { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png', maxPlayers: [2, 4, 6] }
   ];
 
   // 방 생성 폼 데이터
@@ -135,10 +135,26 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   };
 
   const handleFormChange = (field, value) => {
-    setRoomForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'gameType') {
+      // 게임 종류 변경 시 해당 게임의 첫 번째 인원수 옵션으로 자동 설정
+      const selectedGame = gameTypes.find(game => game.name === value);
+      setRoomForm(prev => ({
+        ...prev,
+        gameType: value,
+        maxPlayers: selectedGame?.maxPlayers[0] || 2
+      }));
+    } else {
+      setRoomForm(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+  };
+
+  // 현재 선택된 게임의 인원수 옵션 가져오기
+  const getCurrentMaxPlayersOptions = () => {
+    const selectedGame = gameTypes.find(game => game.name === roomForm.gameType);
+    return selectedGame?.maxPlayers || [2, 4, 6, 8];
   };
 
   const handleSubmitCreateRoom = () => {
@@ -265,10 +281,11 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                   value={roomForm.maxPlayers}
                   onChange={(e) => handleFormChange('maxPlayers', parseInt(e.target.value))}
                 >
-                  <option value={2}>2명</option>
-                  <option value={4}>4명</option>
-                  <option value={6}>6명</option>
-                  <option value={8}>8명</option>
+                  {getCurrentMaxPlayersOptions().map((playerCount) => (
+                    <option key={playerCount} value={playerCount}>
+                      {playerCount}명
+                    </option>
+                  ))}
                 </select>
               </div>
 
