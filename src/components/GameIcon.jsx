@@ -1,5 +1,6 @@
 import React from 'react';
 import './GameIcon.css';
+import { FaPlus } from 'react-icons/fa';
 
 /**
  * GameIcon 컴포넌트
@@ -15,9 +16,9 @@ function GameIcon({ onClick, onCreateRoom, visible = true }) {
         <img src="/resources/Icon/Game-icon.png" alt="Game" />
         <div className="game-icon-label">미니게임 로비</div>
       </button>
-      <button className="game-icon-button create-room" onClick={onCreateRoom} title="방 생성">
-        <img src="/resources/Icon/Event-icon.png" alt="Create Room" />
-        <div className="game-icon-label">방 생성</div>
+      <button className="create-room-button" onClick={onCreateRoom} title="방 생성">
+        <FaPlus className="create-room-icon" />
+        <div className="create-room-label">방 생성</div>
       </button>
     </div>
   );
