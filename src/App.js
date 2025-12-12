@@ -24,9 +24,12 @@ import SuspensionNotification from './components/SuspensionNotification';
 import ContextMenu from './components/ContextMenu';
 import OtherPlayerProfileModal from './components/OtherPlayerProfileModal';
 import Notification from './components/Notification';
+import NotificationModal from './components/NotificationModal';
+import NotificationToast from './components/NotificationToast';
 import GameIcon from './components/GameIcon';
 import CurrencyDisplay from './components/CurrencyDisplay';
 import multiplayerService from './services/multiplayerService';
+import notificationService from './services/notificationService';
 import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
 import currencyService from './services/currencyService';
@@ -73,10 +76,32 @@ function App() {
   const [showGameIcon, setShowGameIcon] = useState(false); // 게임 아이콘 표시 상태
   const [silverCoins, setSilverCoins] = useState(0); // 일반 재화 (Silver Coin)
   const [goldCoins, setGoldCoins] = useState(0); // 유료 재화 (Gold Coin)
+  const [showNotificationModal, setShowNotificationModal] = useState(false); // 알림 모달 표시 상태
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0); // 읽지 않은 알림 개수
+  const [toastNotifications, setToastNotifications] = useState([]); // 실시간 토스트 알림 목록
+  const [appSettings, setAppSettings] = useState(() => {
+    // 로컬 스토리지에서 설정 불러오기
+    try {
+      const stored = localStorage.getItem('appSettings');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Failed to load app settings:', error);
+    }
+    return {
+      other: {
+        showToastNotifications: true,
+        chatNotifications: true,
+        eventNotifications: true,
+        nightNotifications: false
+      }
+    };
+  });
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
-  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showMinigameModal || showLanding;
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showMinigameModal || showLanding || showNotificationModal;
 
   // 캐릭터 현재 위치 업데이트 콜백
   const handleCharacterPositionUpdate = (position) => {
@@ -309,6 +334,101 @@ function App() {
       }
     } catch (error) {
       console.error('Failed to update user profile:', error);
+    }
+  };
+
+  // 설정 변경 핸들러
+  const handleSettingsChange = (newSettings) => {
+    setAppSettings(newSettings);
+  };
+
+  // 알림 서비스 구독
+  useEffect(() => {
+    // 초기 읽지 않은 알림 개수 설정
+    setUnreadNotificationCount(notificationService.getUnreadCount());
+
+    // 알림 변경 구독
+    const unsubscribe = notificationService.subscribe((notifications, unreadCount) => {
+      setUnreadNotificationCount(unreadCount);
+
+      // 새 알림이 추가되면 토스트로 표시 (설정에 따라)
+      if (appSettings.other?.showToastNotifications && notifications.length > 0) {
+        const latestNotification = notifications[0];
+        if (!latestNotification.read) {
+          // 이미 토스트에 있는지 확인
+          const alreadyShown = toastNotifications.some(t => t.id === latestNotification.id);
+          if (!alreadyShown) {
+            setToastNotifications(prev => [...prev, latestNotification]);
+          }
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [appSettings.other?.showToastNotifications]);
+
+  // 친구 업데이트 이벤트 구독 (알림 생성)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    multiplayerService.onFriendUpdate((data) => {
+      console.log('친구 업데이트 이벤트:', data);
+
+      if (data.type === 'FRIEND_REQUEST') {
+        // 친구 요청 알림 생성
+        notificationService.createFriendRequestNotification(data.requesterUsername);
+      } else if (data.type === 'FRIEND_ACCEPTED') {
+        // 친구 수락 알림 생성
+        notificationService.createFriendAcceptedNotification(data.acceptorUsername);
+      }
+    });
+
+    return () => {
+      multiplayerService.onFriendUpdate(null);
+    };
+  }, [isLoggedIn]);
+
+  // 토스트 알림 닫기 핸들러
+  const handleToastClose = (notificationId) => {
+    setToastNotifications(prev => prev.filter(n => n.id !== notificationId));
+  };
+
+  // 토스트 알림 수락 핸들러 (친구 요청, 게임 초대 등)
+  const handleToastAccept = async (notification) => {
+    console.log('알림 수락:', notification);
+
+    if (notification.type === 'friend_request') {
+      // 친구 요청 수락 로직 (FriendList.jsx 참고)
+      try {
+        // TODO: friendshipId를 알림 데이터에 포함시켜야 함
+        // await friendService.acceptFriendRequest(notification.data.friendshipId);
+        console.log('친구 요청 수락:', notification.data.requesterUsername);
+      } catch (error) {
+        console.error('친구 요청 수락 실패:', error);
+      }
+    } else if (notification.type === 'game_invite') {
+      // 게임 초대 수락 로직
+      console.log('게임 초대 수락:', notification.data);
+      // TODO: 게임 방 입장 로직
+    }
+  };
+
+  // 토스트 알림 거절 핸들러
+  const handleToastReject = async (notification) => {
+    console.log('알림 거절:', notification);
+
+    if (notification.type === 'friend_request') {
+      // 친구 요청 거절 로직
+      try {
+        // TODO: friendshipId를 알림 데이터에 포함시켜야 함
+        // await friendService.rejectFriendRequest(notification.data.friendshipId);
+        console.log('친구 요청 거절:', notification.data.requesterUsername);
+      } catch (error) {
+        console.error('친구 요청 거절 실패:', error);
+      }
+    } else if (notification.type === 'game_invite') {
+      // 게임 초대 거절 로직
+      console.log('게임 초대 거절:', notification.data);
     }
   };
 
@@ -612,8 +732,15 @@ function App() {
 
           {/* 확장 시 보이는 아이콘들 */}
           <div className={`secondary-icons ${isMenuExpanded ? 'show' : 'hide'}`}>
-            <button className="icon-button" onClick={() => console.log('알람')} title="알람">
+            <button
+              className="icon-button notification-icon-button"
+              onClick={() => setShowNotificationModal(true)}
+              title="알림"
+            >
               <img src="/resources/Icon/Alarm-icon.png" alt="Alarm" />
+              {unreadNotificationCount > 0 && (
+                <span className="notification-badge">{unreadNotificationCount}</span>
+              )}
             </button>
             <button className="icon-button" onClick={() => setShowPhoneUI(true)} title="모바일 (친구/채팅)">
               <img src="/resources/Icon/Mobile-icon.png" alt="Mobile" />
@@ -779,8 +906,28 @@ function App() {
 
       {/* 설정 모달 */}
       {showSettingModal && (
-        <SettingModal onClose={() => setShowSettingModal(false)} />
+        <SettingModal
+          onClose={() => setShowSettingModal(false)}
+          onSettingsChange={handleSettingsChange}
+        />
       )}
+
+      {/* 알림 모달 */}
+      {showNotificationModal && (
+        <NotificationModal onClose={() => setShowNotificationModal(false)} />
+      )}
+
+      {/* 실시간 알림 토스트 (화면 좌측 상단에 표시) */}
+      {appSettings.other?.showToastNotifications && toastNotifications.map((notification) => (
+        <NotificationToast
+          key={notification.id}
+          notification={notification}
+          onClose={() => handleToastClose(notification.id)}
+          onAccept={handleToastAccept}
+          onReject={handleToastReject}
+          autoCloseDelay={5000}
+        />
+      ))}
 
       {/* 이벤트 모달 */}
       {showEventModal && (

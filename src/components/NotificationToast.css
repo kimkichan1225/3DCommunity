@@ -1,0 +1,191 @@
+/* 알림 토스트 (화면 좌측 상단 아이콘들 밑에 표시) */
+.notification-toast {
+  position: fixed;
+  top: 140px; /* 아이콘들 밑에 위치 */
+  left: 20px;
+  width: 350px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  animation: slideInLeft 0.3s ease-out;
+  z-index: 2000;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 알림 아이콘 */
+.notification-toast-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.notification-toast-friend_request .notification-toast-icon,
+.notification-toast-friend_accepted .notification-toast-icon {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.notification-toast-game_invite .notification-toast-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.notification-toast-chat .notification-toast-icon {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.notification-toast-system .notification-toast-icon {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+}
+
+/* 알림 내용 */
+.notification-toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-toast-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.notification-toast-message {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* 액션 버튼들 */
+.notification-toast-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.notification-toast-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.notification-toast-btn.accept-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.notification-toast-btn.accept-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.notification-toast-btn.reject-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.notification-toast-btn.reject-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+/* 닫기 버튼 */
+.notification-toast-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #999;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.notification-toast-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+/* 프로그레스 바 */
+.notification-toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.notification-toast-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.1s linear;
+}
+
+/* 여러 개의 토스트가 쌓일 때 */
+.notification-toast:nth-child(2) {
+  top: calc(140px + 100px);
+}
+
+.notification-toast:nth-child(3) {
+  top: calc(140px + 200px);
+}
+
+.notification-toast:nth-child(4) {
+  top: calc(140px + 300px);
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .notification-toast {
+    width: calc(100% - 40px);
+    left: 20px;
+    top: 120px;
+  }
+
+  .notification-toast:nth-child(2) {
+    top: calc(120px + 90px);
+  }
+
+  .notification-toast:nth-child(3) {
+    top: calc(120px + 180px);
+  }
+}
