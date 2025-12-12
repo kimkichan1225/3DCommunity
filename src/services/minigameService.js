@@ -95,7 +95,7 @@ class MinigameService {
   /**
    * 방 생성
    */
-  createRoom(roomName, gameName, maxPlayers, isLocked, hostLevel) {
+  createRoom(roomName, gameName, maxPlayers, isLocked, hostLevel, selectedProfile, selectedOutline) {
     if (!this.connected || !this.client) {
       console.error('WebSocket not connected');
       return;
@@ -108,7 +108,9 @@ class MinigameService {
       hostName: this.username,
       maxPlayers,
       isLocked,
-      hostLevel: hostLevel || 1
+      hostLevel: hostLevel || 1,
+      selectedProfile: selectedProfile || null,
+      selectedOutline: selectedOutline || null
     };
 
     this.client.publish({
@@ -122,7 +124,7 @@ class MinigameService {
   /**
    * 방 입장
    */
-  joinRoom(roomId, level) {
+  joinRoom(roomId, level, selectedProfile, selectedOutline) {
     if (!this.connected || !this.client) {
       console.error('WebSocket not connected');
       return;
@@ -132,7 +134,9 @@ class MinigameService {
       roomId,
       userId: this.userId,
       username: this.username,
-      level
+      level,
+      selectedProfile: selectedProfile || null,
+      selectedOutline: selectedOutline || null
     };
 
     this.client.publish({

@@ -1089,3 +1089,20 @@
   color: #999;
   font-size: 14px;
 }
+
+/* 친구 초대 모달 - 친구 정보 텍스트 스타일 */
+.friend-invite-item .friend-info {
+  flex: 1;
+}
+
+.friend-invite-item .friend-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.friend-invite-item .friend-level {
+  font-size: 12px;
+  color: #666;
+}

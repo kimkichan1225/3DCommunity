@@ -187,7 +187,12 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     }
     console.log('방 입장:', room);
     // 실제 방 입장 (서버 응답을 받으면 roomJoin 이벤트에서 화면 전환)
-    minigameService.joinRoom(room.roomId, userProfile?.level || 1);
+    minigameService.joinRoom(
+      room.roomId,
+      userProfile?.level || 1,
+      userProfile?.selectedProfile || null,
+      userProfile?.selectedOutline || null
+    );
   };
 
   const handleCreateRoom = () => {
@@ -235,7 +240,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       roomForm.gameType,
       roomForm.maxPlayers,
       roomForm.isPrivate,
-      userProfile?.level || 1
+      userProfile?.level || 1,
+      userProfile?.selectedProfile || null,
+      userProfile?.selectedOutline || null
     );
 
     // 폼 초기화 및 대기 (방 생성 완료 이벤트를 받으면 자동으로 입장)

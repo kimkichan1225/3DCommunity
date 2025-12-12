@@ -11,4 +11,6 @@ public class CreateRoomRequest {
     private int maxPlayers;
     private boolean isLocked;
     private int hostLevel;
+    private String selectedProfile;
+    private String selectedOutline;
 }

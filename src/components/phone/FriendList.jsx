@@ -25,11 +25,17 @@ function FriendList({ userId, username, onlinePlayers }) {
       if (data.type === 'FRIEND_REQUEST') {
         // 새 친구 요청 받음
         setPopupMessage(`${data.requesterUsername}님이 친구 요청을 보냈습니다.`);
-        loadPendingRequests(); // 목록 새로고침
+        // 약간의 지연 후 목록 새로고침 (DB 트랜잭션 완료 대기)
+        setTimeout(() => {
+          loadPendingRequests();
+        }, 300);
       } else if (data.type === 'FRIEND_ACCEPTED') {
         // 친구 요청이 수락됨
         setPopupMessage(`${data.acceptorUsername}님이 친구 요청을 수락했습니다.`);
-        loadFriends(); // 친구 목록 새로고침
+        // 약간의 지연 후 목록 새로고침 (DB 트랜잭션 완료 대기)
+        setTimeout(() => {
+          loadFriends();
+        }, 300);
       }
     });
 
@@ -61,8 +67,11 @@ function FriendList({ userId, username, onlinePlayers }) {
     try {
       await friendService.acceptFriendRequest(friendshipId);
       setPopupMessage('친구 요청을 수락했습니다.');
-      loadFriends();
-      loadPendingRequests();
+      // 약간의 지연 후 목록 새로고침 (DB 트랜잭션 완료 확실히 대기)
+      setTimeout(() => {
+        loadFriends();
+        loadPendingRequests();
+      }, 300);
     } catch (error) {
       setPopupMessage(error.response?.data?.message || '친구 수락에 실패했습니다.');
     }

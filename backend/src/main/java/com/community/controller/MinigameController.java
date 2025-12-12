@@ -36,7 +36,9 @@ public class MinigameController {
             request.getHostName(),
             request.getMaxPlayers(),
             request.isLocked(),
-            request.getHostLevel()
+            request.getHostLevel(),
+            request.getSelectedProfile(),
+            request.getSelectedOutline()
         );
         room.setAction("create");
         room.setTimestamp(System.currentTimeMillis());
@@ -70,6 +72,8 @@ public class MinigameController {
         player.setLevel(request.getLevel());
         player.setHost(false);
         player.setReady(false);
+        player.setSelectedProfile(request.getSelectedProfile());
+        player.setSelectedOutline(request.getSelectedOutline());
 
         MinigameRoomDto room = roomService.joinRoom(request.getRoomId(), player);
         if (room != null) {

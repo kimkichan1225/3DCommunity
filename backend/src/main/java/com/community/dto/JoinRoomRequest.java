@@ -8,4 +8,6 @@ public class JoinRoomRequest {
     private String userId;
     private String username;
     private int level;
+    private String selectedProfile;
+    private String selectedOutline;
 }
