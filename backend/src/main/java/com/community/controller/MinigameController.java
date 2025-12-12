@@ -191,4 +191,19 @@ public class MinigameController {
         chatDto.setTimestamp(System.currentTimeMillis());
         messagingTemplate.convertAndSend("/topic/minigame/room/" + chatDto.getRoomId() + "/chat", chatDto);
     }
+
+    /**
+     * 게임 초대
+     * Client -> /app/minigame.invite
+     * Server -> /topic/minigame/invite/{targetUserId} (to target user)
+     */
+    @MessageMapping("/minigame.invite")
+    public void sendGameInvite(GameInviteDto inviteDto) {
+        log.info("게임 초대 전송: {} -> {}", inviteDto.getInviterUsername(), inviteDto.getTargetUsername());
+
+        inviteDto.setTimestamp(System.currentTimeMillis());
+
+        // 초대 받는 사람에게만 전송
+        messagingTemplate.convertAndSend("/topic/minigame/invite/" + inviteDto.getTargetUserId(), inviteDto);
+    }
 }

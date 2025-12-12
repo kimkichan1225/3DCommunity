@@ -29,6 +29,7 @@ import NotificationToast from './components/NotificationToast';
 import GameIcon from './components/GameIcon';
 import CurrencyDisplay from './components/CurrencyDisplay';
 import multiplayerService from './services/multiplayerService';
+import minigameService from './services/minigameService';
 import notificationService from './services/notificationService';
 import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
@@ -385,6 +386,38 @@ function App() {
 
     return () => {
       multiplayerService.onFriendUpdate(null);
+    };
+  }, [isLoggedIn]);
+
+  // DM 메시지 이벤트 구독 (알림 생성)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    multiplayerService.onDMMessage((data) => {
+      console.log('DM 메시지 수신:', data);
+
+      // DM 메시지 알림 생성
+      notificationService.createChatNotification(data.senderUsername, data.message);
+    });
+
+    return () => {
+      multiplayerService.onDMMessage(null);
+    };
+  }, [isLoggedIn]);
+
+  // 게임 초대 이벤트 구독 (알림 생성)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    minigameService.on('gameInvite', (data) => {
+      console.log('게임 초대 수신:', data);
+
+      // 게임 초대 알림 생성
+      notificationService.createGameInviteNotification(data.inviterUsername, data.gameName);
+    });
+
+    return () => {
+      minigameService.on('gameInvite', null);
     };
   }, [isLoggedIn]);
 

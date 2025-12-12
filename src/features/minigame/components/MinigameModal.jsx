@@ -290,14 +290,20 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       return;
     }
 
-    // TODO: 실제 초대 시스템 구현 시 여기에 초대 메시지 전송 로직 추가
-    // 예: notificationService.sendInvite(friend.id, currentRoom.roomId)
+    // 게임 초대 전송
+    const targetUserId = friend.id || friend.friendId;
+    const targetUsername = friend.username;
+    const roomId = currentRoom.roomId;
+    const gameName = currentRoom.gameName;
+
+    minigameService.sendGameInvite(targetUserId, targetUsername, roomId, gameName);
+
     setInviteNotification({
       type: 'success',
       message: `${friend.username}님에게 초대를 보냈습니다!`
     });
     setTimeout(() => setInviteNotification(null), 3000);
-    console.log('초대 전송:', { friendId: friend.id, roomId: currentRoom.roomId });
+    console.log('초대 전송:', { targetUserId, targetUsername, roomId, gameName });
     setShowFriendInviteModal(false);
   };
 

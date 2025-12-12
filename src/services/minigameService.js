@@ -16,6 +16,7 @@ class MinigameService {
     this.onRoomLeaveCallback = null;
     this.onRoomChatCallback = null;
     this.onRoomDeleteCallback = null;
+    this.onGameInviteCallback = null; // 게임 초대 받음
   }
 
   connect(userId, username) {
@@ -51,6 +52,13 @@ class MinigameService {
           const data = JSON.parse(message.body);
           console.log('Rooms list:', data);
           this.onRoomsListCallback?.(data);
+        });
+
+        // 개인 게임 초대 구독
+        this.client.subscribe('/topic/minigame/invite/' + this.userId, (message) => {
+          const data = JSON.parse(message.body);
+          console.log('Game invite received:', data);
+          this.onGameInviteCallback?.(data);
         });
 
         // 초기 방 목록 요청
@@ -288,6 +296,32 @@ class MinigameService {
   }
 
   /**
+   * 게임 초대 전송
+   */
+  sendGameInvite(targetUserId, targetUsername, roomId, gameName) {
+    if (!this.connected || !this.client) {
+      console.error('WebSocket not connected');
+      return;
+    }
+
+    const payload = {
+      inviterId: this.userId,
+      inviterUsername: this.username,
+      targetUserId,
+      targetUsername,
+      roomId,
+      gameName
+    };
+
+    this.client.publish({
+      destination: '/app/minigame.invite',
+      body: JSON.stringify(payload)
+    });
+
+    console.log('게임 초대 전송:', payload);
+  }
+
+  /**
    * 콜백 등록
    */
   on(event, callback) {
@@ -309,6 +343,9 @@ class MinigameService {
         break;
       case 'roomDelete':
         this.onRoomDeleteCallback = callback;
+        break;
+      case 'gameInvite':
+        this.onGameInviteCallback = callback;
         break;
       default:
         console.warn('Unknown event:', event);
