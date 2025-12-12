@@ -11,10 +11,18 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   // 현재 참여 중인 방 정보
   const [currentRoom, setCurrentRoom] = useState(null);
 
+  // 게임 종류 목록
+  const gameTypes = [
+    { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png' },
+    { id: 'word', name: '끝말잇기', image: '/resources/GameIllust/Word.png' },
+    { id: 'aim', name: '에임 맞추기', image: '/resources/GameIllust/Aim.png' },
+    { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png' }
+  ];
+
   // 방 생성 폼 데이터
   const [roomForm, setRoomForm] = useState({
     roomName: '',
-    gameType: '두더지 잡기',
+    gameType: '오목',
     maxPlayers: 4,
     isPrivate: false
   });
@@ -28,7 +36,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     {
       id: 1,
       name: '친구들과 즐기는 미니게임',
-      gameName: '두더지 잡기',
+      gameName: '오목',
       hostName: '플레이어123',
       currentPlayers: 3,
       maxPlayers: 4,
@@ -38,7 +46,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     {
       id: 2,
       name: '초보 환영 방',
-      gameName: '숨바꼭질',
+      gameName: '끝말잇기',
       hostName: '게임마스터',
       currentPlayers: 2,
       maxPlayers: 6,
@@ -48,7 +56,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     {
       id: 3,
       name: '고수들의 대결',
-      gameName: '레이싱',
+      gameName: '에임 맞추기',
       hostName: 'SpeedKing',
       currentPlayers: 4,
       maxPlayers: 4,
@@ -58,7 +66,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     {
       id: 4,
       name: '누구나 참여 가능!',
-      gameName: '퀴즈쇼',
+      gameName: '스무고개',
       hostName: 'QuizMaster',
       currentPlayers: 1,
       maxPlayers: 8,
@@ -120,7 +128,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     setCurrentView('lobby');
     setRoomForm({
       roomName: '',
-      gameType: '두더지 잡기',
+      gameType: '오목',
       maxPlayers: 4,
       isPrivate: false
     });
@@ -155,7 +163,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     setCurrentView('waiting');
     setRoomForm({
       roomName: '',
-      gameType: '두더지 잡기',
+      gameType: '오목',
       maxPlayers: 4,
       isPrivate: false
     });
@@ -237,15 +245,18 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
               <div className="form-group">
                 <label>게임 종류</label>
-                <select
-                  value={roomForm.gameType}
-                  onChange={(e) => handleFormChange('gameType', e.target.value)}
-                >
-                  <option value="두더지 잡기">두더지 잡기</option>
-                  <option value="숨바꼭질">숨바꼭질</option>
-                  <option value="레이싱">레이싱</option>
-                  <option value="퀴즈쇼">퀴즈쇼</option>
-                </select>
+                <div className="game-type-grid">
+                  {gameTypes.map((game) => (
+                    <div
+                      key={game.id}
+                      className={`game-type-card ${roomForm.gameType === game.name ? 'selected' : ''}`}
+                      onClick={() => handleFormChange('gameType', game.name)}
+                    >
+                      <img src={game.image} alt={game.name} className="game-type-image" />
+                      <div className="game-type-name">{game.name}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="form-group">
