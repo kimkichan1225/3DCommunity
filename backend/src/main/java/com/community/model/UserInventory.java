@@ -31,6 +31,12 @@ public class UserInventory {
     @Column(name = "is_equipped")
     private Boolean isEquipped = false;
 
+    @Column(name = "is_new")
+    private Boolean isNew = true;
+
+    @Column(name = "viewed_at")
+    private LocalDateTime viewedAt;
+
     @PrePersist
     protected void onCreate() {
         if (purchasedAt == null) {

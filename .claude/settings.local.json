@@ -31,7 +31,8 @@
       "Bash(find:*)",
       "Bash(mkdir:*)",
       "Bash(echo.:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "mcp__supabase__execute_sql"
     ],
     "deny": [],
     "ask": []

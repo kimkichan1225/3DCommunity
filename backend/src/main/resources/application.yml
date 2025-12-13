@@ -43,6 +43,13 @@ jwt:
   secret: ${JWT_SECRET:3d-community-secret-key-please-change-this-in-production-environment-for-security}
   expiration: ${JWT_EXPIRATION:86400000} # 24시간 (밀리초)
 
+# 토스페이먼츠 설정
+toss:
+  payments:
+    secret-key: ${TOSS_SECRET_KEY:test_sk_dummy}
+    client-key: ${TOSS_CLIENT_KEY:test_ck_dummy}
+    api-url: https://api.tosspayments.com/v1/payments
+
 # 로깅 설정
 logging:
   level:

@@ -1,0 +1,346 @@
+import React, { useState, useEffect } from 'react';
+import './ShopModal.css';
+import shopService from '../services/shopService';
+
+/**
+ * ShopModal 컴포넌트
+ * - 상점 아이템 목록 및 상세 정보 표시
+ * - 카테고리별 필터, 검색, 정렬 기능
+ * - 구매, 착용/해제 기능
+ */
+function ShopModal({ onClose, userCoins, onCoinsUpdate }) {
+  // 상태 관리
+  const [activeTab, setActiveTab] = useState('ALL'); // 카테고리 탭
+  const [filter, setFilter] = useState('all'); // 전체/미보유/보유중
+  const [sortBy, setSortBy] = useState('latest'); // 정렬 기준
+  const [searchQuery, setSearchQuery] = useState(''); // 검색어
+  const [selectedItem, setSelectedItem] = useState(null); // 선택된 아이템
+
+  // 데이터
+  const [categories, setCategories] = useState([]);
+  const [allItems, setAllItems] = useState([]);
+  const [myInventory, setMyInventory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 데이터 로드
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const [categoriesData, itemsData, inventoryData] = await Promise.all([
+        shopService.getActiveCategories(),
+        shopService.getActiveShopItems(),
+        shopService.getMyInventory()
+      ]);
+
+      setCategories(categoriesData);
+      setAllItems(itemsData);
+      setMyInventory(inventoryData);
+    } catch (error) {
+      console.error('Failed to load shop data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 필터링된 아이템 목록
+  const getFilteredItems = () => {
+    let items = [...allItems];
+
+    // 카테고리 필터
+    if (activeTab !== 'ALL') {
+      const category = categories.find(c => c.name === activeTab);
+      if (category) {
+        items = items.filter(item => item.categoryId === category.id);
+      }
+    }
+
+    // 보유 상태 필터
+    if (filter === 'unowned') {
+      items = items.filter(item => !myInventory.some(inv => inv.shopItemId === item.id));
+    } else if (filter === 'owned') {
+      items = items.filter(item => myInventory.some(inv => inv.shopItemId === item.id));
+    }
+
+    // 검색어 필터
+    if (searchQuery) {
+      items = items.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // 정렬
+    if (sortBy === 'latest') {
+      // 기본 순서 (최신순)
+    } else if (sortBy === 'price-asc') {
+      items.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-desc') {
+      items.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'name') {
+      items.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return items;
+  };
+
+  const filteredItems = getFilteredItems();
+
+  // 아이템이 보유 중인지 확인
+  const isOwned = (itemId) => {
+    return myInventory.some(inv => inv.shopItemId === itemId);
+  };
+
+  // 아이템이 착용 중인지 확인
+  const isEquipped = (itemId) => {
+    return myInventory.some(inv => inv.shopItemId === itemId && inv.isEquipped);
+  };
+
+  // 아이템이 신규인지 확인
+  const isNew = (itemId) => {
+    return myInventory.some(inv => inv.shopItemId === itemId && inv.isNew);
+  };
+
+  // 아이템 구매
+  const handlePurchase = async (itemId, autoEquip = false) => {
+    try {
+      const response = await shopService.purchaseItem(itemId, autoEquip);
+      if (response.success) {
+        alert(response.message);
+        await loadData(); // 데이터 새로고침
+        if (onCoinsUpdate) {
+          onCoinsUpdate(response.remainingSilverCoins, response.remainingGoldCoins);
+        }
+      } else {
+        alert(response.message);
+      }
+    } catch (error) {
+      console.error('Purchase failed:', error);
+      alert('구매에 실패했습니다.');
+    }
+  };
+
+  // 아이템 착용/해제
+  const handleToggleEquip = async (itemId) => {
+    try {
+      const inventoryItem = myInventory.find(inv => inv.shopItemId === itemId);
+      if (inventoryItem) {
+        await shopService.toggleEquipItem(inventoryItem.id);
+        await loadData(); // 데이터 새로고침
+      }
+    } catch (error) {
+      console.error('Toggle equip failed:', error);
+      alert('착용/해제에 실패했습니다.');
+    }
+  };
+
+  // 신규 아이템 확인
+  const handleMarkAsViewed = async (itemId) => {
+    try {
+      const inventoryItem = myInventory.find(inv => inv.shopItemId === itemId);
+      if (inventoryItem && inventoryItem.isNew) {
+        await shopService.markItemAsViewed(inventoryItem.id);
+        await loadData(); // 데이터 새로고침
+      }
+    } catch (error) {
+      console.error('Mark as viewed failed:', error);
+    }
+  };
+
+  // 아이템 선택 시 자동으로 신규 배지 제거
+  const handleSelectItem = (item) => {
+    setSelectedItem(item);
+    if (isNew(item.id)) {
+      handleMarkAsViewed(item.id);
+    }
+  };
+
+  return (
+    <div className="shop-modal-overlay" onClick={onClose}>
+      <div className="shop-modal-container" onClick={(e) => e.stopPropagation()}>
+        {/* 헤더 */}
+        <div className="shop-modal-header">
+          <h2>🛒 상점</h2>
+          <div className="shop-coins-display">
+            <div className="coin-item">
+              <img src="/resources/Icon/Silver-Coin.png" alt="실버 코인" />
+              <span>{userCoins?.silver || 0}</span>
+            </div>
+            <div className="coin-item">
+              <img src="/resources/Icon/Gold-Coin.png" alt="골드 코인" />
+              <span>{userCoins?.gold || 0}</span>
+            </div>
+          </div>
+          <button className="shop-modal-close" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+
+        {/* 카테고리 탭 */}
+        <div className="shop-modal-tabs">
+          <button
+            className={`shop-tab ${activeTab === 'ALL' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ALL')}
+          >
+            전체
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              className={`shop-tab ${activeTab === category.name ? 'active' : ''}`}
+              onClick={() => setActiveTab(category.name)}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+
+        {/* 필터 & 정렬 바 */}
+        <div className="shop-filter-bar">
+          <select
+            className="shop-filter-select"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          >
+            <option value="all">전체 보기</option>
+            <option value="unowned">미보유 아이템만</option>
+            <option value="owned">보유한 아이템만</option>
+          </select>
+
+          <input
+            type="text"
+            className="shop-search-input"
+            placeholder="🔍 아이템 검색..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+
+          <select
+            className="shop-sort-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="latest">최신순</option>
+            <option value="price-asc">가격 낮은순</option>
+            <option value="price-desc">가격 높은순</option>
+            <option value="name">이름순</option>
+          </select>
+        </div>
+
+        {/* 메인 컨텐츠: 왼쪽(목록) + 오른쪽(상세) */}
+        <div className="shop-modal-body">
+          {/* 왼쪽: 아이템 그리드 */}
+          <div className="shop-items-section">
+            {isLoading ? (
+              <div className="shop-loading">로딩 중...</div>
+            ) : filteredItems.length === 0 ? (
+              <div className="shop-empty">아이템이 없습니다.</div>
+            ) : (
+              <div className="shop-items-grid">
+                {filteredItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`shop-item-card ${selectedItem?.id === item.id ? 'selected' : ''}`}
+                    onClick={() => handleSelectItem(item)}
+                  >
+                    <div className="shop-item-image">
+                      <img
+                        src={item.imageUrl || '/resources/Icon/Event-icon.png'}
+                        alt={item.name}
+                      />
+                      {isNew(item.id) && <div className="item-badge new-badge">NEW</div>}
+                      {isEquipped(item.id) && <div className="item-badge equipped-badge">착용중</div>}
+                      {isOwned(item.id) && !isEquipped(item.id) && (
+                        <div className="item-badge owned-badge">보유중</div>
+                      )}
+                    </div>
+                    <div className="shop-item-info">
+                      <h4>{item.name}</h4>
+                      <div className="shop-item-price">
+                        <img src="/resources/Icon/Silver-Coin.png" alt="코인" />
+                        <span>{item.price}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 오른쪽: 상세 정보 */}
+          <div className="shop-detail-section">
+            {selectedItem ? (
+              <>
+                <div className="shop-detail-header">
+                  <img
+                    src={selectedItem.imageUrl || '/resources/Icon/Event-icon.png'}
+                    alt={selectedItem.name}
+                  />
+                  <h3>{selectedItem.name}</h3>
+                </div>
+                <div className="shop-detail-content">
+                  <p className="detail-description">
+                    {selectedItem.description || '아이템 설명이 없습니다.'}
+                  </p>
+
+                  <div className="detail-price-box">
+                    <h4>가격</h4>
+                    <div className="price-display">
+                      <img src="/resources/Icon/Silver-Coin.png" alt="실버 코인" />
+                      <span className="price-value">{selectedItem.price}</span>
+                    </div>
+                  </div>
+
+                  {/* 상태 표시 */}
+                  <div className="detail-status">
+                    {isOwned(selectedItem.id) && (
+                      <div className="status-badge owned">✓ 보유 중</div>
+                    )}
+                    {isEquipped(selectedItem.id) && (
+                      <div className="status-badge equipped">★ 착용 중</div>
+                    )}
+                  </div>
+
+                  {/* 버튼 */}
+                  <div className="detail-actions">
+                    {!isOwned(selectedItem.id) ? (
+                      <>
+                        <button
+                          className="btn-purchase"
+                          onClick={() => handlePurchase(selectedItem.id, false)}
+                        >
+                          구매하기
+                        </button>
+                        <button
+                          className="btn-purchase-equip"
+                          onClick={() => handlePurchase(selectedItem.id, true)}
+                        >
+                          구매 후 착용
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className={`btn-equip ${isEquipped(selectedItem.id) ? 'equipped' : ''}`}
+                        onClick={() => handleToggleEquip(selectedItem.id)}
+                      >
+                        {isEquipped(selectedItem.id) ? '착용 해제' : '착용하기'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="shop-detail-empty">
+                <p>아이템을 선택해주세요</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ShopModal;

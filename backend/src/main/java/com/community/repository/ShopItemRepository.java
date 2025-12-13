@@ -9,4 +9,7 @@ import java.util.List;
 public interface ShopItemRepository extends JpaRepository<ShopItem, Long> {
     List<ShopItem> findByCategoryId(Long categoryId);
     List<ShopItem> findByIsActiveTrue();
+    List<ShopItem> findByCategoryIdAndIsActiveTrue(Long categoryId);
+    List<ShopItem> findAllByOrderByCreatedAtDesc();
+    List<ShopItem> findByIsActiveTrueOrderByCreatedAtDesc();
 }
