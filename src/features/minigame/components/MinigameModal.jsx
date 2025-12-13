@@ -12,6 +12,16 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   // 현재 참여 중인 방 정보
   const [currentRoom, setCurrentRoom] = useState(null);
 
+  // 모달 닫기 핸들러 (방 나가기 포함)
+  const handleClose = () => {
+    // 방에 있으면 나가기
+    if (minigameService.currentRoomId) {
+      console.log('모달 닫기 - 방에서 나가기:', minigameService.currentRoomId);
+      minigameService.leaveRoom(minigameService.currentRoomId);
+    }
+    onClose();
+  };
+
   // 방 설정 변경 모드
   const [isEditingRoomSettings, setIsEditingRoomSettings] = useState(false);
 
@@ -153,15 +163,11 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     // 컴포넌트 언마운트 시 정리
     return () => {
-      // 방에 있으면 나가기
-      if (minigameService.currentRoomId) {
-        console.log('모달 종료 - 방에서 나가기:', minigameService.currentRoomId);
-        minigameService.leaveRoom(minigameService.currentRoomId);
-      }
-      // WebSocket 연결 유지 (다른 곳에서도 사용할 수 있으므로)
-      // minigameService.disconnect();
+      // ⚠️ React StrictMode에서 cleanup이 테스트 목적으로 실행될 수 있으므로
+      // 여기서는 방 나가기를 하지 않음. handleClose에서만 처리.
+      console.log('MinigameModal cleanup (StrictMode 테스트일 수 있음)');
     };
-  }, [userProfile]);
+  }, []);
 
   // 브라우저 종료/새로고침 시 방에서 나가기
   useEffect(() => {
@@ -372,7 +378,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   };
 
   return (
-    <div className="minigame-modal-overlay" onClick={onClose}>
+    <div className="minigame-modal-overlay" onClick={handleClose}>
       <div className="minigame-modal" onClick={(e) => e.stopPropagation()}>
         {/* 왼쪽: 방 목록 */}
         <div className="minigame-main">
@@ -393,7 +399,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 </>
               )}
             </h2>
-            <button className="minigame-close-btn" onClick={onClose}>
+            <button className="minigame-close-btn" onClick={handleClose}>
               <FaTimes />
             </button>
           </div>

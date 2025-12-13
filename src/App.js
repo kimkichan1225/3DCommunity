@@ -495,21 +495,60 @@ function App() {
         }
 
         // 3. 게임 방 입장 (사용자 프로필 정보와 함께)
-        minigameService.joinRoom(
-          roomId,
-          userProfile?.level || 1,
-          userProfile?.selectedProfile?.id,
-          userProfile?.selectedOutline?.id
-        );
-        console.log('✅ 게임 방 입장 요청:', {
-          roomId,
-          level: userProfile?.level || 1,
-          selectedProfile: userProfile?.selectedProfile?.id,
-          selectedOutline: userProfile?.selectedOutline?.id
-        });
+        console.log('🎮 minigameService 연결 상태:', minigameService.connected);
 
-        // 4. 미니게임 모달 열기
-        setShowMinigameModal(true);
+        // 연결 상태를 확인하고 방 입장 시도
+        const tryJoinRoom = () => {
+          if (minigameService.connected) {
+            console.log('✅ 게임 방 입장 요청:', {
+              roomId,
+              level: userProfile?.level || 1,
+              selectedProfile: userProfile?.selectedProfile?.id,
+              selectedOutline: userProfile?.selectedOutline?.id
+            });
+
+            minigameService.joinRoom(
+              roomId,
+              userProfile?.level || 1,
+              userProfile?.selectedProfile?.id,
+              userProfile?.selectedOutline?.id
+            );
+            return true;
+          }
+          return false;
+        };
+
+        // 연결되어 있으면 바로 입장
+        if (!tryJoinRoom()) {
+          // 연결되지 않았으면 재연결 시도
+          console.warn('⚠️ minigameService가 연결되지 않음, 재연결 시도...');
+          minigameService.connect(userId, username);
+
+          // 연결 확인을 위해 최대 5초 동안 폴링
+          let attempts = 0;
+          const maxAttempts = 10; // 5초 (500ms * 10)
+          const checkInterval = setInterval(() => {
+            attempts++;
+            if (tryJoinRoom()) {
+              console.log('✅ 재연결 후 방 입장 성공');
+              clearInterval(checkInterval);
+            } else if (attempts >= maxAttempts) {
+              console.error('❌ 방 입장 실패: WebSocket 연결 시간 초과');
+              clearInterval(checkInterval);
+              alert('게임 방 입장에 실패했습니다. 다시 시도해주세요.');
+            } else {
+              console.log(`🔄 연결 대기 중... (${attempts}/${maxAttempts})`);
+            }
+          }, 500);
+        }
+
+        // 4. 미니게임 모달 열기 (이미 열려 있지 않으면)
+        if (!showMinigameModal) {
+          console.log('🎮 미니게임 모달 열기');
+          setShowMinigameModal(true);
+        } else {
+          console.log('🎮 미니게임 모달 이미 열려 있음');
+        }
 
         // 5. 알림을 읽음으로 표시
         notificationService.markAsRead(notification.id);
