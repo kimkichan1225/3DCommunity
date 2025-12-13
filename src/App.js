@@ -510,8 +510,8 @@ function App() {
             minigameService.joinRoom(
               roomId,
               userProfile?.level || 1,
-              userProfile?.selectedProfile?.id,
-              userProfile?.selectedOutline?.id
+              userProfile?.selectedProfile?.imagePath,
+              userProfile?.selectedOutline?.imagePath
             );
             return true;
           }

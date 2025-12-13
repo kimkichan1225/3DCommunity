@@ -12,6 +12,37 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   // 현재 참여 중인 방 정보
   const [currentRoom, setCurrentRoom] = useState(null);
 
+  // 아이템을 ProfileAvatar에 맞는 형식으로 변환하는 헬퍼 함수
+  const formatProfileImage = (item) => {
+    if (!item) return null;
+    // 이미 올바른 객체 형태면 그대로 반환
+    if (typeof item === 'object' && item.imagePath) return item;
+    // 경로 문자열이면 객체로 감싸기
+    if (typeof item === 'string' && item.includes('/')) {
+      return { imagePath: item };
+    }
+    // ID면 경로로 변환하여 객체 생성
+    return {
+      imagePath: `/resources/Profile/base-profile${item}.png`,
+      itemName: `프로필 ${item}`
+    };
+  };
+
+  const formatOutlineImage = (item) => {
+    if (!item) return null;
+    // 이미 올바른 객체 형태면 그대로 반환
+    if (typeof item === 'object' && item.imagePath) return item;
+    // 경로 문자열이면 객체로 감싸기
+    if (typeof item === 'string' && item.includes('/')) {
+      return { imagePath: item };
+    }
+    // ID면 경로로 변환하여 객체 생성
+    return {
+      imagePath: `/resources/ProfileOutline/base-outline${item}.png`,
+      itemName: `테두리 ${item}`
+    };
+  };
+
   // 모달 닫기 핸들러 (방 나가기 포함)
   const handleClose = () => {
     // 방에 있으면 나가기
@@ -250,8 +281,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
       roomForm.maxPlayers,
       roomForm.isPrivate,
       userProfile?.level || 1,
-      userProfile?.selectedProfile?.imagePath || userProfile?.selectedProfile || null,
-      userProfile?.selectedOutline?.imagePath || userProfile?.selectedOutline || null
+      userProfile?.selectedProfile?.imagePath,
+      userProfile?.selectedOutline?.imagePath
     );
 
     // 폼 초기화 및 대기 (방 생성 완료 이벤트를 받으면 자동으로 입장)
@@ -546,8 +577,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                   {currentRoom?.players?.map((player) => (
                     <div key={player.userId} className={`player-card ${player.isReady ? 'ready' : ''}`}>
                       <ProfileAvatar
-                        profileImage={player.selectedProfile ? { imagePath: player.selectedProfile } : null}
-                        outlineImage={player.selectedOutline ? { imagePath: player.selectedOutline } : null}
+                        profileImage={formatProfileImage(player.selectedProfile)}
+                        outlineImage={formatOutlineImage(player.selectedOutline)}
                         size={50}
                       />
                       <div className="player-info">
