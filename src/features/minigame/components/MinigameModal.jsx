@@ -163,8 +163,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     // 방 입장/업데이트 이벤트
     minigameService.on('roomJoin', (roomData) => {
-      console.log('방 이벤트:', roomData);
+      console.log('🟢 방 이벤트 수신:', roomData.action, roomData);
       if (roomData.action === 'join' || roomData.action === 'update' || roomData.action === 'ready' || roomData.action === 'leave') {
+        console.log('🟢 currentRoom 업데이트:', roomData);
         setCurrentRoom(roomData);
         // 내가 방에 있는지 확인 (join 액션일 때만 화면 전환)
         if (roomData.action === 'join') {
@@ -352,9 +353,12 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   };
 
   const handleReady = () => {
-    console.log('준비 버튼 클릭');
+    console.log('🔵 준비 버튼 클릭, roomId:', currentRoom?.roomId, 'userId:', userProfile?.id);
     if (currentRoom?.roomId) {
       minigameService.toggleReady(currentRoom.roomId);
+      console.log('🔵 toggleReady 호출 완료');
+    } else {
+      console.error('❌ currentRoom.roomId가 없음:', currentRoom);
     }
   };
 
@@ -575,7 +579,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 <h3>참가 인원 ({currentRoom?.players?.length || 0}/{currentRoom?.maxPlayers})</h3>
                 <div className="players-grid">
                   {currentRoom?.players?.map((player) => (
-                    <div key={player.userId} className={`player-card ${player.isReady ? 'ready' : ''}`}>
+                    <div key={player.userId} className={`player-card ${player.ready ? 'ready' : ''}`}>
                       <ProfileAvatar
                         profileImage={formatProfileImage(player.selectedProfile)}
                         outlineImage={formatOutlineImage(player.selectedOutline)}
@@ -583,14 +587,14 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                       />
                       <div className="player-info">
                         <div className="player-name">
-                          {player.isHost && <FaCrown className="host-icon" />}
+                          {player.host && <FaCrown className="host-icon" />}
                           {player.username}
                         </div>
                         <div className="player-level">Lv. {player.level}</div>
                       </div>
-                      {!player.isHost && (
-                        <div className={`player-ready-badge ${player.isReady ? 'ready' : 'waiting'}`}>
-                          {player.isReady ? '✓ 준비' : '대기'}
+                      {!player.host && (
+                        <div className={`player-ready-badge ${player.ready ? 'ready' : 'waiting'}`}>
+                          {player.ready ? '✓ 준비' : '대기'}
                         </div>
                       )}
                     </div>
@@ -647,10 +651,23 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     게임 시작
                   </button>
                 ) : (
-                  <button className="ready-btn" onClick={handleReady}>
-                    <FaUsers />
-                    준비
-                  </button>
+                  (() => {
+                    // 현재 유저의 준비 상태 찾기
+                    const myPlayer = currentRoom?.players?.find(
+                      p => p.username === (userProfile?.username || '게스트')
+                    );
+                    const isReady = myPlayer?.ready || false;
+
+                    return (
+                      <button
+                        className={`ready-btn ${isReady ? 'ready' : ''}`}
+                        onClick={handleReady}
+                      >
+                        <FaUsers />
+                        {isReady ? '준비 완료' : '준비'}
+                      </button>
+                    );
+                  })()
                 )}
               </div>
             </div>
