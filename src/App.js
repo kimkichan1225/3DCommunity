@@ -494,9 +494,19 @@ function App() {
           console.warn('⚠️ 초대자를 찾을 수 없음 (오프라인일 수 있음)');
         }
 
-        // 3. 게임 방 입장
-        minigameService.joinRoom(roomId);
-        console.log('✅ 게임 방 입장 요청:', roomId);
+        // 3. 게임 방 입장 (사용자 프로필 정보와 함께)
+        minigameService.joinRoom(
+          roomId,
+          userProfile?.level || 1,
+          userProfile?.selectedProfile?.id,
+          userProfile?.selectedOutline?.id
+        );
+        console.log('✅ 게임 방 입장 요청:', {
+          roomId,
+          level: userProfile?.level || 1,
+          selectedProfile: userProfile?.selectedProfile?.id,
+          selectedOutline: userProfile?.selectedOutline?.id
+        });
 
         // 4. 미니게임 모달 열기
         setShowMinigameModal(true);
@@ -747,6 +757,10 @@ function App() {
     if (isLoggedIn && userId && username) {
       // console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
       multiplayerService.connect(userId, username);
+
+      // 미니게임 서비스도 연결 (게임 초대를 받기 위해)
+      console.log('🎮 Connecting to minigame service...', { userId, username });
+      minigameService.connect(userId, username);
     } else {
       // Connect as observer (anonymous viewer)
       // console.log('👀 Connecting to multiplayer service as observer...');
@@ -757,6 +771,9 @@ function App() {
     // Cleanup on unmount
     return () => {
       multiplayerService.disconnect();
+      if (isLoggedIn) {
+        minigameService.disconnect();
+      }
     };
   }, [isLoggedIn, userId, username]);
 
