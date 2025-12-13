@@ -291,7 +291,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     }
 
     // 게임 초대 전송
-    const targetUserId = friend.id || friend.friendId;
+    const targetUserId = friend.userId; // FriendRequestDto의 userId 필드 사용
     const targetUsername = friend.username;
     const roomId = currentRoom.roomId;
     const gameName = currentRoom.gameName;
