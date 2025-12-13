@@ -20,18 +20,23 @@ function FriendList({ userId, username, onlinePlayers }) {
 
     // WebSocket: 친구 업데이트 구독 (목록 새로고침만 수행, 알림은 App.js에서 처리)
     const unsubscribe = multiplayerService.onFriendUpdate((data) => {
-      console.log('Friend update received in FriendList:', data);
+      console.log('👥 FriendList: 친구 업데이트 이벤트 수신:', data);
 
       if (data.type === 'FRIEND_REQUEST') {
         // 새 친구 요청 받음 - 목록만 새로고침
+        console.log('👥 FriendList: 친구 요청 수신, 목록 새로고침 예정');
         setTimeout(() => {
           loadPendingRequests();
-        }, 300);
+          console.log('👥 FriendList: 요청 목록 새로고침 완료');
+        }, 500);
       } else if (data.type === 'FRIEND_ACCEPTED') {
-        // 친구 요청이 수락됨 - 목록만 새로고침
+        // 친구 요청이 수락됨 - 친구 목록과 요청 목록 모두 새로고침
+        console.log('👥 FriendList: 친구 수락 수신, 목록 새로고침 예정');
         setTimeout(() => {
           loadFriends();
-        }, 300);
+          loadPendingRequests();
+          console.log('👥 FriendList: 친구 목록 새로고침 완료');
+        }, 500);
       }
     });
 

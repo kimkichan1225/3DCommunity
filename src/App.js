@@ -377,7 +377,11 @@ function App() {
 
       if (data.type === 'FRIEND_REQUEST') {
         // 친구 요청 알림 생성
-        notificationService.createFriendRequestNotification(data.requesterUsername);
+        notificationService.createFriendRequestNotification(
+          data.requesterUsername,
+          data.friendshipId,
+          data.requesterId
+        );
       } else if (data.type === 'FRIEND_ACCEPTED') {
         // 친구 수락 알림 생성
         notificationService.createFriendAcceptedNotification(data.acceptorUsername);
@@ -392,10 +396,15 @@ function App() {
     if (!isLoggedIn) return;
 
     const unsubscribe = multiplayerService.onDMMessage((data) => {
-      console.log('DM 메시지 수신:', data);
+      console.log('DM 메시지 수신 (알림 생성):', data);
 
-      // DM 메시지 알림 생성
-      notificationService.createChatNotification(data.senderUsername, data.message);
+      // DM 메시지 알림 생성 (content 필드 사용)
+      if (data.senderUsername && data.content) {
+        notificationService.createChatNotification(data.senderUsername, data.content);
+        console.log('✅ DM 알림 생성 완료:', data.senderUsername);
+      } else {
+        console.error('❌ DM 알림 생성 실패 - 필드 누락:', data);
+      }
     });
 
     return unsubscribe;
@@ -405,17 +414,30 @@ function App() {
   useEffect(() => {
     if (!isLoggedIn) return;
 
+    console.log('🎮 게임 초대 이벤트 구독 시작, userId:', userId);
+
     minigameService.on('gameInvite', (data) => {
-      console.log('게임 초대 수신:', data);
+      console.log('🎮 게임 초대 수신:', data);
 
       // 게임 초대 알림 생성
-      notificationService.createGameInviteNotification(data.inviterUsername, data.gameName);
+      if (data && data.inviterUsername && data.gameName) {
+        notificationService.createGameInviteNotification(
+          data.inviterUsername,
+          data.gameName,
+          data.roomId,
+          data.inviterId
+        );
+        console.log('✅ 게임 초대 알림 생성 완료:', data.inviterUsername, data.gameName);
+      } else {
+        console.error('❌ 게임 초대 알림 생성 실패 - 필드 누락:', data);
+      }
     });
 
     return () => {
+      console.log('🎮 게임 초대 이벤트 구독 해제');
       minigameService.on('gameInvite', null);
     };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, userId]);
 
   // 토스트 알림 닫기 핸들러
   const handleToastClose = (notificationId) => {
@@ -427,18 +449,27 @@ function App() {
     console.log('알림 수락:', notification);
 
     if (notification.type === 'friend_request') {
-      // 친구 요청 수락 로직 (FriendList.jsx 참고)
+      // 친구 요청 수락 로직
       try {
-        // TODO: friendshipId를 알림 데이터에 포함시켜야 함
-        // await friendService.acceptFriendRequest(notification.data.friendshipId);
-        console.log('친구 요청 수락:', notification.data.requesterUsername);
+        await friendService.acceptFriendRequest(notification.data.friendshipId);
+        console.log('친구 요청 수락 완료:', notification.data.requesterUsername);
+        // 알림을 읽음으로 표시
+        notificationService.markAsRead(notification.id);
       } catch (error) {
         console.error('친구 요청 수락 실패:', error);
+        alert('친구 요청 수락에 실패했습니다.');
       }
     } else if (notification.type === 'game_invite') {
-      // 게임 초대 수락 로직
-      console.log('게임 초대 수락:', notification.data);
-      // TODO: 게임 방 입장 로직
+      // 게임 초대 수락 - 게임 방 입장
+      try {
+        console.log('게임 방 입장:', notification.data.roomId);
+        setShowMinigameModal(true);
+        // minigameService를 통해 방에 입장할 수 있지만,
+        // MinigameModal에서 roomId를 받아서 자동 입장하도록 구현 필요
+        notificationService.markAsRead(notification.id);
+      } catch (error) {
+        console.error('게임 방 입장 실패:', error);
+      }
     }
   };
 
@@ -449,15 +480,18 @@ function App() {
     if (notification.type === 'friend_request') {
       // 친구 요청 거절 로직
       try {
-        // TODO: friendshipId를 알림 데이터에 포함시켜야 함
-        // await friendService.rejectFriendRequest(notification.data.friendshipId);
-        console.log('친구 요청 거절:', notification.data.requesterUsername);
+        await friendService.rejectFriendRequest(notification.data.friendshipId);
+        console.log('친구 요청 거절 완료:', notification.data.requesterUsername);
+        // 알림 삭제
+        notificationService.deleteNotification(notification.id);
       } catch (error) {
         console.error('친구 요청 거절 실패:', error);
+        alert('친구 요청 거절에 실패했습니다.');
       }
     } else if (notification.type === 'game_invite') {
-      // 게임 초대 거절 로직
+      // 게임 초대 거절 - 알림만 삭제
       console.log('게임 초대 거절:', notification.data);
+      notificationService.deleteNotification(notification.id);
     }
   };
 
@@ -949,17 +983,21 @@ function App() {
         <NotificationModal onClose={() => setShowNotificationModal(false)} />
       )}
 
-      {/* 실시간 알림 토스트 (화면 좌측 상단에 표시) */}
-      {appSettings.other?.showToastNotifications && toastNotifications.map((notification) => (
-        <NotificationToast
-          key={notification.id}
-          notification={notification}
-          onClose={() => handleToastClose(notification.id)}
-          onAccept={handleToastAccept}
-          onReject={handleToastReject}
-          autoCloseDelay={5000}
-        />
-      ))}
+      {/* 실시간 알림 토스트 (화면 우측 상단에 표시) */}
+      {appSettings.other?.showToastNotifications && toastNotifications.length > 0 && (
+        <div className="notification-toast-container">
+          {toastNotifications.map((notification) => (
+            <NotificationToast
+              key={notification.id}
+              notification={notification}
+              onClose={() => handleToastClose(notification.id)}
+              onAccept={handleToastAccept}
+              onReject={handleToastReject}
+              autoCloseDelay={5000}
+            />
+          ))}
+        </div>
+      )}
 
       {/* 이벤트 모달 */}
       {showEventModal && (

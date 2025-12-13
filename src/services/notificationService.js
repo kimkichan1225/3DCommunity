@@ -136,12 +136,12 @@ class NotificationService {
   /**
    * 친구 요청 알림 생성
    */
-  createFriendRequestNotification(requesterUsername) {
+  createFriendRequestNotification(requesterUsername, friendshipId, requesterId) {
     return this.addNotification({
       type: 'friend_request',
       title: '친구 요청',
       message: `${requesterUsername}님이 친구 요청을 보냈습니다.`,
-      data: { requesterUsername }
+      data: { requesterUsername, friendshipId, requesterId }
     });
   }
 
@@ -160,12 +160,12 @@ class NotificationService {
   /**
    * 게임 초대 알림 생성
    */
-  createGameInviteNotification(inviterUsername, gameName) {
+  createGameInviteNotification(inviterUsername, gameName, roomId, inviterId) {
     return this.addNotification({
       type: 'game_invite',
       title: '게임 초대',
       message: `${inviterUsername}님이 ${gameName} 게임에 초대했습니다.`,
-      data: { inviterUsername, gameName }
+      data: { inviterUsername, gameName, roomId, inviterId }
     });
   }
 

@@ -14,8 +14,11 @@ function NotificationToast({ notification, onClose, onAccept, onReject, autoClos
   const [progress, setProgress] = useState(100);
 
   useEffect(() => {
+    console.log('🔔 토스트 타이머 시작:', notification.id, autoCloseDelay + 'ms');
+
     // 자동 닫기 타이머
     const closeTimer = setTimeout(() => {
+      console.log('🔔 토스트 자동 닫기:', notification.id);
       onClose();
     }, autoCloseDelay);
 
@@ -28,10 +31,11 @@ function NotificationToast({ notification, onClose, onAccept, onReject, autoClos
     }, 100);
 
     return () => {
+      console.log('🔔 토스트 타이머 정리:', notification.id);
       clearTimeout(closeTimer);
       clearInterval(interval);
     };
-  }, [autoCloseDelay, onClose]);
+  }, [notification.id, autoCloseDelay]);
 
   const getIcon = () => {
     switch (notification.type) {
