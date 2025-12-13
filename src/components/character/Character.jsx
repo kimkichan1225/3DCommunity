@@ -105,37 +105,63 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // characterRef에 텔레포트 메서드 노출 (기존 Three.js 메서드 유지)
+  useEffect(() => {
+    if (characterRef?.current && rigidBodyRef.current && modelGroupRef.current) {
+      // 기존 THREE.Object3D에 속성 추가 (덮어쓰지 않음)
+      characterRef.current.rigidBody = rigidBodyRef;
+      characterRef.current.teleportTo = (position) => {
+        if (rigidBodyRef.current && modelGroupRef.current) {
+          const [x, y, z] = position;
+          console.log('🎯 텔레포트 시작:', position);
+
+          // 물리 엔진에서 위치 설정
+          rigidBodyRef.current.setTranslation({ x, y, z }, true);
+
+          // 모델도 즉시 동기화
+          modelGroupRef.current.position.set(x, y, z);
+
+          // 속도 초기화
+          rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+          rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+
+          console.log('✅ 텔레포트 완료:', position);
+        }
+      };
+    }
+  }, [characterRef, rigidBodyRef.current, modelGroupRef.current]);
+
   // initialPosition이 변경되면 RigidBody 위치 업데이트 (지도 모드에서는 제외)
   useEffect(() => {
     if (initialPosition && rigidBodyRef.current && modelGroupRef.current && !isMapFull) {
       const [x, y, z] = initialPosition;
       const currentPos = rigidBodyRef.current.translation();
-      
+
       // 위치 차이 계산
       const dx = currentPos.x - x;
       const dy = currentPos.y - y;
       const dz = currentPos.z - z;
       const distanceSq = dx * dx + dy * dy + dz * dz;
-      
+
       // 거리가 0.1보다 크면 위치 복구
       if (distanceSq > 0.01) {
         console.log('🔄 위치 복귀 시작:', initialPosition, '→', [currentPos.x, currentPos.y, currentPos.z]);
-        
+
         // 물리 엔진에서 위치 설정
         rigidBodyRef.current.setTranslation(
           { x, y, z },
           true // wake - 절대 필요!
         );
-        
+
         // 모델도 즉시 동기화
         if (modelGroupRef.current) {
           modelGroupRef.current.position.set(x, y, z);
         }
-        
+
         // 속도 초기화 (중요)
         rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
         rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
-        
+
         console.log('✅ 위치 복귀 완료:', initialPosition);
       }
     }

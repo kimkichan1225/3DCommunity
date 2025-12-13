@@ -460,12 +460,48 @@ function App() {
         alert('친구 요청 수락에 실패했습니다.');
       }
     } else if (notification.type === 'game_invite') {
-      // 게임 초대 수락 - 게임 방 입장
+      // 게임 초대 수락 - 게임 방 입장 및 초대자 근처로 이동
       try {
-        console.log('게임 방 입장:', notification.data.roomId);
+        const { roomId, inviterId } = notification.data;
+        console.log('🎮 게임 초대 수락:', { roomId, inviterId });
+
+        // 1. 초대자의 위치 찾기
+        const inviterPlayer = Object.values(otherPlayers).find(
+          player => String(player.userId) === String(inviterId)
+        );
+
+        if (inviterPlayer && inviterPlayer.position) {
+          // 2. 초대자 근처로 캐릭터 텔레포트 (랜덤 오프셋, 같은 높이)
+          const randomAngle = Math.random() * Math.PI * 2;
+          const distance = 3 + Math.random() * 2; // 3-5 유닛 거리
+          const offsetX = Math.cos(randomAngle) * distance;
+          const offsetZ = Math.sin(randomAngle) * distance;
+
+          const targetPosition = [
+            inviterPlayer.position[0] + offsetX,
+            inviterPlayer.position[1], // 같은 높이로
+            inviterPlayer.position[2] + offsetZ
+          ];
+
+          console.log('📍 초대자 위치:', inviterPlayer.position);
+          console.log('📍 이동 목표 위치:', targetPosition);
+
+          // characterRef를 통해 텔레포트
+          if (characterRef.current?.teleportTo) {
+            characterRef.current.teleportTo(targetPosition);
+          }
+        } else {
+          console.warn('⚠️ 초대자를 찾을 수 없음 (오프라인일 수 있음)');
+        }
+
+        // 3. 게임 방 입장
+        minigameService.joinRoom(roomId);
+        console.log('✅ 게임 방 입장 요청:', roomId);
+
+        // 4. 미니게임 모달 열기
         setShowMinigameModal(true);
-        // minigameService를 통해 방에 입장할 수 있지만,
-        // MinigameModal에서 roomId를 받아서 자동 입장하도록 구현 필요
+
+        // 5. 알림을 읽음으로 표시
         notificationService.markAsRead(notification.id);
       } catch (error) {
         console.error('게임 방 입장 실패:', error);
