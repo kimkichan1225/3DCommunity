@@ -48,6 +48,9 @@ public class FriendService {
                 throw new RuntimeException("이미 친구입니다.");
             } else if (status == FriendshipStatus.PENDING) {
                 throw new RuntimeException("이미 친구 요청을 보냈거나 받았습니다.");
+            } else if (status == FriendshipStatus.REJECTED) {
+                // 거절된 관계는 삭제 후 새로 생성
+                friendshipRepository.delete(existing.get());
             }
         }
 

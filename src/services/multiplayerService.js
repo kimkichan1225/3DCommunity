@@ -9,15 +9,15 @@ class MultiplayerService {
     this.username = null;
     this.isObserver = false; // Observer mode (view-only, no join broadcast)
 
-    // Callbacks
-    this.onPlayerJoinCallback = null;
-    this.onPlayerLeaveCallback = null;
-    this.onPositionUpdateCallback = null;
-    this.onChatMessageCallback = null;
-    this.onDuplicateLoginCallback = null;
-    this.onOnlineCountUpdateCallback = null;
-    this.onFriendUpdateCallback = null;
-    this.onDMMessageCallback = null;
+    // Callbacks (배열로 변경하여 여러 리스너 지원)
+    this.onPlayerJoinCallbacks = [];
+    this.onPlayerLeaveCallbacks = [];
+    this.onPositionUpdateCallbacks = [];
+    this.onChatMessageCallbacks = [];
+    this.onDuplicateLoginCallbacks = [];
+    this.onOnlineCountUpdateCallbacks = [];
+    this.onFriendUpdateCallbacks = [];
+    this.onDMMessageCallbacks = [];
   }
 
   connect(userId, username, isObserver = false) {
@@ -43,17 +43,17 @@ class MultiplayerService {
 
           // Handle all actions including 'duplicate'
           if (data.action === 'join' || data.action === 'duplicate') {
-            this.onPlayerJoinCallback?.(data);
+            this.onPlayerJoinCallbacks.forEach(cb => cb?.(data));
           } else if (data.action === 'leave') {
             // Always handle leave events (observer will see all, player will filter in App.js)
-            this.onPlayerLeaveCallback?.(data);
+            this.onPlayerLeaveCallbacks.forEach(cb => cb?.(data));
           }
         });
 
         // Subscribe to online count updates
         this.client.subscribe('/topic/online-count', (message) => {
           const count = parseInt(message.body);
-          this.onOnlineCountUpdateCallback?.(count);
+          this.onOnlineCountUpdateCallbacks.forEach(cb => cb?.(count));
         });
 
         // Subscribe to position updates
@@ -62,7 +62,7 @@ class MultiplayerService {
 
           // In observer mode, show all position updates; in player mode, ignore own
           if (this.isObserver || String(data.userId) !== String(this.userId)) {
-            this.onPositionUpdateCallback?.(data);
+            this.onPositionUpdateCallbacks.forEach(cb => cb?.(data));
           }
         });
 
@@ -70,21 +70,21 @@ class MultiplayerService {
         this.client.subscribe('/topic/chat', (message) => {
           const data = JSON.parse(message.body);
           console.log('Chat message:', data);
-          this.onChatMessageCallback?.(data);
+          this.onChatMessageCallbacks.forEach(cb => cb?.(data));
         });
 
         // Subscribe to friend updates (친구 요청, 수락 등)
         this.client.subscribe('/topic/friend-updates/' + this.userId, (message) => {
           const data = JSON.parse(message.body);
           console.log('Friend update:', data);
-          this.onFriendUpdateCallback?.(data);
+          this.onFriendUpdateCallbacks.forEach(cb => cb?.(data));
         });
 
         // Subscribe to DM messages
         this.client.subscribe('/topic/dm/' + this.userId, (message) => {
           const data = JSON.parse(message.body);
           console.log('DM message received:', data);
-          this.onDMMessageCallback?.(data);
+          this.onDMMessageCallbacks.forEach(cb => cb?.(data));
         });
 
         // Send join message only if not in observer mode
@@ -154,37 +154,77 @@ class MultiplayerService {
     }
   }
 
-  // Callback setters
+  // Callback setters (여러 리스너 지원)
   onPlayerJoin(callback) {
-    this.onPlayerJoinCallback = callback;
+    if (callback) {
+      this.onPlayerJoinCallbacks.push(callback);
+      return () => {
+        this.onPlayerJoinCallbacks = this.onPlayerJoinCallbacks.filter(cb => cb !== callback);
+      };
+    }
   }
 
   onPlayerLeave(callback) {
-    this.onPlayerLeaveCallback = callback;
+    if (callback) {
+      this.onPlayerLeaveCallbacks.push(callback);
+      return () => {
+        this.onPlayerLeaveCallbacks = this.onPlayerLeaveCallbacks.filter(cb => cb !== callback);
+      };
+    }
   }
 
   onPositionUpdate(callback) {
-    this.onPositionUpdateCallback = callback;
+    if (callback) {
+      this.onPositionUpdateCallbacks.push(callback);
+      return () => {
+        this.onPositionUpdateCallbacks = this.onPositionUpdateCallbacks.filter(cb => cb !== callback);
+      };
+    }
   }
 
   onChatMessage(callback) {
-    this.onChatMessageCallback = callback;
+    if (callback) {
+      this.onChatMessageCallbacks.push(callback);
+      return () => {
+        this.onChatMessageCallbacks = this.onChatMessageCallbacks.filter(cb => cb !== callback);
+      };
+    }
   }
 
   onDuplicateLogin(callback) {
-    this.onDuplicateLoginCallback = callback;
+    if (callback) {
+      this.onDuplicateLoginCallbacks.push(callback);
+      return () => {
+        this.onDuplicateLoginCallbacks = this.onDuplicateLoginCallbacks.filter(cb => cb !== callback);
+      };
+    }
   }
 
   onOnlineCountUpdate(callback) {
-    this.onOnlineCountUpdateCallback = callback;
+    if (callback) {
+      this.onOnlineCountUpdateCallbacks.push(callback);
+      return () => {
+        this.onOnlineCountUpdateCallbacks = this.onOnlineCountUpdateCallbacks.filter(cb => cb !== callback);
+      };
+    }
   }
 
   onFriendUpdate(callback) {
-    this.onFriendUpdateCallback = callback;
+    if (callback) {
+      this.onFriendUpdateCallbacks.push(callback);
+      return () => {
+        this.onFriendUpdateCallbacks = this.onFriendUpdateCallbacks.filter(cb => cb !== callback);
+      };
+    }
   }
 
   onDMMessage(callback) {
-    this.onDMMessageCallback = callback;
+    if (callback) {
+      this.onDMMessageCallbacks.push(callback);
+      return () => {
+        this.onDMMessageCallbacks = this.onDMMessageCallbacks.filter(cb => cb !== callback);
+      };
+    }
   }
 }
 

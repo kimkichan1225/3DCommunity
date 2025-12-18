@@ -29,6 +29,9 @@
       "Bash(./gradlew build:*)",
       "Bash(./gradlew bootRun)",
       "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(echo.:*)",
+      "Bash(touch:*)",
       "mcp__supabase__execute_sql"
     ],
     "deny": [],

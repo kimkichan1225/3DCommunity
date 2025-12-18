@@ -18,25 +18,30 @@ function FriendList({ userId, username, onlinePlayers }) {
     loadFriends();
     loadPendingRequests();
 
-    // WebSocket: 친구 업데이트 구독
-    multiplayerService.onFriendUpdate((data) => {
-      console.log('Friend update received in FriendList:', data);
+    // WebSocket: 친구 업데이트 구독 (목록 새로고침만 수행, 알림은 App.js에서 처리)
+    const unsubscribe = multiplayerService.onFriendUpdate((data) => {
+      console.log('👥 FriendList: 친구 업데이트 이벤트 수신:', data);
 
       if (data.type === 'FRIEND_REQUEST') {
-        // 새 친구 요청 받음
-        setPopupMessage(`${data.requesterUsername}님이 친구 요청을 보냈습니다.`);
-        loadPendingRequests(); // 목록 새로고침
+        // 새 친구 요청 받음 - 목록만 새로고침
+        console.log('👥 FriendList: 친구 요청 수신, 목록 새로고침 예정');
+        setTimeout(() => {
+          loadPendingRequests();
+          console.log('👥 FriendList: 요청 목록 새로고침 완료');
+        }, 500);
       } else if (data.type === 'FRIEND_ACCEPTED') {
-        // 친구 요청이 수락됨
-        setPopupMessage(`${data.acceptorUsername}님이 친구 요청을 수락했습니다.`);
-        loadFriends(); // 친구 목록 새로고침
+        // 친구 요청이 수락됨 - 친구 목록과 요청 목록 모두 새로고침
+        console.log('👥 FriendList: 친구 수락 수신, 목록 새로고침 예정');
+        setTimeout(() => {
+          loadFriends();
+          loadPendingRequests();
+          console.log('👥 FriendList: 친구 목록 새로고침 완료');
+        }, 500);
       }
     });
 
     // Cleanup
-    return () => {
-      multiplayerService.onFriendUpdate(null);
-    };
+    return unsubscribe;
   }, [userId]);
 
   const loadFriends = async () => {
@@ -61,8 +66,11 @@ function FriendList({ userId, username, onlinePlayers }) {
     try {
       await friendService.acceptFriendRequest(friendshipId);
       setPopupMessage('친구 요청을 수락했습니다.');
-      loadFriends();
-      loadPendingRequests();
+      // 약간의 지연 후 목록 새로고침 (DB 트랜잭션 완료 확실히 대기)
+      setTimeout(() => {
+        loadFriends();
+        loadPendingRequests();
+      }, 300);
     } catch (error) {
       setPopupMessage(error.response?.data?.message || '친구 수락에 실패했습니다.');
     }
@@ -105,7 +113,13 @@ function FriendList({ userId, username, onlinePlayers }) {
       setPopupMessage(`${searchQuery}님에게 친구 요청을 보냈습니다.`);
       setSearchQuery('');
     } catch (error) {
-      setPopupMessage(error.response?.data?.message || '친구 요청에 실패했습니다.');
+      const errorMessage = error.response?.data?.message || '친구 요청에 실패했습니다.';
+      // SQL 오류 메시지를 사용자 친화적으로 변환
+      if (errorMessage.includes('duplicate key') || errorMessage.includes('already exists')) {
+        setPopupMessage('이미 친구 요청을 보냈거나 친구 관계가 존재합니다.');
+      } else {
+        setPopupMessage(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

@@ -1,38 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaTimes, FaDesktop, FaVolumeUp, FaCog } from 'react-icons/fa';
 import './SettingModal.css';
 
-function SettingModal({ onClose }) {
+function SettingModal({ onClose, onSettingsChange }) {
   const [activeTab, setActiveTab] = useState('graphics');
 
-  // 설정 상태 (UI만, 실제 기능은 나중에)
-  const [settings, setSettings] = useState({
-    graphics: {
-      quality: 'medium',
-      shadows: 'medium',
-      fpsLimit: '60'
-    },
-    sound: {
-      master: 70,
-      effects: 80,
-      music: 60
-    },
-    other: {
-      language: 'ko',
-      chatNotifications: true,
-      eventNotifications: true,
-      nightNotifications: false
+  // 로컬 스토리지에서 설정 불러오기
+  const loadSettings = () => {
+    try {
+      const stored = localStorage.getItem('appSettings');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
     }
-  });
+    // 기본 설정
+    return {
+      graphics: {
+        quality: 'medium',
+        shadows: 'medium',
+        fpsLimit: '60'
+      },
+      sound: {
+        master: 70,
+        effects: 80,
+        music: 60
+      },
+      other: {
+        language: 'ko',
+        showToastNotifications: true,
+        chatNotifications: true,
+        eventNotifications: true,
+        nightNotifications: false
+      }
+    };
+  };
+
+  const [settings, setSettings] = useState(loadSettings());
 
   const handleSettingChange = (category, key, value) => {
-    setSettings({
+    const newSettings = {
       ...settings,
       [category]: {
         ...settings[category],
         [key]: value
       }
-    });
+    };
+    setSettings(newSettings);
+  };
+
+  const handleApply = () => {
+    try {
+      localStorage.setItem('appSettings', JSON.stringify(settings));
+      if (onSettingsChange) {
+        onSettingsChange(settings);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    }
   };
 
   return (
@@ -195,6 +222,21 @@ function SettingModal({ onClose }) {
                 <h4 className="setting-subsection-title">알림 설정</h4>
 
                 <div className="setting-item">
+                  <label className="setting-label">
+                    실시간 알림 표시
+                    <span className="setting-description">(화면 좌측 상단에 표시)</span>
+                  </label>
+                  <label className="setting-toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.other.showToastNotifications !== false}
+                      onChange={(e) => handleSettingChange('other', 'showToastNotifications', e.target.checked)}
+                    />
+                    <span className="setting-toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div className="setting-item">
                   <label className="setting-label">채팅 알림</label>
                   <label className="setting-toggle">
                     <input
@@ -239,7 +281,7 @@ function SettingModal({ onClose }) {
 
         {/* 버튼 */}
         <div className="setting-buttons">
-          <button className="setting-btn apply-btn" onClick={onClose}>
+          <button className="setting-btn apply-btn" onClick={handleApply}>
             적용
           </button>
           <button className="setting-btn cancel-btn" onClick={onClose}>

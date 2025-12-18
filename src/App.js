@@ -9,6 +9,7 @@ import { BoardModal } from './features/board';
 import { ProfileModal } from './features/profile';
 import { SettingModal } from './features/system/settings';
 import { EventModal } from './features/event';
+import { MinigameModal } from './features/minigame';
 import Character from './components/character/Character';
 import MapCharacterController from './components/character/MapCharacterController';
 import CameraController from './components/camera/CameraController';
@@ -23,9 +24,13 @@ import SuspensionNotification from './components/SuspensionNotification';
 import ContextMenu from './components/ContextMenu';
 import OtherPlayerProfileModal from './components/OtherPlayerProfileModal';
 import Notification from './components/Notification';
+import NotificationModal from './components/NotificationModal';
+import NotificationToast from './components/NotificationToast';
 import GameIcon from './components/GameIcon';
 import CurrencyDisplay from './components/CurrencyDisplay';
 import multiplayerService from './services/multiplayerService';
+import minigameService from './services/minigameService';
+import notificationService from './services/notificationService';
 import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
 import currencyService from './services/currencyService';
@@ -52,6 +57,8 @@ function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showMinigameModal, setShowMinigameModal] = useState(false);
+  const [minigameModalMode, setMinigameModalMode] = useState('lobby'); // 'lobby' or 'create'
   const [showShopModal, setShowShopModal] = useState(false);
   const [showGoldChargeModal, setShowGoldChargeModal] = useState(false);
   const [shouldAutoAttendance, setShouldAutoAttendance] = useState(false);
@@ -75,11 +82,32 @@ function App() {
   const [showGameIcon, setShowGameIcon] = useState(false); // 게임 아이콘 표시 상태
   const [silverCoins, setSilverCoins] = useState(0); // 일반 재화 (Silver Coin)
   const [goldCoins, setGoldCoins] = useState(0); // 유료 재화 (Gold Coin)
+  const [showNotificationModal, setShowNotificationModal] = useState(false); // 알림 모달 표시 상태
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0); // 읽지 않은 알림 개수
+  const [toastNotifications, setToastNotifications] = useState([]); // 실시간 토스트 알림 목록
+  const [appSettings, setAppSettings] = useState(() => {
+    // 로컬 스토리지에서 설정 불러오기
+    try {
+      const stored = localStorage.getItem('appSettings');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Failed to load app settings:', error);
+    }
+    return {
+      other: {
+        showToastNotifications: true,
+        chatNotifications: true,
+        eventNotifications: true,
+        nightNotifications: false
+      }
+    };
+  });
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
-  const navigate = useNavigate();
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
-  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showShopModal || showGoldChargeModal || showLanding;
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showMinigameModal || showShopModal || showGoldChargeModal || showLanding || showNotificationModal;
 
   // 캐릭터 현재 위치 업데이트 콜백
   const handleCharacterPositionUpdate = (position) => {
@@ -298,6 +326,248 @@ function App() {
     }
   };
 
+  // 설정 변경 핸들러
+  const handleSettingsChange = (newSettings) => {
+    setAppSettings(newSettings);
+  };
+
+  // 알림 서비스 구독
+  useEffect(() => {
+    // 초기 읽지 않은 알림 개수 설정
+    setUnreadNotificationCount(notificationService.getUnreadCount());
+
+    // 알림 변경 구독
+    const unsubscribe = notificationService.subscribe((notifications, unreadCount) => {
+      setUnreadNotificationCount(unreadCount);
+
+      // 새 알림이 추가되면 토스트로 표시 (설정에 따라)
+      if (appSettings.other?.showToastNotifications && notifications.length > 0) {
+        const latestNotification = notifications[0];
+        if (!latestNotification.read) {
+          // 이미 토스트에 있는지 확인
+          const alreadyShown = toastNotifications.some(t => t.id === latestNotification.id);
+          if (!alreadyShown) {
+            setToastNotifications(prev => [...prev, latestNotification]);
+          }
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [appSettings.other?.showToastNotifications]);
+
+  // 친구 업데이트 이벤트 구독 (알림 생성)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const unsubscribe = multiplayerService.onFriendUpdate((data) => {
+      console.log('친구 업데이트 이벤트:', data);
+
+      if (data.type === 'FRIEND_REQUEST') {
+        // 친구 요청 알림 생성
+        notificationService.createFriendRequestNotification(
+          data.requesterUsername,
+          data.friendshipId,
+          data.requesterId
+        );
+      } else if (data.type === 'FRIEND_ACCEPTED') {
+        // 친구 수락 알림 생성
+        notificationService.createFriendAcceptedNotification(data.acceptorUsername);
+      }
+    });
+
+    return unsubscribe;
+  }, [isLoggedIn]);
+
+  // DM 메시지 이벤트 구독 (알림 생성)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const unsubscribe = multiplayerService.onDMMessage((data) => {
+      console.log('DM 메시지 수신 (알림 생성):', data);
+
+      // DM 메시지 알림 생성 (content 필드 사용)
+      if (data.senderUsername && data.content) {
+        notificationService.createChatNotification(data.senderUsername, data.content);
+        console.log('✅ DM 알림 생성 완료:', data.senderUsername);
+      } else {
+        console.error('❌ DM 알림 생성 실패 - 필드 누락:', data);
+      }
+    });
+
+    return unsubscribe;
+  }, [isLoggedIn]);
+
+  // 게임 초대 이벤트 구독 (알림 생성)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    console.log('🎮 게임 초대 이벤트 구독 시작, userId:', userId);
+
+    minigameService.on('gameInvite', (data) => {
+      console.log('🎮 게임 초대 수신:', data);
+
+      // 게임 초대 알림 생성
+      if (data && data.inviterUsername && data.gameName) {
+        notificationService.createGameInviteNotification(
+          data.inviterUsername,
+          data.gameName,
+          data.roomId,
+          data.inviterId
+        );
+        console.log('✅ 게임 초대 알림 생성 완료:', data.inviterUsername, data.gameName);
+      } else {
+        console.error('❌ 게임 초대 알림 생성 실패 - 필드 누락:', data);
+      }
+    });
+
+    return () => {
+      console.log('🎮 게임 초대 이벤트 구독 해제');
+      minigameService.on('gameInvite', null);
+    };
+  }, [isLoggedIn, userId]);
+
+  // 토스트 알림 닫기 핸들러
+  const handleToastClose = (notificationId) => {
+    setToastNotifications(prev => prev.filter(n => n.id !== notificationId));
+  };
+
+  // 토스트 알림 수락 핸들러 (친구 요청, 게임 초대 등)
+  const handleToastAccept = async (notification) => {
+    console.log('알림 수락:', notification);
+
+    if (notification.type === 'friend_request') {
+      // 친구 요청 수락 로직
+      try {
+        await friendService.acceptFriendRequest(notification.data.friendshipId);
+        console.log('친구 요청 수락 완료:', notification.data.requesterUsername);
+        // 알림을 읽음으로 표시
+        notificationService.markAsRead(notification.id);
+      } catch (error) {
+        console.error('친구 요청 수락 실패:', error);
+        alert('친구 요청 수락에 실패했습니다.');
+      }
+    } else if (notification.type === 'game_invite') {
+      // 게임 초대 수락 - 게임 방 입장 및 초대자 근처로 이동
+      try {
+        const { roomId, inviterId } = notification.data;
+        console.log('🎮 게임 초대 수락:', { roomId, inviterId });
+
+        // 1. 초대자의 위치 찾기
+        const inviterPlayer = Object.values(otherPlayers).find(
+          player => String(player.userId) === String(inviterId)
+        );
+
+        if (inviterPlayer && inviterPlayer.position) {
+          // 2. 초대자 근처로 캐릭터 텔레포트 (랜덤 오프셋, 같은 높이)
+          const randomAngle = Math.random() * Math.PI * 2;
+          const distance = 3 + Math.random() * 2; // 3-5 유닛 거리
+          const offsetX = Math.cos(randomAngle) * distance;
+          const offsetZ = Math.sin(randomAngle) * distance;
+
+          const targetPosition = [
+            inviterPlayer.position[0] + offsetX,
+            inviterPlayer.position[1], // 같은 높이로
+            inviterPlayer.position[2] + offsetZ
+          ];
+
+          console.log('📍 초대자 위치:', inviterPlayer.position);
+          console.log('📍 이동 목표 위치:', targetPosition);
+
+          // characterRef를 통해 텔레포트
+          if (characterRef.current?.teleportTo) {
+            characterRef.current.teleportTo(targetPosition);
+          }
+        } else {
+          console.warn('⚠️ 초대자를 찾을 수 없음 (오프라인일 수 있음)');
+        }
+
+        // 3. 게임 방 입장 (사용자 프로필 정보와 함께)
+        console.log('🎮 minigameService 연결 상태:', minigameService.connected);
+
+        // 연결 상태를 확인하고 방 입장 시도
+        const tryJoinRoom = () => {
+          if (minigameService.connected) {
+            console.log('✅ 게임 방 입장 요청:', {
+              roomId,
+              level: userProfile?.level || 1,
+              selectedProfile: userProfile?.selectedProfile?.id,
+              selectedOutline: userProfile?.selectedOutline?.id
+            });
+
+            minigameService.joinRoom(
+              roomId,
+              userProfile?.level || 1,
+              userProfile?.selectedProfile?.imagePath,
+              userProfile?.selectedOutline?.imagePath
+            );
+            return true;
+          }
+          return false;
+        };
+
+        // 연결되어 있으면 바로 입장
+        if (!tryJoinRoom()) {
+          // 연결되지 않았으면 재연결 시도
+          console.warn('⚠️ minigameService가 연결되지 않음, 재연결 시도...');
+          minigameService.connect(userId, username);
+
+          // 연결 확인을 위해 최대 5초 동안 폴링
+          let attempts = 0;
+          const maxAttempts = 10; // 5초 (500ms * 10)
+          const checkInterval = setInterval(() => {
+            attempts++;
+            if (tryJoinRoom()) {
+              console.log('✅ 재연결 후 방 입장 성공');
+              clearInterval(checkInterval);
+            } else if (attempts >= maxAttempts) {
+              console.error('❌ 방 입장 실패: WebSocket 연결 시간 초과');
+              clearInterval(checkInterval);
+              alert('게임 방 입장에 실패했습니다. 다시 시도해주세요.');
+            } else {
+              console.log(`🔄 연결 대기 중... (${attempts}/${maxAttempts})`);
+            }
+          }, 500);
+        }
+
+        // 4. 미니게임 모달 열기 (이미 열려 있지 않으면)
+        if (!showMinigameModal) {
+          console.log('🎮 미니게임 모달 열기');
+          setShowMinigameModal(true);
+        } else {
+          console.log('🎮 미니게임 모달 이미 열려 있음');
+        }
+
+        // 5. 알림을 읽음으로 표시
+        notificationService.markAsRead(notification.id);
+      } catch (error) {
+        console.error('게임 방 입장 실패:', error);
+      }
+    }
+  };
+
+  // 토스트 알림 거절 핸들러
+  const handleToastReject = async (notification) => {
+    console.log('알림 거절:', notification);
+
+    if (notification.type === 'friend_request') {
+      // 친구 요청 거절 로직
+      try {
+        await friendService.rejectFriendRequest(notification.data.friendshipId);
+        console.log('친구 요청 거절 완료:', notification.data.requesterUsername);
+        // 알림 삭제
+        notificationService.deleteNotification(notification.id);
+      } catch (error) {
+        console.error('친구 요청 거절 실패:', error);
+        alert('친구 요청 거절에 실패했습니다.');
+      }
+    } else if (notification.type === 'game_invite') {
+      // 게임 초대 거절 - 알림만 삭제
+      console.log('게임 초대 거절:', notification.data);
+      notificationService.deleteNotification(notification.id);
+    }
+  };
+
   // 재화 업데이트 함수 (다른 컴포넌트에서 호출 가능)
   const updateCurrency = async () => {
     try {
@@ -429,14 +699,18 @@ function App() {
     setShowGameIcon(false);
   };
 
-  // 미니게임 버튼 클릭 핸들러
-  const handleMinigameButtonClick = () => {
-    navigate('/minigame-select');
+  // 미니게임 아이콘 클릭 핸들러
+  const handleGameIconClick = () => {
+    console.log('🎮 미니게임 로비 아이콘 클릭');
+    setMinigameModalMode('lobby'); // 로비 모드로 설정
+    setShowMinigameModal(true);
   };
 
-  // 미니게임 버튼 클릭 핸들러 (GameIcon 등에서 사용)
-  const handleGameIconClick = () => {
-    handleMinigameButtonClick();
+  // 방 생성 아이콘 클릭 핸들러
+  const handleCreateRoomIconClick = () => {
+    console.log('🎮 방 생성 아이콘 클릭');
+    setShowMinigameModal(true);
+    setMinigameModalMode('create'); // 방 생성 모드로 열기
   };
 
   // Connect to multiplayer service - even when not logged in (as observer)
@@ -453,10 +727,13 @@ function App() {
         return;
       }
 
-      // If logged in, ignore own join event
-      if (isLoggedIn && String(data.userId) === String(userId)) {
+      // 자신의 join 이벤트는 무시 (multiplayerService의 userId와 비교)
+      if (String(data.userId) === String(multiplayerService.userId)) {
+        console.log('Ignoring own join event:', data.userId);
         return;
       }
+
+      console.log('Adding other player:', data.username, data.userId);
 
       // Update otherPlayers state
       setOtherPlayers((prev) => ({
@@ -464,7 +741,7 @@ function App() {
         [data.userId]: {
           userId: data.userId,
           username: data.username,
-          position: [5, 10, 5], // Higher position to make it visible
+          position: [5, 1, 5], // 지면 위치
           rotationY: 0,
           animation: 'idle'
         }
@@ -507,6 +784,10 @@ function App() {
     if (isLoggedIn && userId && username) {
       // console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
       multiplayerService.connect(userId, username);
+
+      // 미니게임 서비스도 연결 (게임 초대를 받기 위해)
+      console.log('🎮 Connecting to minigame service...', { userId, username });
+      minigameService.connect(userId, username);
     } else {
       // Connect as observer (anonymous viewer)
       // console.log('👀 Connecting to multiplayer service as observer...');
@@ -517,6 +798,9 @@ function App() {
     // Cleanup on unmount
     return () => {
       multiplayerService.disconnect();
+      if (isLoggedIn) {
+        minigameService.disconnect();
+      }
     };
   }, [isLoggedIn, userId, username]);
 
@@ -595,8 +879,15 @@ function App() {
 
           {/* 확장 시 보이는 아이콘들 */}
           <div className={`secondary-icons ${isMenuExpanded ? 'show' : 'hide'}`}>
-            <button className="icon-button" onClick={() => console.log('알람')} title="알람">
+            <button
+              className="icon-button notification-icon-button"
+              onClick={() => setShowNotificationModal(true)}
+              title="알림"
+            >
               <img src="/resources/Icon/Alarm-icon.png" alt="Alarm" />
+              {unreadNotificationCount > 0 && (
+                <span className="notification-badge">{unreadNotificationCount}</span>
+              )}
             </button>
             <button className="icon-button" onClick={() => setShowPhoneUI(true)} title="모바일 (친구/채팅)">
               <img src="/resources/Icon/Mobile-icon.png" alt="Mobile" />
@@ -762,7 +1053,31 @@ function App() {
 
       {/* 설정 모달 */}
       {showSettingModal && (
-        <SettingModal onClose={() => setShowSettingModal(false)} />
+        <SettingModal
+          onClose={() => setShowSettingModal(false)}
+          onSettingsChange={handleSettingsChange}
+        />
+      )}
+
+      {/* 알림 모달 */}
+      {showNotificationModal && (
+        <NotificationModal onClose={() => setShowNotificationModal(false)} />
+      )}
+
+      {/* 실시간 알림 토스트 (화면 우측 상단에 표시) */}
+      {appSettings.other?.showToastNotifications && toastNotifications.length > 0 && (
+        <div className="notification-toast-container">
+          {toastNotifications.map((notification) => (
+            <NotificationToast
+              key={notification.id}
+              notification={notification}
+              onClose={() => handleToastClose(notification.id)}
+              onAccept={handleToastAccept}
+              onReject={handleToastReject}
+              autoCloseDelay={5000}
+            />
+          ))}
+        </div>
       )}
 
       {/* 이벤트 모달 */}
@@ -775,6 +1090,19 @@ function App() {
             setSilverCoins(silver);
             setGoldCoins(gold);
           }}
+        />
+      )}
+
+      {/* 미니게임 모달 */}
+      {showMinigameModal && (
+        <MinigameModal
+          onClose={() => {
+            setShowMinigameModal(false);
+            setMinigameModalMode('lobby'); // 모달 닫을 때 로비 모드로 초기화
+          }}
+          userProfile={userProfile}
+          onlinePlayers={otherPlayers}
+          initialMode={minigameModalMode}
         />
       )}
 
@@ -839,6 +1167,7 @@ function App() {
         <GameIcon
           visible={showGameIcon}
           onClick={handleGameIconClick}
+          onCreateRoom={handleCreateRoomIconClick}
         />
       )}
 

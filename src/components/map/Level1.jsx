@@ -44,9 +44,9 @@ function Level1({ characterRef, mainCameraRef, onGameTriggerEnter, onGameTrigger
             cliffBlockInfo.position[2]
           ]}
           size={[
-            cliffBlockInfo.size[0] * 1.2, // 약간 넓게
+            cliffBlockInfo.size[0] * 14.4, // 약간 넓게
             cliffBlockInfo.size[1] + 4, // 높이 여유
-            cliffBlockInfo.size[2] * 1.2 // 약간 넓게
+            cliffBlockInfo.size[2] * 8.9 // 약간 넓게
           ]}
           onEnter={onGameTriggerEnter}
           onExit={onGameTriggerExit}

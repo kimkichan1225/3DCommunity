@@ -27,10 +27,10 @@ function CameraController({ characterRef, mainCameraRef, isLoggedIn }) {
       const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
       // 부드러운 카메라 이동 (속도 감소)
-      camera.position.lerp(targetCameraPosition, delta * 3.0);
+      camera.position.lerp(targetCameraPosition, delta * 5.0);
 
-      // 타겟을 바라보도록 설정
-      camera.lookAt(targetPositionRef.current);
+      // 고정된 각도 유지 (lookAt 제거)
+      // camera.lookAt(targetPositionRef.current);
     }
     // 로그인 전: MainCamera를 따라감
     else if (!isLoggedIn && mainCameraRef.current) {
@@ -47,8 +47,8 @@ function CameraController({ characterRef, mainCameraRef, isLoggedIn }) {
       // 부드러운 카메라 이동 (속도 감소)
       camera.position.lerp(targetCameraPosition, delta * 3);
 
-      // 타겟을 바라보도록 설정
-      camera.lookAt(targetPositionRef.current);
+      // 고정된 각도 유지 (lookAt 제거)
+      // camera.lookAt(targetPositionRef.current);
     }
   });
 

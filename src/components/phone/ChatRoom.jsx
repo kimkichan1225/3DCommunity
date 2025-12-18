@@ -17,7 +17,7 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
     loadMessages();
 
     // WebSocket: DM 메시지 구독
-    multiplayerService.onDMMessage((data) => {
+    const unsubscribe = multiplayerService.onDMMessage((data) => {
       console.log('DM message received in ChatRoom:', data);
 
       // 현재 채팅방의 친구로부터 온 메시지인지 확인
@@ -35,9 +35,9 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
       }
     });
 
-    // Cleanup
+    // Cleanup: 이전 리스너 제거
     return () => {
-      multiplayerService.onDMMessage(null);
+      unsubscribe?.();
     };
   }, [chat.friendId]);
 

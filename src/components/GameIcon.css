@@ -5,40 +5,70 @@
   transform: translateX(-50%);
   z-index: 900;
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
-.game-icon-button {
+/* 공통 스타일 */
+.game-icon-button,
+.create-room-button {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.7);
   border: 3px solid #FFD700;
   border-radius: 15px;
-  padding: 15px 20px;
   cursor: pointer;
   transition: all 0.3s ease;
   animation: pulse 2s infinite;
+  padding: 15px 25px;
+  gap: 12px;
+  min-width: 200px;
+  min-height: 85px;
 }
 
+/* 미니게임 로비 아이콘 (메인) */
 .game-icon-button:hover {
   background: rgba(255, 215, 0, 0.3);
   border-color: #FFA500;
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .game-icon-button img {
-  width: 60px;
-  height: 60px;
-  margin-bottom: 8px;
+  width: 45px;
+  height: 45px;
   filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
 }
 
 .game-icon-label {
   color: #FFD700;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: bold;
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+
+/* 방 생성 버튼 */
+.create-room-button:hover {
+  background: rgba(255, 215, 0, 0.3);
+  border-color: #FFA500;
+  transform: scale(1.05);
+}
+
+.create-room-icon {
+  font-size: 32px;
+  color: #FFD700;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+}
+
+.create-room-label {
+  color: #FFD700;
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
 }
 
 /* 펄스 애니메이션 */
