@@ -25,7 +25,8 @@ function MapGamePageNew() {
   // 캐릭터 상태 공유
   const characterStateRef = useRef({
     position: [0, 0, 0],
-    rotation: 0
+    rotation: 0,
+    isMoving: false
   });
 
   // Mapbox 참조
@@ -79,6 +80,111 @@ function MapGamePageNew() {
         await mapboxManager.initialize(mapContainerRef.current);
         mapboxManagerRef.current = mapboxManager;
 
+        const map = mapboxManager.getMap();
+
+        // 3D 레이어 추가 함수
+        const add3DLayers = () => {
+          console.log('🏗️ 3D 레이어 추가 시작...');
+          
+          // 3D 건물 추가
+          const layers = map.getStyle().layers;
+          const labelLayerId = layers.find(
+            (layer) => layer.type === 'symbol' && layer.layout['text-field']
+          )?.id;
+
+          // 이미 레이어가 있으면 추가하지 않음
+          if (!map.getLayer('3d-buildings')) {
+            map.addLayer(
+              {
+                id: '3d-buildings',
+                source: 'composite',
+                'source-layer': 'building',
+                filter: ['==', 'extrude', 'true'],
+                type: 'fill-extrusion',
+                minzoom: 15,
+                paint: {
+                  'fill-extrusion-color': '#aaa',
+                  'fill-extrusion-height': [
+                    'interpolate', ['linear'], ['zoom'],
+                    15, 0,
+                    15.05, ['get', 'height']
+                  ],
+                  'fill-extrusion-base': [
+                    'interpolate', ['linear'], ['zoom'],
+                    15, 0,
+                    15.05, ['get', 'min_height']
+                  ],
+                  'fill-extrusion-opacity': 0.6
+                }
+              },
+              labelLayerId
+            );
+            console.log('✅ 3D 건물 레이어 추가 완료');
+          }
+
+          // 캐릭터 마커 생성 (Three.js CustomLayer 대신 SVG/CSS 마커 사용)
+          if (!window.characterMarker) {
+            const markerElement = document.createElement('div');
+            markerElement.className = 'character-marker-3d';
+            markerElement.innerHTML = `
+              <div style="
+                width: 60px;
+                height: 80px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                transform: translateY(-40px);
+              ">
+                <div style="
+                  width: 50px;
+                  height: 50px;
+                  background: linear-gradient(180deg, #4a90d9 0%, #357abd 100%);
+                  border-radius: 50%;
+                  border: 3px solid #fff;
+                  box-shadow: 0 4px 15px rgba(0,0,0,0.4), 0 0 20px rgba(74,144,217,0.5);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 24px;
+                ">
+                  🧑
+                </div>
+                <div style="
+                  width: 0;
+                  height: 0;
+                  border-left: 10px solid transparent;
+                  border-right: 10px solid transparent;
+                  border-top: 15px solid #357abd;
+                  margin-top: -2px;
+                "></div>
+                <div style="
+                  width: 30px;
+                  height: 8px;
+                  background: radial-gradient(ellipse, rgba(0,0,0,0.3) 0%, transparent 70%);
+                  border-radius: 50%;
+                  margin-top: 5px;
+                "></div>
+              </div>
+            `;
+
+            window.characterMarker = new mapboxgl.Marker({
+              element: markerElement,
+              anchor: 'bottom'
+            })
+              .setLngLat(mapCenter)
+              .addTo(map);
+            
+            console.log('✅ 캐릭터 마커 생성 완료');
+          }
+        };
+
+        // 지도가 이미 로드되었으면 바로 실행, 아니면 load 이벤트 대기
+        if (map.loaded()) {
+          add3DLayers();
+        } else {
+          map.on('load', add3DLayers);
+        }
+
         console.log('✅ Mapbox 초기화 완료');
         setIsReady(true);
       } catch (err) {
@@ -98,35 +204,17 @@ function MapGamePageNew() {
     };
   }, [mapboxToken, userLocation]);
 
-  // 캐릭터 위치를 지도에 마커로 표시 - 초기 생성만
+  // 3D 캐릭터가 지도에 표시되므로 마커는 더 이상 필요 없음
+  // 지도 중심 이동용으로만 사용
   useEffect(() => {
     if (!mapboxManagerRef.current || !isReady) return;
 
-    const map = mapboxManagerRef.current.getMap();
-
-    // 마커 생성 (처음 한번만)
-    if (!window.characterMarker && characterStateRef.current) {
-      const [charX, charY, charZ] = characterStateRef.current.position;
-      const characterLng = userLocation[0] + (charX / 100000);
-      const characterLat = userLocation[1] - (charZ / 100000);  // Z축은 부호 반대
-
-      const markerElement = document.createElement('div');
-      markerElement.style.width = '16px';
-      markerElement.style.height = '16px';
-      markerElement.style.borderRadius = '50%';
-      markerElement.style.backgroundColor = '#ff0000';
-      markerElement.style.border = '2px solid #ffffff';
-      markerElement.style.boxShadow = '0 0 8px rgba(255, 0, 0, 0.8)';
-
-      window.characterMarker = new mapboxgl.Marker(markerElement)
-        .setLngLat([characterLng, characterLat])
-        .addTo(map);
-    }
-
+    // cleanup
     return () => {
-      if (window.characterMarker) {
-        window.characterMarker.remove();
-        window.characterMarker = null;
+      if (window.mapCharacter) {
+        window.mapCharacter = null;
+        window.mapMixer = null;
+        window.mapActions = null;
       }
     };
   }, [isReady, userLocation]);
@@ -322,6 +410,7 @@ function CharacterViewer({ characterStateRef }) {
     if (left) direction.x -= 1;
     if (right) direction.x += 1;
 
+    const isMoving = direction.length() > 0;
     let targetAngleForNetwork = null;
 
     if (direction.length() > 0) {
@@ -345,13 +434,14 @@ function CharacterViewer({ characterStateRef }) {
     // 모델 회전 적용
     modelGroupRef.current.quaternion.copy(currentRotationRef.current);
 
-    // 상태 공유
+    // 상태 공유 (isMoving 포함)
     characterStateRef.current.position = [
       modelGroupRef.current.position.x,
       modelGroupRef.current.position.y,
       modelGroupRef.current.position.z
     ];
     characterStateRef.current.rotation = lastRotationYRef.current;
+    characterStateRef.current.isMoving = isMoving;
   });
 
   return (
@@ -414,18 +504,17 @@ function MarkerUpdater({ characterStateRef, mapboxManagerRef, userLocation, isRe
     const [charX, charY, charZ] = characterStateRef.current.position;
 
     // 3D 좌표를 지도상의 GPS 좌표로 변환
-    // 스케일: 100000으로 나눠서 지도 화면 내에서 적당히 이동하도록 조정
     const SCALE = 100000;
     const characterLng = userLocation[0] + (charX / SCALE);
-    const characterLat = userLocation[1] - (charZ / SCALE);  // Z축은 부호 반대 (Three.js Z가 음수 = 북쪽)
+    const characterLat = userLocation[1] - (charZ / SCALE);
 
-    // 마커 업데이트 (매 프레임마다 실시간 동기화)
+    // 캐릭터 마커 위치 업데이트
     if (window.characterMarker) {
       window.characterMarker.setLngLat([characterLng, characterLat]);
-      
-      // 지도 중심을 빨간점 위치로 이동
-      map.setCenter([characterLng, characterLat]);
     }
+
+    // 지도 중심을 캐릭터 위치로 이동
+    map.setCenter([characterLng, characterLat]);
   });
 
   return null;
