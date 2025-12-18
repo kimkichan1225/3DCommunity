@@ -40,6 +40,7 @@ import { ShopModal } from './features/shop';
 import { GoldChargeModal } from './features/payment';
 
 function App() {
+  const navigate = useNavigate();
   const characterRef = useRef();
   const mainCameraRef = useRef();
   const level1PositionRef = useRef(null); // Level1 위치를 ref로 저장 (즉시 접근 용도)
