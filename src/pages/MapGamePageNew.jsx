@@ -70,8 +70,8 @@ function MapGamePageNew() {
           accessToken: mapboxToken,
           style: 'mapbox://styles/mapbox/streets-v12',
           center: mapCenter,
-          zoom: 25.2,
-          pitch: 30,
+          zoom: 20.2,
+          pitch: 60,
           bearing: 0
         });
 
@@ -107,8 +107,8 @@ function MapGamePageNew() {
     // 마커 생성 (처음 한번만)
     if (!window.characterMarker && characterStateRef.current) {
       const [charX, charY, charZ] = characterStateRef.current.position;
-      const characterLng = userLocation[0] + (charX / 1000);
-      const characterLat = userLocation[1] - (charZ / 1000);  // Z축은 부호 반대
+      const characterLng = userLocation[0] + (charX / 100000);
+      const characterLat = userLocation[1] - (charZ / 100000);  // Z축은 부호 반대
 
       const markerElement = document.createElement('div');
       markerElement.style.width = '16px';
@@ -414,12 +414,17 @@ function MarkerUpdater({ characterStateRef, mapboxManagerRef, userLocation, isRe
     const [charX, charY, charZ] = characterStateRef.current.position;
 
     // 3D 좌표를 지도상의 GPS 좌표로 변환
-    const characterLng = userLocation[0] + (charX / 1000);
-    const characterLat = userLocation[1] - (charZ / 1000);  // Z축은 부호 반대 (Three.js Z가 음수 = 북쪽)
+    // 스케일: 100000으로 나눠서 지도 화면 내에서 적당히 이동하도록 조정
+    const SCALE = 100000;
+    const characterLng = userLocation[0] + (charX / SCALE);
+    const characterLat = userLocation[1] - (charZ / SCALE);  // Z축은 부호 반대 (Three.js Z가 음수 = 북쪽)
 
     // 마커 업데이트 (매 프레임마다 실시간 동기화)
     if (window.characterMarker) {
       window.characterMarker.setLngLat([characterLng, characterLat]);
+      
+      // 지도 중심을 빨간점 위치로 이동
+      map.setCenter([characterLng, characterLat]);
     }
   });
 
