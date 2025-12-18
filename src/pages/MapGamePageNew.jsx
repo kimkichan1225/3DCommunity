@@ -245,16 +245,11 @@ function MapGamePageNew() {
 
   return (
     <div className="map-game-split-container">
-      {/* 뒤로가기 버튼 */}
-      <button className="map-game-back-button" onClick={handleBack}>
-        ← 뒤로가기
-      </button>
-
       {/* 좌측: Three.js 캐릭터 */}
       <div className="map-game-left">
         <Canvas
           camera={{
-            position: [0, 28, 20],
+            position: [0, 38, 45],
             fov: 60,
             near: 0.1,
             far: 10000
@@ -272,11 +267,8 @@ function MapGamePageNew() {
             castShadow
           />
           
-          {/* 바닥 - 밝은 초록색 */}
-          <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[50, 50]} />
-            <meshStandardMaterial color={0x90EE90} />
-          </mesh>
+          {/* 가상 풀숲 바닥 */}
+          <VirtualGrassGround />
 
           {/* 캐릭터 */}
           <CharacterViewer characterStateRef={characterStateRef} />
@@ -315,22 +307,37 @@ function MapGamePageNew() {
         )}
       </div>
 
-      {/* HUD 정보 */}
+      {/* 하단 통합 UI 바 */}
       {isReady && (
-        <div className="map-game-hud">
-          <div style={{ fontSize: '12px', color: '#0f0', fontFamily: 'monospace' }}>
-            <strong>📊 게임 상태</strong>
-            <div>상태: ✅ 준비 완료</div>
-            {userLocation && (
-              <div style={{ marginTop: '4px', fontSize: '10px', color: '#0f0' }}>
-                📍 위치: {userLocation[0].toFixed(4)}, {userLocation[1].toFixed(4)}
-              </div>
-            )}
-            <div style={{ marginTop: '6px', fontSize: '10px', color: '#888' }}>
-              WASD: 이동<br/>
-              Shift: 달리기<br/>
-              화살표: 이동 방향
-            </div>
+        <div className="map-game-bottom-bar">
+          {/* 좌측: 뒤로가기 */}
+          <div className="bottom-bar-left">
+            <button className="map-game-back-button" onClick={handleBack}>
+              ← 뒤로가기
+            </button>
+          </div>
+
+          {/* 중앙: 방 생성/입장 버튼 */}
+          <div className="bottom-bar-center">
+            <button className="room-button room-create-button">
+              🏠 방 생성
+            </button>
+            <button className="room-button room-join-button">
+              📍 방 입장
+            </button>
+          </div>
+
+          {/* 우측: 액션 버튼들 */}
+          <div className="bottom-bar-right">
+            <button className="bottom-bar-button" title="채팅">
+              💬
+            </button>
+            <button className="bottom-bar-button" title="설정">
+              ⚙️
+            </button>
+            <button className="bottom-bar-button" title="메뉴">
+              ☰
+            </button>
           </div>
         </div>
       )}
@@ -464,7 +471,7 @@ export default MapGamePageNew;
  */
 function CameraTracker({ characterStateRef }) {
   const { camera } = useThree();
-  const cameraOffset = new THREE.Vector3(0, 28.35, 19.76); // CameraController와 동일한 오프셋
+  const cameraOffset = new THREE.Vector3(0, 38, 45); // 각도를 낮춘 카메라 오프셋
   const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
@@ -518,4 +525,103 @@ function MarkerUpdater({ characterStateRef, mapboxManagerRef, userLocation, isRe
   });
 
   return null;
+}
+
+/**
+ * 가상 풀숲 바닥 컴포넌트
+ * 포켓몬 고 스타일의 풀밭 느낌 - 무한 맵
+ */
+function VirtualGrassGround() {
+  const grassPatches = [];
+  
+  // 랜덤 풀 패치 생성 - 더 넓은 범위
+  for (let i = 0; i < 500; i++) {
+    const x = (Math.random() - 0.5) * 500;
+    const z = (Math.random() - 0.5) * 500;
+    const scale = 0.3 + Math.random() * 0.5;
+    const rotation = Math.random() * Math.PI * 2;
+    grassPatches.push({ x, z, scale, rotation, key: i });
+  }
+
+  return (
+    <group>
+      {/* 메인 바닥 - 무한 잔디 (매우 큰 크기) */}
+      <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[2000, 2000]} />
+        <meshStandardMaterial 
+          color={0x4CAF50}
+          roughness={0.9}
+          metalness={0}
+        />
+      </mesh>
+
+      {/* 풀 패치들 - 작은 원형 */}
+      {grassPatches.map(({ x, z, scale, rotation, key }) => (
+        <group key={key} position={[x, -1.17, z]} rotation={[0, rotation, 0]}>
+          {/* 풀 뭉치 */}
+          <mesh scale={[scale, 0.1, scale]}>
+            <cylinderGeometry args={[0.8, 1, 0.3, 8]} />
+            <meshStandardMaterial 
+              color={key % 3 === 0 ? 0x388E3C : key % 3 === 1 ? 0x43A047 : 0x2E7D32}
+              roughness={0.9}
+            />
+          </mesh>
+        </group>
+      ))}
+
+      {/* 나무들 (랜덤 배치 - 더 많이) */}
+      {[...Array(50)].map((_, i) => {
+        const x = (Math.random() - 0.5) * 400;
+        const z = (Math.random() - 0.5) * 400;
+        // 중앙 근처는 피함
+        if (Math.abs(x) < 15 && Math.abs(z) < 15) return null;
+        const treeScale = 1 + Math.random() * 0.5;
+        return (
+          <group key={`tree-${i}`} position={[x, -1.2, z]} scale={[treeScale, treeScale, treeScale]}>
+            {/* 나무 줄기 */}
+            <mesh position={[0, 1.5, 0]}>
+              <cylinderGeometry args={[0.3, 0.5, 3, 8]} />
+              <meshStandardMaterial color={0x5D4037} roughness={0.9} />
+            </mesh>
+            {/* 나무 잎 */}
+            <mesh position={[0, 4, 0]}>
+              <coneGeometry args={[2, 4, 8]} />
+              <meshStandardMaterial color={0x2E7D32} roughness={0.8} />
+            </mesh>
+            <mesh position={[0, 5.5, 0]}>
+              <coneGeometry args={[1.5, 3, 8]} />
+              <meshStandardMaterial color={0x388E3C} roughness={0.8} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* 꽃들 (랜덤 배치 - 더 많이) */}
+      {[...Array(100)].map((_, i) => {
+        const x = (Math.random() - 0.5) * 300;
+        const z = (Math.random() - 0.5) * 300;
+        const colors = [0xE91E63, 0xFFEB3B, 0x9C27B0, 0xFF9800, 0x03A9F4];
+        const color = colors[i % colors.length];
+        return (
+          <mesh key={`flower-${i}`} position={[x, -1.1, z]}>
+            <sphereGeometry args={[0.15, 8, 8]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} />
+          </mesh>
+        );
+      })}
+
+      {/* 돌멩이들 - 더 많이 */}
+      {[...Array(40)].map((_, i) => {
+        const x = (Math.random() - 0.5) * 300;
+        const z = (Math.random() - 0.5) * 300;
+        const scale = 0.2 + Math.random() * 0.4;
+        return (
+          <mesh key={`rock-${i}`} position={[x, -1.1, z]} scale={[scale, scale * 0.6, scale]}>
+            <dodecahedronGeometry args={[1, 0]} />
+            <meshStandardMaterial color={0x757575} roughness={0.95} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
 }
