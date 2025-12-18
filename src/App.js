@@ -40,6 +40,7 @@ import { ShopModal } from './features/shop';
 import { GoldChargeModal } from './features/payment';
 
 function App() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const characterRef = useRef();
   const mainCameraRef = useRef();
