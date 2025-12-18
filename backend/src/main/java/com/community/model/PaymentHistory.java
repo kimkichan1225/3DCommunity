@@ -77,5 +77,8 @@ public class PaymentHistory {
         if (this.status == null) {
             this.status = PaymentStatus.PENDING;
         }
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
     }
 }

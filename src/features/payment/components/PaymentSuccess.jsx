@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import paymentService from '../services/paymentService';
 import './PaymentResult.css';
@@ -9,10 +9,17 @@ function PaymentSuccess() {
   const [processing, setProcessing] = useState(true);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const approvePaymentRef = useRef(false); // 중복 호출 방지 플래그
 
   useEffect(() => {
+    // React.StrictMode에서 useEffect가 2번 실행되는 것을 방지
+    if (approvePaymentRef.current) {
+      console.log('[PaymentSuccess] 이미 결제 승인 요청을 보냈습니다. 중복 호출 방지.');
+      return;
+    }
+    approvePaymentRef.current = true;
     approvePayment();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const approvePayment = async () => {
     const orderId = searchParams.get('orderId');
@@ -26,18 +33,66 @@ function PaymentSuccess() {
     }
 
     try {
+      console.log('결제 승인 요청 시작:', { orderId, paymentKey, amount });
+
       const response = await paymentService.approvePayment(orderId, paymentKey, amount);
+
+      console.log('결제 승인 응답:', response);
 
       if (response.success) {
         setResult(response);
       } else {
-        setError(response.message || '결제 승인에 실패했습니다.');
+        // 실패 응답이지만 "Payment already processed" 메시지인 경우
+        // 이미 처리된 결제일 수 있으므로 결제 내역 조회
+        if (response.message && response.message.includes('already processed')) {
+          console.warn('이미 처리된 결제입니다. 결제 내역을 조회합니다.');
+          await checkPaymentHistory();
+        } else {
+          setError(response.message || '결제 승인에 실패했습니다.');
+        }
       }
     } catch (err) {
       console.error('Payment approval error:', err);
-      setError('결제 승인 중 오류가 발생했습니다.');
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status
+      });
+
+      // 네트워크 오류나 타임아웃 발생 시 결제 내역 확인
+      console.log('오류 발생으로 결제 내역을 확인합니다...');
+      await checkPaymentHistory();
     } finally {
       setProcessing(false);
+    }
+  };
+
+  // 결제 내역 조회하여 실제 결제 성공 여부 확인
+  const checkPaymentHistory = async () => {
+    try {
+      const history = await paymentService.getPaymentHistory();
+      const orderId = searchParams.get('orderId');
+
+      // 현재 주문 ID에 해당하는 결제 내역 찾기
+      const currentPayment = history.find(h => h.orderId === orderId);
+
+      if (currentPayment && currentPayment.status === 'APPROVED') {
+        // 결제가 실제로 성공했다면 성공 화면 표시
+        console.log('결제 내역 확인 결과: 성공', currentPayment);
+        setResult({
+          success: true,
+          orderId: currentPayment.orderId,
+          goldAmount: currentPayment.goldAmount,
+          remainingGoldCoins: currentPayment.goldAmount, // 정확한 값은 백엔드에서 제공해야 함
+          message: 'Payment approved successfully'
+        });
+      } else {
+        // 여전히 PENDING이거나 FAILED인 경우
+        setError('결제 승인 중 오류가 발생했습니다. 고객센터에 문의해주세요.');
+      }
+    } catch (historyErr) {
+      console.error('결제 내역 조회 실패:', historyErr);
+      setError('결제 승인 중 오류가 발생했습니다. 결제 내역을 확인해주세요.');
     }
   };
 

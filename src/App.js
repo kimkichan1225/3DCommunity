@@ -35,12 +35,12 @@ import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
 import currencyService from './services/currencyService';
 import attendanceService from './services/attendanceService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShopModal } from './features/shop';
 import { GoldChargeModal } from './features/payment';
 
 function App() {
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const characterRef = useRef();
   const mainCameraRef = useRef();
   const level1PositionRef = useRef(null); // Level1 위치를 ref로 저장 (즉시 접근 용도)
@@ -132,11 +132,11 @@ function App() {
     lastMapUpdateRef.current = now;
 
     const [threeX, threeY, threeZ] = position;
-    
+
     try {
       const map = mapHelpers.map;
       const project = mapHelpers.project;
-      
+
       // 초기 지도 중심을 Mercator로 변환
       const initialCenter = initialMapCenterRef.current;
       const initialMerc = project([initialCenter.lng, initialCenter.lat], 0);
@@ -164,9 +164,9 @@ function App() {
       // Mercator 좌표를 LngLat으로 변환
       const mercatorCoord = new mapboxgl.MercatorCoordinate(newMercX, newMercY, 0);
       const lngLat = mercatorCoord.toLngLat();
-      
+
       // console.log('🗺️ [7] converted to lngLat:', lngLat);
-      
+
       // 지도 중심 업데이트
       map.setCenter(lngLat);
       // console.log('✅ [8] Map.setCenter() called with:', lngLat);
@@ -189,7 +189,7 @@ function App() {
     mapReadyCalledRef.current = true;
 
     setMapHelpers({ map, project });
-    
+
     // 초기 지도 중심 저장 (지도 업데이트용)
     const initialCenter = map.getCenter();
     initialMapCenterRef.current = initialCenter;
@@ -829,6 +829,53 @@ function App() {
     };
   }, [isLoggedIn]);
 
+  // 페이지 로드 시 로그인 상태 복원 (localStorage에서)
+  useEffect(() => {
+    const token = authService.getToken();
+    const user = authService.getCurrentUser();
+
+    if (token && user) {
+      console.log('[App] 로그인 상태 복원:', user.username);
+      setIsLoggedIn(true);
+      setShowLanding(false);
+      setUsername(user.username || 'Guest');
+      setUserId(user.id || String(Date.now()));
+      setUserProfile(user);
+
+      // 재화 정보 로드
+      currencyService.getCurrency()
+        .then(currency => {
+          setSilverCoins(currency.silverCoins || 0);
+          setGoldCoins(currency.goldCoins || 0);
+          console.log('✅ 재화 정보 복원:', currency);
+        })
+        .catch(error => {
+          console.error('재화 정보 로드 실패:', error);
+          setSilverCoins(0);
+          setGoldCoins(0);
+        });
+    } else {
+      console.log('[App] 로그인 상태 없음 - 랜딩 페이지 표시');
+    }
+  }, []); // 컴포넌트 마운트 시 1회만 실행
+
+  // 결제 URL 파라미터 감지 및 모달 자동 열기
+  useEffect(() => {
+    const orderId = searchParams.get('orderId');
+    const paymentKey = searchParams.get('paymentKey');
+    const amount = searchParams.get('amount');
+    const code = searchParams.get('code');
+    const message = searchParams.get('message');
+
+    // 결제 성공 또는 실패 파라미터가 있으면 금화 충전 모달 자동 열기
+    // 단, 로그인 상태일 때만 (비로그인 상태에서는 랜딩 페이지 표시)
+    if (isLoggedIn && ((orderId && paymentKey && amount) || (code && message))) {
+      console.log('[App] 결제 URL 파라미터 감지 - 금화 충전 모달 자동 열기');
+      setShowGoldChargeModal(true);
+    }
+  }, [searchParams, isLoggedIn]);
+
+
 
 
   return (
@@ -856,8 +903,8 @@ function App() {
           {/* 재화 표시 (프로필 아바타 우측) */}
           <div className={`currency-display-wrapper ${isMapFull ? 'currency-display-bottom-right' : 'currency-display-top-left'}`}>
             <CurrencyDisplay
-              silverCoins={silverCoins}
-              goldCoins={goldCoins}
+              silverCoins={Number(silverCoins) || 0}
+              goldCoins={Number(goldCoins) || 0}
               onChargeGold={() => setShowGoldChargeModal(true)}
             />
           </div>
@@ -923,109 +970,109 @@ function App() {
 
       {/* 3D 배경 (항상 렌더링) - 지도 위에 오버레이로 렌더링됩니다 */}
       <div className="three-overlay">
-      <Canvas
-        className="three-canvas"
-        camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
-        shadows
-        gl={{ 
-          alpha: true, // 투명 배경 활성화
-          antialias: true,
-          preserveDrawingBuffer: true
-        }}
-        style={{ width: '100%', height: '100%' }}
-      >
-        <ambientLight intensity={0.5} />
-        <directionalLight
-          position={[50, 50, 25]}
-          intensity={6}
-          castShadow
-          shadow-mapSize-width={8192}
-          shadow-mapSize-height={8192}
-          shadow-camera-far={1000}
-          shadow-camera-left={-500}
-          shadow-camera-right={500}
-          shadow-camera-top={500}
-          shadow-camera-bottom={-500}
-          shadow-bias={-0.0001}
-          shadow-normalBias={0.02}
-          shadow-radius={4}
-        />
-        {/* Sun visual */}
-        <mesh position={[50, 50, 25]}>
-          <sphereGeometry args={[3, 16, 16]} />
-          <meshBasicMaterial color="#FDB813" />
-        </mesh>
+        <Canvas
+          className="three-canvas"
+          camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
+          shadows
+          gl={{
+            alpha: true, // 투명 배경 활성화
+            antialias: true,
+            preserveDrawingBuffer: true
+          }}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <ambientLight intensity={0.5} />
+          <directionalLight
+            position={[50, 50, 25]}
+            intensity={6}
+            castShadow
+            shadow-mapSize-width={8192}
+            shadow-mapSize-height={8192}
+            shadow-camera-far={1000}
+            shadow-camera-left={-500}
+            shadow-camera-right={500}
+            shadow-camera-top={500}
+            shadow-camera-bottom={-500}
+            shadow-bias={-0.0001}
+            shadow-normalBias={0.02}
+            shadow-radius={4}
+          />
+          {/* Sun visual */}
+          <mesh position={[50, 50, 25]}>
+            <sphereGeometry args={[3, 16, 16]} />
+            <meshBasicMaterial color="#FDB813" />
+          </mesh>
 
-        <Suspense fallback={null}>
-          <Physics gravity={[0, -40, 0]} debug>
-            {/* 로그인 후에만 캐릭터 표시 */}
-            {isLoggedIn && (
-              <>
-                {/* 지도 모드: MapCharacterController 사용 */}
-                {isMapFull ? (
-                  <MapCharacterController
-                    characterRef={characterRef}
-                    isMovementDisabled={shouldBlockMovement}
-                    username={username}
-                    userId={userId}
-                    multiplayerService={multiplayerService}
-                    chatMessage={myChatMessage}
-                    onPositionUpdate={handleMapCharacterPositionUpdate}
+          <Suspense fallback={null}>
+            <Physics gravity={[0, -40, 0]} debug>
+              {/* 로그인 후에만 캐릭터 표시 */}
+              {isLoggedIn && (
+                <>
+                  {/* 지도 모드: MapCharacterController 사용 */}
+                  {isMapFull ? (
+                    <MapCharacterController
+                      characterRef={characterRef}
+                      isMovementDisabled={shouldBlockMovement}
+                      username={username}
+                      userId={userId}
+                      multiplayerService={multiplayerService}
+                      chatMessage={myChatMessage}
+                      onPositionUpdate={handleMapCharacterPositionUpdate}
+                    />
+                  ) : (
+                    /* Level1 모드: 기존 Character 사용 */
+                    <Character
+                      characterRef={characterRef}
+                      initialPosition={initialPosition}
+                      isMovementDisabled={shouldBlockMovement}
+                      username={username}
+                      userId={userId}
+                      multiplayerService={multiplayerService}
+                      isMapFull={isMapFull}
+                      onPositionUpdate={handleCharacterPositionUpdate}
+                      chatMessage={myChatMessage}
+                    />
+                  )}
+                  <CameraLogger />
+                </>
+              )}
+
+              {/* Render other players - 로그인 여부와 관계없이 항상 표시 (observer 제외) */}
+              {Object.values(otherPlayers)
+                .filter((player) => !String(player.userId).startsWith('observer_'))
+                .map((player) => (
+                  <OtherPlayer
+                    key={player.userId}
+                    userId={player.userId}
+                    username={player.username}
+                    position={player.position}
+                    rotationY={player.rotationY}
+                    animation={player.animation}
+                    chatMessage={playerChatMessages[player.userId]?.message}
+                    onRightClick={handlePlayerRightClick}
                   />
-                ) : (
-                  /* Level1 모드: 기존 Character 사용 */
-                  <Character
-                    characterRef={characterRef}
-                    initialPosition={initialPosition}
-                    isMovementDisabled={shouldBlockMovement}
-                    username={username}
-                    userId={userId}
-                    multiplayerService={multiplayerService}
-                    isMapFull={isMapFull}
-                    onPositionUpdate={handleCharacterPositionUpdate}
-                    chatMessage={myChatMessage}
-                  />
-                )}
-                <CameraLogger />
-              </>
-            )}
+                ))}
 
-            {/* Render other players - 로그인 여부와 관계없이 항상 표시 (observer 제외) */}
-            {Object.values(otherPlayers)
-              .filter((player) => !String(player.userId).startsWith('observer_'))
-              .map((player) => (
-                <OtherPlayer
-                  key={player.userId}
-                  userId={player.userId}
-                  username={player.username}
-                  position={player.position}
-                  rotationY={player.rotationY}
-                  animation={player.animation}
-                  chatMessage={playerChatMessages[player.userId]?.message}
-                  onRightClick={handlePlayerRightClick}
-                />
-              ))}
-
-            {/* CameraController는 항상 렌더링 (로그인 전: MainCamera, 로그인 후: Character) */}
-            <CameraController
-              characterRef={characterRef}
-              mainCameraRef={mainCameraRef}
-              isLoggedIn={isLoggedIn}
-            />
-            {/* 지도 모드일 때만 MapFloor 렌더링 */}
-            {isMapFull && <MapFloor />}
-            {/* Level1은 지도 모드가 아닐 때만 렌더링 */}
-            {!isMapFull && (
-              <Level1
+              {/* CameraController는 항상 렌더링 (로그인 전: MainCamera, 로그인 후: Character) */}
+              <CameraController
                 characterRef={characterRef}
                 mainCameraRef={mainCameraRef}
-                onGameTriggerEnter={handleGameTriggerEnter}
-                onGameTriggerExit={handleGameTriggerExit}
+                isLoggedIn={isLoggedIn}
               />
-            )}
-          </Physics>
-        </Suspense>
-      </Canvas>
+              {/* 지도 모드일 때만 MapFloor 렌더링 */}
+              {isMapFull && <MapFloor />}
+              {/* Level1은 지도 모드가 아닐 때만 렌더링 */}
+              {!isMapFull && (
+                <Level1
+                  characterRef={characterRef}
+                  mainCameraRef={mainCameraRef}
+                  onGameTriggerEnter={handleGameTriggerEnter}
+                  onGameTriggerExit={handleGameTriggerExit}
+                />
+              )}
+            </Physics>
+          </Suspense>
+        </Canvas>
       </div>
 
       {/* 랜딩 페이지 오버레이 (지도 전체화면일 때는 숨김) */}
@@ -1173,22 +1220,27 @@ function App() {
       )}
 
       {showShopModal && (
-          <ShopModal
-            onClose={() => setShowShopModal(false)}
-            userCoins={{ silver: silverCoins, gold: goldCoins }}
-            onCoinsUpdate={(silver, gold) => {
-              setSilverCoins(silver);
-              setGoldCoins(gold);
-            }}
-          />
-        )}
+        <ShopModal
+          onClose={() => setShowShopModal(false)}
+          userCoins={{ silver: silverCoins, gold: goldCoins }}
+          onCoinsUpdate={(silver, gold) => {
+            setSilverCoins(silver);
+            setGoldCoins(gold);
+          }}
+        />
+      )}
 
       {showGoldChargeModal && (
         <GoldChargeModal
           onClose={() => setShowGoldChargeModal(false)}
-          onChargeSuccess={(newGoldCoins) => {
-            setGoldCoins(newGoldCoins);
-            setShowGoldChargeModal(false);
+          onChargeSuccess={(result) => {
+            console.log('[App] 결제 성공 콜백:', result);
+            // 재화 업데이트
+            if (result.remainingGoldCoins !== undefined) {
+              setGoldCoins(result.remainingGoldCoins);
+            }
+            // 서버에서 최신 재화 정보 다시 가져오기
+            updateCurrency();
           }}
         />
       )}
