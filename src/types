@@ -1,0 +1,237 @@
+// src/types/index.ts
+
+import * as THREE from 'three';
+import type * as Rapier from '@react-three/rapier';
+
+/**
+ * 지도 좌표 (경도, 위도)
+ */
+export type LngLat = [number, number];
+
+/**
+ * Mapbox Mercator 정규화 좌표
+ */
+export interface MercatorCoord {
+  x: number;
+  y: number;
+  z?: number; // 고도
+}
+
+/**
+ * 게임 월드 정보
+ */
+export interface GameState {
+  isInitialized: boolean;
+  isRunning: boolean;
+  isPaused: boolean;
+  currentTime: number;
+  deltaTime: number;
+}
+
+/**
+ * 플레이어 (캐릭터) 상태
+ */
+export interface PlayerState {
+  position: LngLat; // GPS 좌표
+  worldPosition: THREE.Vector3;
+  heading: number; // 라디안 (0 = 북쪽)
+  velocity: number; // m/s
+  isMoving: boolean;
+  animationState: 'idle' | 'walk' | 'run';
+  height: number; // 캐릭터 높이 (미터)
+}
+
+/**
+ * 카메라 설정
+ */
+export interface CameraConfig {
+  distance: number; // 캐릭터 뒤 거리
+  height: number; // 카메라 높이
+  lookAheadDistance: number; // 앞쪽 시야 거리
+  lerpAlpha: number; // 보간 가중치 (0~1)
+  verticalAngle: number; // 위 아래 기울임 각도 (라디안)
+}
+
+/**
+ * 경로 정보
+ */
+export interface Route {
+  id: string;
+  points: LngLat[]; // 경로 포인트
+  distance: number; // 총 거리 (미터)
+  duration: number; // 예상 시간 (초)
+  worldPoints: THREE.Vector3[]; // Three.js 좌표로 변환된 포인트
+  mesh?: THREE.Mesh; // 시각화 메시
+  currentIndex: number; // 현재 경로 포인트 인덱스
+}
+
+/**
+ * 물리 엔진 월드 설정
+ */
+export interface PhysicsConfig {
+  gravity: [number, number, number];
+  maxVelocity: number;
+  acceleration: number;
+  friction: number;
+}
+
+/**
+ * 렌더링 설정
+ */
+export interface RenderConfig {
+  antialias: boolean;
+  shadowMap: boolean;
+  shadowMapSize: 1024 | 2048 | 4096;
+  pixelRatio: number;
+  exposureTone: number;
+}
+
+/**
+ * Mapbox 설정
+ */
+export interface MapboxConfig {
+  accessToken: string;
+  center: LngLat;
+  zoom: number;
+  pitch: number;
+  bearing: number;
+  style: string;
+}
+
+/**
+ * glTF 모델 정보
+ */
+export interface CharacterModel {
+  scene: THREE.Group;
+  animations: THREE.AnimationClip[];
+  mixer: THREE.AnimationMixer;
+  actions: {
+    idle?: THREE.AnimationAction;
+    walk?: THREE.AnimationAction;
+    run?: THREE.AnimationAction;
+  };
+}
+
+/**
+ * 애니메이션 상태
+ */
+export interface AnimationState {
+  current: 'idle' | 'walk' | 'run';
+  previous: 'idle' | 'walk' | 'run';
+  transitionDuration: number;
+}
+
+/**
+ * 좌표 변환 기능
+ */
+export interface CoordinateConverter {
+  lngLatToWorld(lngLat: LngLat, elevation?: number): THREE.Vector3;
+  worldToLngLat(worldPos: THREE.Vector3): LngLat;
+  updateCenter(lngLat: LngLat): void;
+}
+
+/**
+ * 카메라 시스템 인터페이스
+ */
+export interface ICameraSystem {
+  update(playerPos: THREE.Vector3, playerHeading: number, deltaTime: number): void;
+  getCamera(): THREE.PerspectiveCamera;
+  setCameraOffset(config: Partial<CameraConfig>): void;
+}
+
+/**
+ * 경로 시스템 인터페이스
+ */
+export interface IRouteSystem {
+  loadRoute(start: LngLat, end: LngLat): Promise<Route>;
+  visualizeRoute(route: Route): THREE.Mesh;
+  findClosestPointOnRoute(worldPos: THREE.Vector3, route: Route): {point: THREE.Vector3, index: number};
+  getNextWaypoint(worldPos: THREE.Vector3, route: Route, lookahead: number): THREE.Vector3;
+}
+
+/**
+ * 플레이어 시스템 인터페이스
+ */
+export interface IPlayerSystem {
+  initialize(gltfPath: string): Promise<CharacterModel>;
+  update(gpsPosition: LngLat, deltaTime: number): void;
+  setTarget(target: THREE.Vector3): void;
+  setState(state: Partial<PlayerState>): void;
+  getState(): PlayerState;
+}
+
+/**
+ * 애니메이션 시스템 인터페이스
+ */
+export interface IAnimationSystem {
+  transitionTo(state: 'idle' | 'walk' | 'run', duration?: number): void;
+  getCurrentState(): AnimationState;
+  update(deltaTime: number): void;
+}
+
+/**
+ * 물리 엔진 관리 인터페이스
+ */
+export interface IPhysicsManager {
+  initialize(config: PhysicsConfig): void;
+  step(deltaTime: number): void;
+  createCharacterBody(position: THREE.Vector3): any; // Rapier RigidBody
+  dispose(): void;
+}
+
+/**
+ * Three.js 관리 인터페이스
+ */
+export interface IThreeManager {
+  initialize(container: HTMLElement, config: RenderConfig): void;
+  getScene(): THREE.Scene;
+  getRenderer(): THREE.WebGLRenderer;
+  getCamera(): THREE.PerspectiveCamera;
+  render(): void;
+  dispose(): void;
+}
+
+/**
+ * Mapbox 관리 인터페이스
+ */
+export interface IMapboxManager {
+  initialize(container: HTMLElement, config: MapboxConfig): void;
+  getMap(): any; // mapboxgl.Map
+  getCoordinateConverter(): CoordinateConverter;
+  getCenter(): LngLat;
+  dispose(): void;
+}
+
+/**
+ * 경로 추종 결과
+ */
+export interface PathFollowResult {
+  currentWaypoint: THREE.Vector3;
+  nextWaypoint: THREE.Vector3;
+  distance: number;
+  isRouteComplete: boolean;
+}
+
+/**
+ * 지형 고도 데이터
+ */
+export interface TerrainData {
+  elevation: number;
+  normal: THREE.Vector3;
+  slope: number;
+}
+
+/**
+ * 게임 이벤트 종류
+ */
+export type GameEvent = 
+  | {type: 'player-move', position: THREE.Vector3}
+  | {type: 'route-complete', routeId: string}
+  | {type: 'animation-change', state: 'idle' | 'walk' | 'run'}
+  | {type: 'collision', objects: THREE.Object3D[]}
+  | {type: 'fps-warning', fps: number};
+
+/**
+ * 게임 이벤트 구독 콜백
+ */
+export type GameEventListener = (event: GameEvent) => void;

@@ -240,24 +240,7 @@ function App() {
 
   const toggleMapFull = (e) => {
     e && e.stopPropagation();
-
-    if (!isMapFull) {
-      // 지도 진입
-      console.log('🗺️ 지도 진입 - isMapFull:', false, '→ true');
-      setIsMapFull(true);
-      // ⚠️ initialPosition을 건드리지 않음! (자동 위치 복구 방지)
-    } else {
-      // 지도 종료: 저장된 Level1 위치로 복귀
-      console.log('🗺️ 지도 종료 - isMapFull:', true, '→ false');
-      const posToRestore = level1PositionRef.current || level1Position;
-      if (posToRestore) {
-        console.log('📍 저장된 위치로 복귀:', posToRestore);
-        setInitialPosition(posToRestore);
-      } else {
-        console.warn('⚠️ 복귀할 위치가 없습니다');
-      }
-      setIsMapFull(false);
-    }
+    navigate('/map-game');
   };
 
   // Helper: request geolocation and set initialPosition using provided project helper

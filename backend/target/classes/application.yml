@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: 3d-community-backend
+
+  # 데이터베이스 설정 (PostgreSQL - Supabase Session Pooler)
+  datasource:
+    url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require&prepareThreshold=0
+    driver-class-name: org.postgresql.Driver
+    username: postgres.krnevmhwahnxiqvyrjeu
+    password: "!Q@W#E$R!"
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: ${DB_DDL_AUTO:update}
+    show-sql: ${DB_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # CORS 설정
+  web:
+    cors:
+      allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+
+# 서버 포트
+server:
+  port: ${SERVER_PORT:8080}
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:3d-community-secret-key-please-change-this-in-production-environment-for-security}
+  expiration: ${JWT_EXPIRATION:86400000} # 24시간 (밀리초)
+
+# 토스페이먼츠 설정
+toss:
+  payments:
+    secret-key: ${TOSS_SECRET_KEY:test_sk_dummy}
+    client-key: ${TOSS_CLIENT_KEY:test_ck_dummy}
+    api-url: https://api.tosspayments.com/v1/payments
+
+# 로깅 설정
+logging:
+  level:
+    com.community: ${LOG_LEVEL:DEBUG}
+    org.springframework.web: INFO
+    org.springframework.security: ${LOG_LEVEL:DEBUG}
+    org.springframework.messaging: INFO
+    org.springframework.web.SimpLogging: INFO

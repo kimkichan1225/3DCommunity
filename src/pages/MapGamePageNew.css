@@ -1,0 +1,319 @@
+.map-game-split-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  background: #000;
+  flex-direction: column;
+}
+
+/* 좌측: Three.js 캐릭터 영역 */
+.map-game-left {
+  position: relative;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(180deg, #87CEEB 0%, #2d5016 50%);
+  border-right: 2px solid #333;
+}
+
+/* 우측: Mapbox 지도 영역 */
+.map-game-right {
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  right: 0;
+  top: 0;
+  background: #f0f0f0;
+}
+
+/* 하단 통합 UI 바 */
+.map-game-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+  background: linear-gradient(to top, 
+    rgba(15, 15, 35, 0.98) 0%, 
+    rgba(25, 45, 85, 0.96) 40%,
+    rgba(20, 35, 65, 0.94) 100%);
+  border-top: 3px solid rgba(100, 180, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  z-index: 150;
+  box-shadow: 
+    0 -8px 30px rgba(0, 50, 100, 0.6),
+    inset 0 2px 0 rgba(100, 180, 255, 0.2),
+    inset 0 -2px 10px rgba(0, 0, 0, 0.3);
+  gap: 24px;
+  backdrop-filter: blur(10px);
+}
+
+/* 하단 바 좌측 (뒤로가기) */
+.bottom-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+}
+
+/* 뒤로가기 버튼 */
+.map-game-back-button {
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #FF6B6B 0%, #EE5A52 50%, #DD3333 100%);
+  color: #fff;
+  border: 2px solid #CC3333;
+  border-radius: 28px;
+  cursor: pointer;
+  font-family: 'Arial', sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  box-shadow: 
+    0 8px 25px rgba(255, 100, 100, 0.45),
+    inset 0 1px 0 rgba(255, 150, 150, 0.5),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.map-game-back-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), transparent);
+  transition: left 0.4s ease;
+}
+
+.map-game-back-button:hover::before {
+  left: 100%;
+}
+
+.map-game-back-button:hover {
+  background: linear-gradient(135deg, #EE5A52 0%, #DD3333 50%, #CC1111 100%);
+  transform: translateY(-4px);
+  box-shadow: 
+    0 10px 30px rgba(255, 100, 100, 0.55),
+    inset 0 1px 0 rgba(255, 150, 150, 0.6),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.map-game-back-button:active {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(255, 100, 100, 0.35),
+    inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 하단 바 우측 (액션 버튼) */
+.bottom-bar-right {
+  display: flex;
+  gap: 14px;
+  flex: 0.9;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* 하단 바 버튼 */
+.bottom-bar-button {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+  border: 2.5px solid #4C1D95;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 8px 25px rgba(124, 58, 237, 0.4),
+    inset 0 1px 0 rgba(200, 150, 255, 0.3),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.bottom-bar-button::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.12), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.bottom-bar-button:hover::after {
+  opacity: 1;
+}
+
+.bottom-bar-button:hover {
+  background: linear-gradient(135deg, #5B21B6 0%, #3F0F7C 100%);
+  transform: translateY(-4px) scale(1.12);
+  box-shadow: 
+    0 12px 30px rgba(124, 58, 237, 0.55),
+    inset 0 1px 0 rgba(200, 150, 255, 0.4),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.bottom-bar-button:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow: 
+    0 4px 12px rgba(124, 58, 237, 0.3),
+    inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 중앙: 방 생성/입장 버튼 */
+.bottom-bar-center {
+  display: flex;
+  gap: 20px;
+  flex: 1.4;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 방 버튼 기본 스타일 */
+.room-button {
+  padding: 16px 44px;
+  border: 2px solid;
+  border-radius: 32px;
+  font-family: 'Arial', sans-serif;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.room-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.12);
+  transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.room-button:hover::before {
+  left: 100%;
+}
+
+/* 방 생성 버튼 */
+.room-create-button {
+  background: linear-gradient(135deg, #52C41A 0%, #389E0D 50%, #274E11 100%);
+  color: #fff;
+  border-color: #1F873D;
+  box-shadow: 
+    0 8px 25px rgba(82, 196, 26, 0.4),
+    inset 0 1px 0 rgba(150, 230, 100, 0.3),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.room-create-button:hover {
+  background: linear-gradient(135deg, #389E0D 0%, #274E11 50%, #1F873D 100%);
+  transform: translateY(-4px);
+  box-shadow: 
+    0 12px 30px rgba(82, 196, 26, 0.55),
+    inset 0 1px 0 rgba(150, 230, 100, 0.4),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.room-create-button:active {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(82, 196, 26, 0.3),
+    inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 방 입장 버튼 */
+.room-join-button {
+  background: linear-gradient(135deg, #1890FF 0%, #0050B3 50%, #0A2F7F 100%);
+  color: #fff;
+  border-color: #0050B3;
+  box-shadow: 
+    0 8px 25px rgba(24, 144, 255, 0.4),
+    inset 0 1px 0 rgba(100, 200, 255, 0.3),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.room-join-button:hover {
+  background: linear-gradient(135deg, #0050B3 0%, #0A2F7F 50%, #061D4D 100%);
+  transform: translateY(-4px);
+  box-shadow: 
+    0 12px 30px rgba(24, 144, 255, 0.55),
+    inset 0 1px 0 rgba(100, 200, 255, 0.4),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.room-join-button:active {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(24, 144, 255, 0.3),
+    inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* HUD (기존 - 숨김) */
+.map-game-hud {
+  display: none;
+}
+
+/* 로딩 오버레이 */
+.map-game-loading-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: #0f0;
+  padding: 20px 40px;
+  border-radius: 8px;
+  font-family: monospace;
+  border: 1px solid #0f0;
+  z-index: 200;
+}
+
+/* 반응형 레이아웃 */
+@media (max-width: 1024px) {
+  .map-game-left {
+    width: 100%;
+    height: calc(100% - 70px);
+    border-right: none;
+    border-bottom: 2px solid #333;
+  }
+
+  .map-game-right {
+    width: 100%;
+    height: calc(100% - 70px);
+  }
+
+  .bottom-bar-center {
+    display: none;
+  }
+
+  .status-info {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
