@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import paymentService from '../services/paymentService';
 import './PaymentResult.css';
@@ -9,10 +9,17 @@ function PaymentSuccess() {
   const [processing, setProcessing] = useState(true);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const approvePaymentRef = useRef(false); // 중복 호출 방지 플래그
 
   useEffect(() => {
+    // React.StrictMode에서 useEffect가 2번 실행되는 것을 방지
+    if (approvePaymentRef.current) {
+      console.log('[PaymentSuccess] 이미 결제 승인 요청을 보냈습니다. 중복 호출 방지.');
+      return;
+    }
+    approvePaymentRef.current = true;
     approvePayment();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const approvePayment = async () => {
     const orderId = searchParams.get('orderId');

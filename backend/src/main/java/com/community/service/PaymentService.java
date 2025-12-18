@@ -138,26 +138,36 @@ public class PaymentService {
 
     /**
      * 토스페이먼츠 결제 승인
+     * SERIALIZABLE 격리 수준으로 동시 요청 방지
      */
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.SERIALIZABLE)
     public PaymentResponseDTO approvePayment(Long userId, PaymentApproveRequestDTO request) {
+        log.info("[PaymentService] 결제 승인 시작: orderId={}, userId={}, paymentKey={}", 
+            request.getOrderId(), userId, request.getPaymentKey());
+        
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         PaymentHistory paymentHistory = paymentHistoryRepository.findByOrderId(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Payment history not found"));
 
+        // 소유권 확인
         if (!paymentHistory.getUser().getId().equals(userId)) {
+            log.warn("[PaymentService] 권한 없음: orderId={}, requestUserId={}, ownerUserId={}", 
+                request.getOrderId(), userId, paymentHistory.getUser().getId());
             return PaymentResponseDTO.builder()
                     .success(false)
                     .message("Unauthorized")
                     .build();
         }
 
+        // 상태 체크 - PENDING이 아니면 이미 처리된 결제
         if (paymentHistory.getStatus() != PaymentHistory.PaymentStatus.PENDING) {
+            log.warn("[PaymentService] 이미 처리된 결제: orderId={}, currentStatus={}", 
+                request.getOrderId(), paymentHistory.getStatus());
             return PaymentResponseDTO.builder()
                     .success(false)
-                    .message("Payment already processed")
+                    .message("Payment already processed: " + paymentHistory.getStatus())
                     .build();
         }
 
