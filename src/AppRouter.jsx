@@ -12,9 +12,9 @@ import ChatLogManagement from './pages/admin/ChatLogManagement';
 import { ShopManagement } from './features/shop';
 import ProtectedRoute from './components/ProtectedRoute';
 import MinigameSelectPage from './pages/MinigameSelectPage';
+import MapGamePageNew from './pages/MapGamePageNew';
 import PaymentSuccess from './features/payment/components/PaymentSuccess';
 import PaymentFail from './features/payment/components/PaymentFail';
-import MapGamePageNew from './pages/MapGamePageNew';
 
 function AppRouter() {
   return (
@@ -51,7 +51,7 @@ function AppRouter() {
         <Route path="/minigame-select" element={<MinigameSelectPage />} />
         <Route path="/map-game" element={<MapGamePageNew />} />
 
-        {/* 결제 결과 페이지 */}
+        {/* 결제 결과 페이지 (팝업에서 처리) */}
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/fail" element={<PaymentFail />} />
 

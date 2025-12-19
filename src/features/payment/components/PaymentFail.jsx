@@ -1,51 +1,30 @@
-import React from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import './PaymentResult.css';
+import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import './PaymentSuccess.css'; // 공유 스타일 사용
 
 function PaymentFail() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const errorCode = searchParams.get('code');
-  const errorMessage = searchParams.get('message');
+  useEffect(() => {
+    const message = searchParams.get('message') || '결제에 실패했습니다.';
 
-  const handleGoHome = () => {
-    navigate('/');
-  };
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({
+        type: 'PAYMENT_ERROR',
+        error: message
+      }, window.location.origin);
+    }
 
-  const handleRetry = () => {
-    navigate('/');
-    // TODO: 금화 충전 모달 다시 열기
-  };
+    setTimeout(() => {
+      window.close();
+    }, 500);
+  }, [searchParams]);
 
   return (
-    <div className="payment-result-page">
-      <div className="payment-result-card error">
-        <div className="result-icon">❌</div>
-        <h2>결제 실패</h2>
-
-        <div className="error-details">
-          {errorMessage && (
-            <p className="error-message">{errorMessage}</p>
-          )}
-          {errorCode && (
-            <p className="error-code">오류 코드: {errorCode}</p>
-          )}
-        </div>
-
-        <p className="fail-description">
-          결제가 정상적으로 처리되지 않았습니다.<br />
-          다시 시도해주세요.
-        </p>
-
-        <div className="button-group">
-          <button className="retry-button" onClick={handleRetry}>
-            다시 시도
-          </button>
-          <button className="home-button secondary" onClick={handleGoHome}>
-            홈으로 돌아가기
-          </button>
-        </div>
+    <div className="payment-success-modal-overlay">
+      <div className="payment-success-modal">
+        <h2 style={{ color: '#ff4444' }}>결제 실패</h2>
+        <p>요청을 처리할 수 없습니다.</p>
       </div>
     </div>
   );

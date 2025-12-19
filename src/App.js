@@ -41,6 +41,7 @@ import { GoldChargeModal } from './features/payment';
 
 function App() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const characterRef = useRef();
   const mainCameraRef = useRef();
   const level1PositionRef = useRef(null); // Level1 위치를 ref로 저장 (즉시 접근 용도)
@@ -835,22 +836,41 @@ function App() {
     const user = authService.getCurrentUser();
 
     if (token && user) {
-      console.log('[App] 로그인 상태 복원:', user.username);
-      setIsLoggedIn(true);
-      setShowLanding(false);
-      setUsername(user.username || 'Guest');
-      setUserId(user.id || String(Date.now()));
-      setUserProfile(user);
+      console.log('[App] 토큰 발견 - 서버 유효성 검증 시작:', user.username);
 
-      // 재화 정보 로드
-      currencyService.getCurrency()
+      // 서버에서 토큰 유효성 확인
+      authService.fetchCurrentUser()
+        .then(validUser => {
+          if (validUser) {
+            console.log('[App] ✅ 토큰 유효 - 로그인 상태 복원:', validUser.username);
+            setIsLoggedIn(true);
+            setShowLanding(false);
+            setUsername(validUser.username || 'Guest');
+            setUserId(validUser.id || String(Date.now()));
+            setUserProfile(validUser);
+
+            // 재화 정보 로드
+            return currencyService.getCurrency();
+          } else {
+            console.log('[App] ❌ 토큰 무효 - 로그아웃 처리');
+            authService.logout();
+            return null;
+          }
+        })
         .then(currency => {
-          setSilverCoins(currency.silverCoins || 0);
-          setGoldCoins(currency.goldCoins || 0);
-          console.log('✅ 재화 정보 복원:', currency);
+          if (currency) {
+            setSilverCoins(currency.silverCoins || 0);
+            setGoldCoins(currency.goldCoins || 0);
+            console.log('[App] ✅ 재화 정보 복원:', currency);
+          }
         })
         .catch(error => {
-          console.error('재화 정보 로드 실패:', error);
+          console.error('[App] ❌ 로그인 복원 실패:', error);
+          // 401 에러 (토큰 만료) 또는 네트워크 에러
+          if (error.response?.status === 401) {
+            console.log('[App] 토큰 만료 - 로그아웃');
+          }
+          authService.logout();
           setSilverCoins(0);
           setGoldCoins(0);
         });
@@ -859,21 +879,7 @@ function App() {
     }
   }, []); // 컴포넌트 마운트 시 1회만 실행
 
-  // 결제 URL 파라미터 감지 및 모달 자동 열기
-  useEffect(() => {
-    const orderId = searchParams.get('orderId');
-    const paymentKey = searchParams.get('paymentKey');
-    const amount = searchParams.get('amount');
-    const code = searchParams.get('code');
-    const message = searchParams.get('message');
 
-    // 결제 성공 또는 실패 파라미터가 있으면 금화 충전 모달 자동 열기
-    // 단, 로그인 상태일 때만 (비로그인 상태에서는 랜딩 페이지 표시)
-    if (isLoggedIn && ((orderId && paymentKey && amount) || (code && message))) {
-      console.log('[App] 결제 URL 파라미터 감지 - 금화 충전 모달 자동 열기');
-      setShowGoldChargeModal(true);
-    }
-  }, [searchParams, isLoggedIn]);
 
 
 

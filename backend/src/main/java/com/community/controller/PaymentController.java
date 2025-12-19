@@ -97,6 +97,17 @@ public class PaymentController {
     }
 
     /**
+     * 특정 주문의 결제 상태 조회
+     */
+    @GetMapping("/status/{orderId}")
+    public ResponseEntity<PaymentResponseDTO> getPaymentStatus(
+            @PathVariable String orderId,
+            Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(paymentService.getPaymentStatus(user.getId(), orderId));
+    }
+
+    /**
      * 내 결제 내역 조회
      */
     @GetMapping("/history")
