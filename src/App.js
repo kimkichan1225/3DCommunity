@@ -63,6 +63,7 @@ function App() {
   const [minigameModalMode, setMinigameModalMode] = useState('lobby'); // 'lobby' or 'create'
   const [showShopModal, setShowShopModal] = useState(false);
   const [showGoldChargeModal, setShowGoldChargeModal] = useState(false);
+  const [goldChargeModalTab, setGoldChargeModalTab] = useState('charge'); // 'charge' | 'exchange'
   const [shouldAutoAttendance, setShouldAutoAttendance] = useState(false);
   const [showPhoneUI, setShowPhoneUI] = useState(false);
   const [username, setUsername] = useState('');
@@ -911,7 +912,14 @@ function App() {
             <CurrencyDisplay
               silverCoins={Number(silverCoins) || 0}
               goldCoins={Number(goldCoins) || 0}
-              onChargeGold={() => setShowGoldChargeModal(true)}
+              onChargeGold={() => {
+                setGoldChargeModalTab('charge');
+                setShowGoldChargeModal(true);
+              }}
+              onExchangeSilver={() => {
+                setGoldChargeModalTab('exchange');
+                setShowGoldChargeModal(true);
+              }}
             />
           </div>
         </>
@@ -1239,6 +1247,7 @@ function App() {
       {showGoldChargeModal && (
         <GoldChargeModal
           onClose={() => setShowGoldChargeModal(false)}
+          initialTab={goldChargeModalTab}
           onChargeSuccess={(result) => {
             console.log('[App] 결제 성공 콜백:', result);
             // 재화 업데이트

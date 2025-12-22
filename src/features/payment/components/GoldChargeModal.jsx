@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import paymentService from '../services/paymentService';
+import CurrencyExchangeModal from './CurrencyExchangeModal';
 import './GoldChargeModal.css';
 
-function GoldChargeModal({ onClose, onChargeSuccess }) {
+function GoldChargeModal({ onClose, onChargeSuccess, initialTab = 'charge' }) {
+  const [activeTab, setActiveTab] = useState(initialTab); // 'charge' | 'exchange'
   const [selectedAmount, setSelectedAmount] = useState(null);
   const [processing, setProcessing] = useState(false);
 
@@ -253,6 +255,18 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
     setSelectedAmount(null);
   };
 
+  // 은화 교환 탭 렌더링
+  if (activeTab === 'exchange') {
+    return (
+      <CurrencyExchangeModal
+        onClose={onClose}
+        onExchangeSuccess={(data) => {
+          if (onChargeSuccess) onChargeSuccess(data);
+        }}
+      />
+    );
+  }
+
   // 결제 처리 중 화면
   if (processing) {
     return (
@@ -343,7 +357,32 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
     <div className="gold-charge-modal-overlay" onClick={onClose}>
       <div className="gold-charge-modal" onClick={(e) => e.stopPropagation()}>
         <div className="gold-charge-modal__header">
-          <h2>💰 금화 충전</h2>
+          <div className="modal-tabs" style={{ display: 'flex', gap: '30px' }}>
+            <h2
+              onClick={() => setActiveTab('charge')}
+              style={{
+                cursor: 'pointer',
+                margin: 0,
+                color: activeTab === 'charge' ? '#FFD700' : 'rgba(255, 215, 0, 0.4)',
+                borderBottom: activeTab === 'charge' ? '2px solid #FFD700' : 'none',
+                paddingBottom: '5px'
+              }}
+            >
+              💰 금화 충전
+            </h2>
+            <h2
+              onClick={() => setActiveTab('exchange')}
+              style={{
+                cursor: 'pointer',
+                margin: 0,
+                color: activeTab === 'exchange' ? '#FFD700' : 'rgba(255, 215, 0, 0.4)',
+                borderBottom: activeTab === 'exchange' ? '2px solid #FFD700' : 'none',
+                paddingBottom: '5px'
+              }}
+            >
+              🥈 은화 교환
+            </h2>
+          </div>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 

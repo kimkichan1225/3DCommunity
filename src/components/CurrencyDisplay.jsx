@@ -7,7 +7,7 @@ import './CurrencyDisplay.css';
  * - Silver Coin: 일반 재화
  * - Gold Coin: 유료 재화
  */
-function CurrencyDisplay({ silverCoins = 0, goldCoins = 0, onChargeGold }) {
+function CurrencyDisplay({ silverCoins = 0, goldCoins = 0, onChargeGold, onExchangeSilver }) {
   // 숫자를 천 단위 콤마로 포맷
   const formatNumber = (num) => {
     return num.toLocaleString();
@@ -34,6 +34,15 @@ function CurrencyDisplay({ silverCoins = 0, goldCoins = 0, onChargeGold }) {
       <div className="currency-item silver">
         <img src="/resources/Icon/Silver-Coin.png" alt="Silver Coin" className="currency-icon" />
         <span className="currency-amount">{formatNumber(silverCoins)}</span>
+        {onExchangeSilver && (
+          <button
+            className="charge-button silver-exchange"
+            onClick={onExchangeSilver}
+            title="은화 교환"
+          >
+            +
+          </button>
+        )}
       </div>
     </div>
   );

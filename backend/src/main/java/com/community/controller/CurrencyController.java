@@ -121,4 +121,24 @@ public class CurrencyController {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
+    /**
+     * Gold Coin을 Silver Coin으로 교환 (1:100)
+     */
+    @PostMapping("/exchange/gold-to-silver")
+    public ResponseEntity<?> exchangeGoldToSilver(
+            @AuthenticationPrincipal User user,
+            @RequestBody Map<String, Integer> request) {
+        try {
+            Integer goldAmount = request.get("goldAmount");
+            if (goldAmount == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "goldAmount is required"));
+            }
+            Map<String, Integer> currency = currencyService.exchangeGoldToSilver(user.getId(), goldAmount);
+            return ResponseEntity.ok(currency);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

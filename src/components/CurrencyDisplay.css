@@ -68,13 +68,23 @@
   transform: scale(1.05);
 }
 
+.charge-button.silver-exchange {
+  background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+  box-shadow: 0 2px 8px rgba(192, 192, 192, 0.4);
+}
+
+.charge-button.silver-exchange:hover {
+  box-shadow: 0 4px 12px rgba(192, 192, 192, 0.6);
+}
+
 /* 지도 모드일 때 위치 조정 */
 .currency-display-bottom-right {
   position: fixed;
   bottom: 180px;
   right: 20px;
   z-index: 950;
-  transform: translateY(15px); /* 프로필 중앙과 맞추기 */
+  transform: translateY(15px);
+  /* 프로필 중앙과 맞추기 */
 }
 
 /* 일반 모드일 때 위치 조정 */
@@ -83,7 +93,8 @@
   top: 20px;
   left: 180px;
   z-index: 950;
-  transform: translateY(15px); /* 프로필 중앙과 맞추기 */
+  transform: translateY(15px);
+  /* 프로필 중앙과 맞추기 */
 }
 
 /* 반응형 디자인 */
