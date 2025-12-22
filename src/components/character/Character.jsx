@@ -23,7 +23,7 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   const [currentAnimation, setCurrentAnimation] = useState('none');
 
   // 점프 관련 변수
-  const jumpPowerRef = useRef(10); // 점프 힘
+  const jumpPowerRef = useRef(20); // 점프 힘 (높을수록 높이 점프)
   const isJumpingRef = useRef(false);
   const jumpSpeedRef = useRef(0.5); // 애니메이션 속도
   const prevSpaceRef = useRef(false); // 이전 프레임의 spacebar 상태
