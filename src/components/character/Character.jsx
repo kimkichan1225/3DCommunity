@@ -23,11 +23,12 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   const [currentAnimation, setCurrentAnimation] = useState('none');
 
   // 점프 관련 변수
-  const jumpPowerRef = useRef(12);
+  const jumpPowerRef = useRef(10); // 점프 높이 조정
   const gravityRef = useRef(-30);
   const isJumpingRef = useRef(false);
   const velocityYRef = useRef(0);
   const jumpSpeedRef = useRef(0.5);
+  const prevSpaceRef = useRef(false); // 이전 프레임의 spacebar 상태 (키 누른 "순간" 감지용)
 
   // Multiplayer position update throttle
   const lastPositionUpdateRef = useRef(0);
@@ -210,8 +211,8 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       return;
     }
 
-    // 점프 입력 처리
-    if (space && !isJumpingRef.current) {
+    // 점프 입력 처리 (키를 "누른 순간"만 감지)
+    if (!prevSpaceRef.current && space && !isJumpingRef.current) {
       isJumpingRef.current = true;
       velocityYRef.current = jumpPowerRef.current;
 
@@ -233,6 +234,9 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       }
     }
 
+    // 이전 프레임의 spacebar 상태 저장
+    prevSpaceRef.current = space;
+
     // 점프 물리 시뮬레이션
     if (isJumpingRef.current) {
       // 중력 적용
@@ -242,11 +246,11 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       const rbPosition = rigidBodyRef.current.translation();
       const newY = rbPosition.y + velocityYRef.current * delta;
 
-      // 착지 감지 (초기 위치인 Y=5 이하로 내려가면)
-      if (newY <= 5) {
+      // 착지 감지 (Y=3 이하로 내려가면)
+      if (newY <= 3) {
         isJumpingRef.current = false;
         velocityYRef.current = 0;
-        rigidBodyRef.current.setTranslation({ x: rbPosition.x, y: 5, z: rbPosition.z }, true);
+        rigidBodyRef.current.setTranslation({ x: rbPosition.x, y: 3, z: rbPosition.z }, true);
 
         // 착지 시 애니메이션 전환 (이동 중이면 Walk/Run, 정지면 Idle)
         let landingAnim = 'Idle';
