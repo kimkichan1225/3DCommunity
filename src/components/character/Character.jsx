@@ -19,8 +19,15 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
   const { actions } = useAnimations(animations, characterRef);
 
-  const { forward, backward, left, right, shift } = useKeyboardControls();
+  const { forward, backward, left, right, shift, space } = useKeyboardControls();
   const [currentAnimation, setCurrentAnimation] = useState('none');
+
+  // 점프 관련 변수
+  const jumpPowerRef = useRef(12);
+  const gravityRef = useRef(-30);
+  const isJumpingRef = useRef(false);
+  const velocityYRef = useRef(0);
+  const jumpSpeedRef = useRef(0.5);
 
   // Multiplayer position update throttle
   const lastPositionUpdateRef = useRef(0);
@@ -168,6 +175,9 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   }, [initialPosition, isMapFull]);
 
   useEffect(() => {
+    // 점프 중일 때는 애니메이션을 useFrame에서 처리하므로 여기서는 건너뜀
+    if (isJumpingRef.current) return;
+
     let animToPlay = 'Idle';
     if (forward || backward || left || right) {
       animToPlay = shift ? 'Run' : 'Walk';
@@ -198,6 +208,65 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       // 속도를 0으로 설정하여 정지
       rigidBodyRef.current.setLinvel({ x: 0, y: rigidBodyRef.current.linvel().y, z: 0 }, true);
       return;
+    }
+
+    // 점프 입력 처리
+    if (space && !isJumpingRef.current) {
+      isJumpingRef.current = true;
+      velocityYRef.current = jumpPowerRef.current;
+
+      // Jump 애니메이션 즉시 재생
+      if (actions['Jump']) {
+        const oldAction = actions[currentAnimation];
+        const jumpAction = actions['Jump'];
+
+        if (oldAction && oldAction !== jumpAction) oldAction.fadeOut(0.2);
+
+        jumpAction.reset();
+        jumpAction.setLoop(THREE.LoopOnce, 1);
+        jumpAction.clampWhenFinished = true;
+        jumpAction.time = 0.25;
+        jumpAction.timeScale = jumpSpeedRef.current;
+        jumpAction.fadeIn(0.2).play();
+
+        setCurrentAnimation('Jump');
+      }
+    }
+
+    // 점프 물리 시뮬레이션
+    if (isJumpingRef.current) {
+      // 중력 적용
+      velocityYRef.current += gravityRef.current * delta;
+
+      // 현재 위치 가져오기
+      const rbPosition = rigidBodyRef.current.translation();
+      const newY = rbPosition.y + velocityYRef.current * delta;
+
+      // 착지 감지 (초기 위치인 Y=5 이하로 내려가면)
+      if (newY <= 5) {
+        isJumpingRef.current = false;
+        velocityYRef.current = 0;
+        rigidBodyRef.current.setTranslation({ x: rbPosition.x, y: 5, z: rbPosition.z }, true);
+
+        // 착지 시 애니메이션 전환 (이동 중이면 Walk/Run, 정지면 Idle)
+        let landingAnim = 'Idle';
+        if (forward || backward || left || right) {
+          landingAnim = shift ? 'Run' : 'Walk';
+        }
+
+        if (actions[landingAnim] && currentAnimation !== landingAnim) {
+          const oldAction = actions[currentAnimation];
+          const newAction = actions[landingAnim];
+
+          if (oldAction) oldAction.fadeOut(0.3);
+          if (newAction) newAction.reset().fadeIn(0.3).play();
+
+          setCurrentAnimation(landingAnim);
+        }
+      } else {
+        // 점프 중 위치 업데이트
+        rigidBodyRef.current.setTranslation({ x: rbPosition.x, y: newY, z: rbPosition.z }, true);
+      }
     }
 
     const speed = shift ? 20 : 10; // 물리 기반 속도 (걷기: 10, 뛰기: 20)
