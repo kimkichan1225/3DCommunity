@@ -90,6 +90,21 @@ const paymentService = {
   },
 
   /**
+   * 결제 상태 조회
+   */
+  async getPaymentStatus(orderId) {
+    try {
+      const response = await axios.get(`${API_URL}/api/payment/status/${orderId}`, {
+        headers: getAuthHeader()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch payment status:', error);
+      throw error;
+    }
+  },
+
+  /**
    * 결제 내역 조회
    */
   async getPaymentHistory() {

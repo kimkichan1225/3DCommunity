@@ -273,6 +273,32 @@ public class PaymentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 특정 주문의 결제 상태 조회
+     */
+    @Transactional(readOnly = true)
+    public PaymentResponseDTO getPaymentStatus(Long userId, String orderId) {
+        PaymentHistory paymentHistory = paymentHistoryRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment history not found"));
+
+        // 소유권 확인
+        if (!paymentHistory.getUser().getId().equals(userId)) {
+            return PaymentResponseDTO.builder()
+                    .success(false)
+                    .message("Unauthorized")
+                    .build();
+        }
+
+        return PaymentResponseDTO.builder()
+                .success(true)
+                .status(paymentHistory.getStatus().name())
+                .orderId(paymentHistory.getOrderId())
+                .goldAmount(paymentHistory.getGoldAmount())
+                .remainingGoldCoins(paymentHistory.getUser().getGoldCoins())
+                .paymentHistory(convertToPaymentHistoryDTO(paymentHistory))
+                .build();
+    }
+
     // ============ 변환 메서드 ============
 
     private GoldPackageDTO convertToGoldPackageDTO(GoldPackage goldPackage) {
