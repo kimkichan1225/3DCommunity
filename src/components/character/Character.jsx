@@ -23,12 +23,11 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   const [currentAnimation, setCurrentAnimation] = useState('none');
 
   // 점프 관련 변수
-  const jumpPowerRef = useRef(10); // 점프 높이 조정
-  const gravityRef = useRef(-30);
+  const jumpPowerRef = useRef(10); // 점프 힘
   const isJumpingRef = useRef(false);
-  const velocityYRef = useRef(0);
-  const jumpSpeedRef = useRef(0.5);
-  const prevSpaceRef = useRef(false); // 이전 프레임의 spacebar 상태 (키 누른 "순간" 감지용)
+  const jumpSpeedRef = useRef(0.5); // 애니메이션 속도
+  const prevSpaceRef = useRef(false); // 이전 프레임의 spacebar 상태
+  const jumpStartYRef = useRef(0); // 점프 시작 Y 위치
 
   // Multiplayer position update throttle
   const lastPositionUpdateRef = useRef(0);
@@ -211,12 +210,21 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       return;
     }
 
-    // 점프 입력 처리 (키를 "누른 순간"만 감지)
-    if (!prevSpaceRef.current && space && !isJumpingRef.current) {
-      isJumpingRef.current = true;
-      velocityYRef.current = jumpPowerRef.current;
+    // ===== 점프 입력 처리 =====
+    if (!isJumpingRef.current && !prevSpaceRef.current && space) {
+      // 점프 시작
+      const currentY = rigidBodyRef.current.translation().y;
+      const currentVel = rigidBodyRef.current.linvel();
 
-      // Jump 애니메이션 즉시 재생
+      isJumpingRef.current = true;
+      jumpStartYRef.current = currentY;
+
+      // Y velocity 설정 (점프!)
+      rigidBodyRef.current.setLinvel({ x: currentVel.x, y: jumpPowerRef.current, z: currentVel.z }, true);
+
+      console.log('🚀 점프 시작! Y:', currentY.toFixed(2), 'jumpPower:', jumpPowerRef.current);
+
+      // Jump 애니메이션 재생
       if (actions['Jump']) {
         const oldAction = actions[currentAnimation];
         const jumpAction = actions['Jump'];
@@ -234,25 +242,26 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       }
     }
 
-    // 이전 프레임의 spacebar 상태 저장
+    // 이전 프레임 spacebar 상태 저장
     prevSpaceRef.current = space;
 
-    // 점프 물리 시뮬레이션
+    // ===== 착지 감지 =====
     if (isJumpingRef.current) {
-      // 중력 적용
-      velocityYRef.current += gravityRef.current * delta;
+      const currentY = rigidBodyRef.current.translation().y;
+      const currentVel = rigidBodyRef.current.linvel();
 
-      // 현재 위치 가져오기
-      const rbPosition = rigidBodyRef.current.translation();
-      const newY = rbPosition.y + velocityYRef.current * delta;
-
-      // 착지 감지 (Y=3 이하로 내려가면)
-      if (newY <= 3) {
+      // 시작 높이 이하 + 아래로 떨어지는 중 = 착지
+      if (currentY <= jumpStartYRef.current && currentVel.y < 0) {
         isJumpingRef.current = false;
-        velocityYRef.current = 0;
-        rigidBodyRef.current.setTranslation({ x: rbPosition.x, y: 3, z: rbPosition.z }, true);
 
-        // 착지 시 애니메이션 전환 (이동 중이면 Walk/Run, 정지면 Idle)
+        // 위치 복구
+        const rbPos = rigidBodyRef.current.translation();
+        rigidBodyRef.current.setTranslation({ x: rbPos.x, y: jumpStartYRef.current, z: rbPos.z }, true);
+        rigidBodyRef.current.setLinvel({ x: currentVel.x, y: 0, z: currentVel.z }, true);
+
+        console.log('🎯 착지! Y:', currentY.toFixed(2));
+
+        // 착지 애니메이션 전환
         let landingAnim = 'Idle';
         if (forward || backward || left || right) {
           landingAnim = shift ? 'Run' : 'Walk';
@@ -267,12 +276,10 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
 
           setCurrentAnimation(landingAnim);
         }
-      } else {
-        // 점프 중 위치 업데이트
-        rigidBodyRef.current.setTranslation({ x: rbPosition.x, y: newY, z: rbPosition.z }, true);
       }
     }
 
+    // 이동 처리
     const speed = shift ? 20 : 10; // 물리 기반 속도 (걷기: 10, 뛰기: 20)
     const direction = new THREE.Vector3();
 
@@ -283,6 +290,7 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
 
     let targetAngleForNetwork = null; // 네트워크 전송용 각도 저장
 
+    // 이동 처리 (점프 중에도 동일하게 Rapier velocity 사용)
     if (direction.length() > 0) {
       direction.normalize();
 
@@ -300,12 +308,12 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       const currentVel = rigidBodyRef.current.linvel();
       rigidBodyRef.current.setLinvel({
         x: direction.x * speed,
-        y: currentVel.y, // Y축은 중력 유지
+        y: currentVel.y, // Y축은 점프 물리에서 이미 설정됨
         z: direction.z * speed
       });
 
       // 발걸음 소리 재생
-      if (currentAnimation === 'Walk' || currentAnimation === 'Run') {
+      if ((currentAnimation === 'Walk' || currentAnimation === 'Run') && !isJumpingRef.current) {
         const currentTime = Date.now();
         if (currentTime - lastStepTimeRef.current > stepIntervalRef.current * 1000) {
           playStepSound();
@@ -313,7 +321,7 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
         }
       }
     } else {
-      // 정지 시 속도 0
+      // 정지 시 X/Z 속도 0 (Y는 유지)
       const currentVel = rigidBodyRef.current.linvel();
       rigidBodyRef.current.setLinvel({ x: 0, y: currentVel.y, z: 0 });
     }
