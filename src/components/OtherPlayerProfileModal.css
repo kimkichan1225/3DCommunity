@@ -16,6 +16,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -37,13 +38,14 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.close-button {
+.other-player-profile-modal .close-button {
   position: absolute;
   top: 15px;
   right: 15px;
@@ -63,17 +65,17 @@
   padding: 0;
 }
 
-.close-button:hover {
+.other-player-profile-modal .close-button:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: rotate(90deg);
 }
 
-.profile-header {
+.other-player-profile-modal .profile-header {
   text-align: center;
   margin-bottom: 25px;
 }
 
-.profile-header h2 {
+.other-player-profile-modal .profile-header h2 {
   color: white;
   font-size: 28px;
   font-weight: bold;
@@ -81,13 +83,13 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.profile-content {
+.other-player-profile-modal .profile-content {
   display: flex;
   flex-direction: column;
   gap: 25px;
 }
 
-.avatar-section {
+.other-player-profile-modal .avatar-section {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -97,7 +99,7 @@
   backdrop-filter: blur(10px);
 }
 
-.user-info-section {
+.other-player-profile-modal .user-info-section {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 15px;
   padding: 20px;
@@ -107,7 +109,7 @@
   backdrop-filter: blur(10px);
 }
 
-.info-item {
+.other-player-profile-modal .info-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -115,18 +117,18 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.info-item:last-child {
+.other-player-profile-modal .info-item:last-child {
   border-bottom: none;
   padding-bottom: 0;
 }
 
-.info-label {
+.other-player-profile-modal .info-label {
   color: rgba(255, 255, 255, 0.8);
   font-size: 14px;
   font-weight: 500;
 }
 
-.info-value {
+.other-player-profile-modal .info-value {
   color: white;
   font-size: 16px;
   font-weight: bold;
@@ -135,24 +137,24 @@
   word-wrap: break-word;
 }
 
-.info-value.level {
+.other-player-profile-modal .info-value.level {
   color: #ffd700;
   font-size: 18px;
 }
 
-.info-value.status-message {
+.other-player-profile-modal .info-value.status-message {
   font-style: italic;
   font-weight: normal;
   opacity: 0.9;
 }
 
-.action-buttons {
+.other-player-profile-modal .action-buttons {
   display: flex;
   gap: 10px;
   justify-content: center;
 }
 
-.add-friend-button {
+.other-player-profile-modal .add-friend-button {
   flex: 1;
   padding: 14px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -170,22 +172,22 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.add-friend-button:hover {
+.other-player-profile-modal .add-friend-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-.add-friend-button:active {
+.other-player-profile-modal .add-friend-button:active {
   transform: translateY(0);
 }
 
-.button-icon {
+.other-player-profile-modal .button-icon {
   font-size: 18px;
 }
 
 /* 로딩 상태 */
-.loading-container {
+.other-player-profile-modal .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -194,7 +196,7 @@
   color: white;
 }
 
-.loading-spinner {
+.other-player-profile-modal .loading-spinner {
   width: 50px;
   height: 50px;
   border: 4px solid rgba(255, 255, 255, 0.3);
@@ -210,13 +212,13 @@
   }
 }
 
-.loading-container p {
+.other-player-profile-modal .loading-container p {
   font-size: 16px;
   font-weight: 500;
 }
 
 /* 에러 상태 */
-.error-container {
+.other-player-profile-modal .error-container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -225,13 +227,13 @@
   color: white;
 }
 
-.error-message {
+.other-player-profile-modal .error-message {
   font-size: 16px;
   margin-bottom: 20px;
   text-align: center;
 }
 
-.retry-button {
+.other-player-profile-modal .retry-button {
   padding: 12px 24px;
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -243,7 +245,7 @@
   transition: all 0.3s;
 }
 
-.retry-button:hover {
+.other-player-profile-modal .retry-button:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
 }
@@ -255,15 +257,15 @@
     padding: 20px;
   }
 
-  .profile-header h2 {
+  .other-player-profile-modal .profile-header h2 {
     font-size: 24px;
   }
 
-  .info-value {
+  .other-player-profile-modal .info-value {
     font-size: 14px;
   }
 
-  .add-friend-button {
+  .other-player-profile-modal .add-friend-button {
     font-size: 14px;
     padding: 12px 16px;
   }
