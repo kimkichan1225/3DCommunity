@@ -297,7 +297,7 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
         linearDamping={2.0} // 증가: 더 빠르게 감속 (떨림 방지)
         angularDamping={1.0} // 회전 감쇠 추가
         enabledRotations={[false, false, false]} // 물리적 회전 완전 잠금
-        position={initialPosition ? initialPosition : [0, 2, 0]} // 시작 위치 (App에서 initialPosition prop으로 설정 가능)
+        position={initialPosition ? initialPosition : [0, 5, 0]} // 시작 위치 (App에서 initialPosition prop으로 설정 가능)
         lockRotations={true} // 회전 완전 잠금
         canSleep={false} // 절대 sleep 상태로 전환되지 않음 (플레이어 캐릭터용)
       >
