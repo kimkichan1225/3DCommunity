@@ -18,5 +18,13 @@ public interface PaymentHistoryRepository extends JpaRepository<PaymentHistory, 
 
     List<PaymentHistory> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, PaymentHistory.PaymentStatus status);
 
+    List<PaymentHistory> findAllByOrderByCreatedAtDesc();
+
     boolean existsByOrderId(String orderId);
+
+    // 통계용 쿼리
+    List<PaymentHistory> findAllByCreatedAtAfterAndStatus(java.time.LocalDateTime date, PaymentHistory.PaymentStatus status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(p.amount) FROM PaymentHistory p WHERE p.status = :status")
+    Long sumAmountByStatus(@org.springframework.data.repository.query.Param("status") PaymentHistory.PaymentStatus status);
 }

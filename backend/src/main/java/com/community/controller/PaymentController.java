@@ -6,10 +6,12 @@ import com.community.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -107,9 +109,6 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentStatus(user.getId(), orderId));
     }
 
-    /**
-     * 내 결제 내역 조회
-     */
     @GetMapping("/history")
     public ResponseEntity<List<PaymentHistoryDTO>> getMyPaymentHistory(Authentication authentication) {
         User user = (User) authentication.getPrincipal();

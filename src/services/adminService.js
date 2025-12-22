@@ -24,6 +24,14 @@ api.interceptors.request.use(
 
 const adminService = {
   /**
+   * 통계 대시보드 데이터 조회
+   */
+  getStatistics: async () => {
+    const response = await api.get('/api/admin/statistics');
+    return response.data;
+  },
+
+  /**
    * 사용자 목록 조회 (검색, 필터, 페이지네이션)
    */
   getUsers: async (params = {}) => {
@@ -178,6 +186,28 @@ const adminService = {
   manualCleanupMessages: async () => {
     const response = await api.post('/api/admin/chat-logs/cleanup');
     return response;
+  },
+
+  // ==================== 결제/환불 관리 ====================
+
+  getAllPayments: async (params = {}) => {
+    const { page = 0, size = 20, sortBy = 'createdAt', sortDirection = 'DESC' } = params;
+    const queryParams = new URLSearchParams();
+    queryParams.append('page', page);
+    queryParams.append('size', size);
+    queryParams.append('sortBy', sortBy);
+    queryParams.append('sortDirection', sortDirection);
+
+    const response = await api.get(`/api/admin/payment/history?${queryParams.toString()}`);
+    return response.data;
+  },
+
+  /**
+   * 결제 취소 (Admin)
+   */
+  cancelPayment: async (orderId, reason) => {
+    const response = await api.post(`/api/admin/payment/cancel/${orderId}`, { reason });
+    return response.data;
   },
 };
 

@@ -4,7 +4,7 @@
   min-height: 100vh;
 }
 
-.shop-management-header {
+.shop-management .shop-management-header {
   margin-bottom: 30px;
   display: flex;
   justify-content: space-between;
@@ -12,13 +12,13 @@
   gap: 20px;
 }
 
-.shop-management-header h1 {
+.shop-management .shop-management-header h1 {
   font-size: 28px;
   color: #333;
   margin: 0;
 }
 
-.btn-add {
+.shop-management .btn-add {
   padding: 10px 20px;
   background-color: #007bff;
   color: white;
@@ -34,21 +34,21 @@
   white-space: nowrap;
 }
 
-.btn-add:hover {
+.shop-management .btn-add:hover {
   background-color: #0056b3;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
 }
 
 /* 탭 네비게이션 */
-.tabs-nav {
+.shop-management .tabs-nav {
   border-bottom: 2px solid #dee2e6;
   margin-bottom: 30px;
   display: flex;
   gap: 30px;
 }
 
-.tab-button {
+.shop-management .tab-button {
   padding: 12px 8px;
   border: none;
   border-bottom: 2px solid transparent;
@@ -61,34 +61,36 @@
   margin-bottom: -2px;
 }
 
-.tab-button:hover {
+.shop-management .tab-button:hover {
   color: #495057;
   border-bottom-color: #adb5bd;
 }
 
-.tab-button.active {
+.shop-management .tab-button.active {
   color: #007bff;
   border-bottom-color: #007bff;
 }
 
 /* 검색 및 필터 섹션 */
-.filters-section {
+.shop-management .filters-section {
   background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 15px;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 25px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: nowrap;
   align-items: flex-end;
 }
 
-.search-box {
+.shop-management .search-box {
+  flex: 8;
   position: relative;
+  min-width: 300px;
 }
 
-.search-input {
+.shop-management .search-input {
   width: 100%;
   padding: 10px 15px 10px 40px;
   border: 1px solid #ddd;
@@ -96,13 +98,13 @@
   font-size: 14px;
 }
 
-.search-input:focus {
+.shop-management .search-input:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
-.search-icon {
+.shop-management .search-icon {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -111,7 +113,7 @@
   pointer-events: none;
 }
 
-.search-clear {
+.shop-management .search-clear {
   position: absolute;
   right: 12px;
   top: 50%;
@@ -123,23 +125,25 @@
   padding: 4px;
 }
 
-.search-clear:hover {
+.shop-management .search-clear:hover {
   color: #495057;
 }
 
-.filter-group {
+.shop-management .filter-group {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
+  min-width: 120px;
 }
 
-.filter-group label {
+.shop-management .filter-group label {
   font-size: 12px;
   color: #666;
   font-weight: 500;
 }
 
-.filter-group select {
+.shop-management .filter-group select {
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -148,32 +152,32 @@
   cursor: pointer;
 }
 
-.filter-group select:focus {
+.shop-management .filter-group select:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
 /* 테이블 */
-.table-container {
+.shop-management .table-container {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow-x: auto;
 }
 
-.items-table {
+.shop-management .items-table {
   width: 100%;
   border-collapse: collapse;
   min-width: 900px;
 }
 
-.items-table thead {
+.shop-management .items-table thead {
   background-color: #f8f9fa;
   border-bottom: 2px solid #dee2e6;
 }
 
-.items-table th {
+.shop-management .items-table th {
   padding: 15px;
   text-align: left;
   font-weight: 600;
@@ -182,22 +186,22 @@
   white-space: nowrap;
 }
 
-.items-table tbody tr {
+.shop-management .items-table tbody tr {
   border-bottom: 1px solid #dee2e6;
   transition: background-color 0.2s;
 }
 
-.items-table tbody tr:hover {
+.shop-management .items-table tbody tr:hover {
   background-color: #f8f9fa;
 }
 
-.items-table td {
+.shop-management .items-table td {
   padding: 12px 15px;
   font-size: 14px;
   color: #212529;
 }
 
-.item-image {
+.shop-management .item-image {
   width: 64px;
   height: 64px;
   border-radius: 8px;
@@ -208,29 +212,29 @@
   justify-content: center;
 }
 
-.item-image img {
+.shop-management .item-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.item-image-placeholder {
+.shop-management .item-image-placeholder {
   color: #adb5bd;
   font-size: 24px;
 }
 
-.item-info {
+.shop-management .item-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.item-name {
+.shop-management .item-name {
   font-weight: 500;
   color: #212529;
 }
 
-.item-description {
+.shop-management .item-description {
   color: #6c757d;
   font-size: 13px;
   max-width: 300px;
@@ -239,7 +243,7 @@
   white-space: nowrap;
 }
 
-.status-badge {
+.shop-management .status-badge {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 12px;
@@ -249,22 +253,22 @@
   white-space: nowrap;
 }
 
-.status-badge.active {
+.shop-management .status-badge.active {
   background-color: #d4edda;
   color: #155724;
 }
 
-.status-badge.inactive {
+.shop-management .status-badge.inactive {
   background-color: #f8d7da;
   color: #721c24;
 }
 
-.action-buttons {
+.shop-management .action-buttons {
   display: flex;
   gap: 8px;
 }
 
-.btn-icon {
+.shop-management .btn-icon {
   padding: 6px;
   border: none;
   background: none;
@@ -273,31 +277,31 @@
   transition: color 0.2s;
 }
 
-.btn-icon:hover {
+.shop-management .btn-icon:hover {
   color: #007bff;
 }
 
-.btn-icon.delete:hover {
+.shop-management .btn-icon.delete:hover {
   color: #dc3545;
 }
 
-.no-results {
+.shop-management .no-results {
   text-align: center;
   padding: 60px 20px;
   color: #6c757d;
 }
 
-.no-results-icon {
+.shop-management .no-results-icon {
   font-size: 48px;
   margin-bottom: 16px;
 }
 
-.no-results-text {
+.shop-management .no-results-text {
   font-size: 16px;
   margin-bottom: 12px;
 }
 
-.btn-link {
+.shop-management .btn-link {
   background: none;
   border: none;
   color: #007bff;
@@ -306,12 +310,12 @@
   text-decoration: none;
 }
 
-.btn-link:hover {
+.shop-management .btn-link:hover {
   text-decoration: underline;
 }
 
 /* 모달 */
-.modal-overlay {
+.shop-management .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -325,7 +329,7 @@
   z-index: 1000;
 }
 
-.modal-content {
+.shop-management .modal-content {
   background: white;
   border-radius: 8px;
   padding: 30px;
@@ -335,20 +339,20 @@
   overflow-y: auto;
 }
 
-.modal-header {
+.shop-management .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
 }
 
-.modal-header h3 {
+.shop-management .modal-header h3 {
   font-size: 20px;
   color: #212529;
   margin: 0;
 }
 
-.btn-close {
+.shop-management .btn-close {
   background: none;
   border: none;
   font-size: 24px;
@@ -362,69 +366,69 @@
   justify-content: center;
 }
 
-.btn-close:hover {
+.shop-management .btn-close:hover {
   color: #212529;
 }
 
-.modal-form {
+.shop-management .modal-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.form-grid {
+.shop-management .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
 }
 
-.form-group {
+.shop-management .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.form-group label {
+.shop-management .form-group label {
   font-size: 13px;
   font-weight: 500;
   color: #495057;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.shop-management .form-group input,
+.shop-management .form-group select,
+.shop-management .form-group textarea {
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.shop-management .form-group input:focus,
+.shop-management .form-group select:focus,
+.shop-management .form-group textarea:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
-.form-group textarea {
+.shop-management .form-group textarea {
   resize: vertical;
   min-height: 80px;
 }
 
-.form-checkbox {
+.shop-management .form-checkbox {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.form-checkbox input[type="checkbox"] {
+.shop-management .form-checkbox input[type="checkbox"] {
   width: 18px;
   height: 18px;
   cursor: pointer;
 }
 
-.modal-actions {
+.shop-management .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -432,8 +436,8 @@
   border-top: 1px solid #dee2e6;
 }
 
-.btn-cancel,
-.btn-submit {
+.shop-management .btn-cancel,
+.shop-management .btn-submit {
   padding: 10px 24px;
   border: none;
   border-radius: 4px;
@@ -443,27 +447,27 @@
   transition: all 0.2s;
 }
 
-.btn-cancel {
+.shop-management .btn-cancel {
   background-color: white;
   color: #495057;
   border: 1px solid #ddd;
 }
 
-.btn-cancel:hover {
+.shop-management .btn-cancel:hover {
   background-color: #f8f9fa;
 }
 
-.btn-submit {
+.shop-management .btn-submit {
   background-color: #007bff;
   color: white;
 }
 
-.btn-submit:hover {
+.shop-management .btn-submit:hover {
   background-color: #0056b3;
 }
 
 /* 로딩 */
-.loading {
+.shop-management .loading {
   text-align: center;
   padding: 60px 20px;
   font-size: 16px;
@@ -475,21 +479,21 @@
 
 /* 반응형 */
 @media (max-width: 768px) {
-  .shop-management-header {
+  .shop-management .shop-management-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .btn-add {
+  .shop-management .btn-add {
     width: 100%;
     justify-content: center;
   }
 
-  .filters-section {
+  .shop-management .filters-section {
     grid-template-columns: 1fr;
   }
 
-  .tabs-nav {
+  .shop-management .tabs-nav {
     overflow-x: auto;
   }
 }

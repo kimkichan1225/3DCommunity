@@ -17,6 +17,8 @@ const ShopManagement = () => {
   // 검색 및 필터 상태
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -175,6 +177,14 @@ const ShopManagement = () => {
 
   const renderItemsTab = () => {
     const filteredItems = getFilteredItems();
+    const totalPages = Math.ceil(filteredItems.length / pageSize);
+    const paginatedItems = filteredItems.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+
+    const handlePageChange = (newPage) => {
+      if (newPage >= 0 && newPage < totalPages) {
+        setCurrentPage(newPage);
+      }
+    };
 
     return (
       <>
@@ -213,8 +223,24 @@ const ShopManagement = () => {
           <div className="filter-group">
             <label>총 아이템</label>
             <div style={{ padding: '10px 12px', color: '#6c757d', fontSize: '14px' }}>
-              {items.length}개 중 {filteredItems.length}개 표시
+              {items.length}개 중 {filteredItems.length}개 검색됨
             </div>
+          </div>
+
+          <div className="filter-group page-size-selector">
+            <label>표시 개수</label>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(0);
+              }}
+            >
+              <option value={5}>5개씩</option>
+              <option value={10}>10개씩</option>
+              <option value={20}>20개씩</option>
+              <option value={50}>50개씩</option>
+            </select>
           </div>
         </div>
 
@@ -231,7 +257,7 @@ const ShopManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredItems.map((item) => (
+              {paginatedItems.map((item) => (
                 <tr key={item.id}>
                   <td>
                     <div className="item-image">
@@ -300,6 +326,23 @@ const ShopManagement = () => {
             >
               모든 필터 초기화
             </button>
+          </div>
+        )}
+      </>
+    );
+
+    return (
+      <>
+        {/* ... existing code ... */}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="pagination" style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+            <button onClick={() => handlePageChange(0)} disabled={currentPage === 0}>처음</button>
+            <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 0}>이전</button>
+            <span className="page-info" style={{ lineHeight: '32px' }}>{currentPage + 1} / {totalPages} 페이지</span>
+            <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= totalPages - 1}>다음</button>
+            <button onClick={() => handlePageChange(totalPages - 1)} disabled={currentPage >= totalPages - 1}>마지막</button>
           </div>
         )}
       </>

@@ -4,25 +4,25 @@
   margin: 0 auto;
 }
 
-.header {
+.report-management .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
 }
 
-.header h2 {
+.report-management .header h2 {
   margin: 0;
   color: #333;
 }
 
-.header-stats {
+.report-management .header-stats {
   display: flex;
   gap: 20px;
   align-items: center;
 }
 
-.pending-count {
+.report-management .pending-count {
   padding: 8px 16px;
   background: #fff3cd;
   border: 1px solid #ffc107;
@@ -31,38 +31,40 @@
   color: #856404;
 }
 
-.pending-count strong {
+.report-management .pending-count strong {
   font-size: 18px;
   color: #dc3545;
 }
 
 /* 필터 */
-.filters {
+.report-management .filters {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  padding: 15px;
+  gap: 20px;
+  margin-bottom: 25px;
+  padding: 25px;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  align-items: center;
 }
 
-.filter-select {
-  padding: 8px 12px;
+.report-management .filter-select {
+  flex: 1;
+  padding: 10px 15px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
-.filter-select:focus {
+.report-management .filter-select:focus {
   outline: none;
   border-color: #007bff;
 }
 
-.btn-reset {
-  padding: 8px 16px;
+.report-management .btn-reset {
+  padding: 10px 20px;
   background: #6c757d;
   color: white;
   border: none;
@@ -70,30 +72,31 @@
   cursor: pointer;
   font-size: 14px;
   transition: background 0.2s;
+  white-space: nowrap;
 }
 
-.btn-reset:hover {
+.report-management .btn-reset:hover {
   background: #5a6268;
 }
 
 /* 테이블 */
-.report-table {
+.report-management .report-table {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
-.report-table table {
+.report-management .report-table table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.report-table thead {
+.report-management .report-table thead {
   background: #f8f9fa;
 }
 
-.report-table th {
+.report-management .report-table th {
   padding: 12px;
   text-align: left;
   font-weight: 600;
@@ -102,24 +105,24 @@
   font-size: 14px;
 }
 
-.report-table td {
+.report-management .report-table td {
   padding: 12px;
   border-bottom: 1px solid #eee;
   color: #555;
   font-size: 14px;
 }
 
-.report-table tr:hover {
+.report-management .report-table tr:hover {
   background: #f8f9fa;
 }
 
-.report-table .empty {
+.report-management .report-table .empty {
   text-align: center;
   padding: 40px;
   color: #999;
 }
 
-.target-title {
+.report-management .target-title {
   max-width: 250px;
   white-space: nowrap;
   overflow: hidden;
@@ -127,7 +130,7 @@
 }
 
 /* 배지 */
-.type-badge {
+.report-management .type-badge {
   padding: 4px 10px;
   background: #e3f2fd;
   color: #1976d2;
@@ -136,7 +139,7 @@
   font-weight: 500;
 }
 
-.status-badge {
+.report-management .status-badge {
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 12px;
@@ -144,22 +147,22 @@
   white-space: nowrap;
 }
 
-.status-badge.pending {
+.report-management .status-badge.pending {
   background: #fff3cd;
   color: #856404;
 }
 
-.status-badge.accepted {
+.report-management .status-badge.accepted {
   background: #d4edda;
   color: #155724;
 }
 
-.status-badge.rejected {
+.report-management .status-badge.rejected {
   background: #f8d7da;
   color: #721c24;
 }
 
-.reason-badge {
+.report-management .reason-badge {
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 12px;
@@ -167,23 +170,23 @@
   white-space: nowrap;
 }
 
-.reason-badge.low {
+.report-management .reason-badge.low {
   background: #e3f2fd;
   color: #1976d2;
 }
 
-.reason-badge.medium {
+.report-management .reason-badge.medium {
   background: #fff3cd;
   color: #856404;
 }
 
-.reason-badge.high {
+.report-management .reason-badge.high {
   background: #f8d7da;
   color: #721c24;
 }
 
 /* 버튼 */
-.btn-view {
+.report-management .btn-view {
   padding: 6px 14px;
   background: #007bff;
   color: white;
@@ -194,12 +197,12 @@
   transition: background 0.2s;
 }
 
-.btn-view:hover {
+.report-management .btn-view:hover {
   background: #0056b3;
 }
 
 /* 페이지네이션 */
-.pagination {
+.report-management .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -208,7 +211,7 @@
   padding: 20px;
 }
 
-.pagination button {
+.report-management .pagination button {
   padding: 8px 16px;
   background: #007bff;
   color: white;
@@ -218,22 +221,22 @@
   transition: background 0.2s;
 }
 
-.pagination button:hover:not(:disabled) {
+.report-management .pagination button:hover:not(:disabled) {
   background: #0056b3;
 }
 
-.pagination button:disabled {
+.report-management .pagination button:disabled {
   background: #ccc;
   cursor: not-allowed;
 }
 
-.pagination span {
+.report-management .pagination span {
   font-size: 14px;
   color: #333;
 }
 
 /* 모달 */
-.modal-overlay {
+.report-management .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -246,7 +249,7 @@
   z-index: 1000;
 }
 
-.modal-content {
+.report-management .modal-content {
   background: white;
   border-radius: 12px;
   max-width: 800px;
@@ -256,7 +259,7 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
-.modal-header {
+.report-management .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -264,12 +267,12 @@
   border-bottom: 1px solid #dee2e6;
 }
 
-.modal-header h3 {
+.report-management .modal-header h3 {
   margin: 0;
   color: #333;
 }
 
-.modal-close {
+.report-management .modal-close {
   background: none;
   border: none;
   font-size: 28px;
@@ -285,23 +288,23 @@
   transition: color 0.2s;
 }
 
-.modal-close:hover {
+.report-management .modal-close:hover {
   color: #333;
 }
 
-.modal-body {
+.report-management .modal-body {
   padding: 24px;
 }
 
 /* 상세 섹션 */
-.detail-section {
+.report-management .detail-section {
   margin-bottom: 24px;
   padding: 20px;
   background: #f8f9fa;
   border-radius: 8px;
 }
 
-.detail-section h4 {
+.report-management .detail-section h4 {
   margin: 0 0 16px 0;
   color: #333;
   font-size: 16px;
@@ -309,34 +312,34 @@
   padding-bottom: 8px;
 }
 
-.detail-grid {
+.report-management .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
-.detail-item {
+.report-management .detail-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.detail-item.full-width {
+.report-management .detail-item.full-width {
   grid-column: 1 / -1;
 }
 
-.detail-item label {
+.report-management .detail-item label {
   font-size: 13px;
   color: #666;
   font-weight: 600;
 }
 
-.detail-item span {
+.report-management .detail-item span {
   font-size: 14px;
   color: #333;
 }
 
-.detail-item .description {
+.report-management .detail-item .description {
   margin: 0;
   padding: 12px;
   background: white;
@@ -349,31 +352,31 @@
 }
 
 /* 처리 폼 */
-.process-section {
+.report-management .process-section {
   background: #fff3cd;
   border: 2px solid #ffc107;
 }
 
-.process-form {
+.report-management .process-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.form-group {
+.report-management .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.form-group label {
+.report-management .form-group label {
   font-size: 14px;
   color: #333;
   font-weight: 600;
 }
 
-.form-group select,
-.form-group textarea {
+.report-management .form-group select,
+.report-management .form-group textarea {
   padding: 10px;
   border: 1px solid #dee2e6;
   border-radius: 6px;
@@ -381,17 +384,17 @@
   font-family: inherit;
 }
 
-.form-group select:focus,
-.form-group textarea:focus {
+.report-management .form-group select:focus,
+.report-management .form-group textarea:focus {
   outline: none;
   border-color: #007bff;
 }
 
-.form-group textarea {
+.report-management .form-group textarea {
   resize: vertical;
 }
 
-.btn-process {
+.report-management .btn-process {
   padding: 12px 24px;
   background: #dc3545;
   color: white;
@@ -404,12 +407,12 @@
   align-self: flex-start;
 }
 
-.btn-process:hover {
+.report-management .btn-process:hover {
   background: #c82333;
 }
 
 /* 로딩 */
-.loading {
+.report-management .loading {
   text-align: center;
   padding: 40px;
   color: #666;
@@ -418,15 +421,15 @@
 
 /* 반응형 */
 @media (max-width: 768px) {
-  .detail-grid {
+  .report-management .detail-grid {
     grid-template-columns: 1fr;
   }
 
-  .filters {
+  .report-management .filters {
     flex-direction: column;
   }
 
-  .report-table {
+  .report-management .report-table {
     overflow-x: auto;
   }
 }

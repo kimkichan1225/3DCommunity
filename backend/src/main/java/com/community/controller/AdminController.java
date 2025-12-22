@@ -7,8 +7,11 @@ import com.community.model.User;
 import com.community.service.AdminService;
 import com.community.service.AdminMessageService;
 import com.community.service.AuditLogService;
+import com.community.service.PaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +29,7 @@ public class AdminController {
     private final AdminService adminService;
     private final AuditLogService auditLogService;
     private final AdminMessageService adminMessageService;
+    private final PaymentService paymentService;
 
     /**
      * 대시보드 통계 조회
@@ -76,6 +80,11 @@ public class AdminController {
     /**
      * 사용자 목록 조회 (검색, 필터, 페이지네이션)
      */
+    @GetMapping("/statistics")
+    public ResponseEntity<StatisticsDTO> getStatistics() {
+        return ResponseEntity.ok(statisticsService.getDashboardStats());
+    }
+
     @GetMapping("/users")
     @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     public ResponseEntity<Page<UserManagementDto>> getUsers(
@@ -310,5 +319,36 @@ public class AdminController {
     public ResponseEntity<String> manualCleanup() {
         long deletedCount = adminMessageService.deleteOldMessagesManually();
         return ResponseEntity.ok(deletedCount + "개의 오래된 메시지가 삭제되었습니다.");
+    }
+
+    // ==================== 결제/환불 관리 API ====================
+
+    /**
+     * 전체 결제 내역 조회
+     */
+    @GetMapping("/payment/history")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    public ResponseEntity<Page<PaymentHistoryDTO>> getAllPaymentHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection) {
+        
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        
+        return ResponseEntity.ok(paymentService.getAllPaymentHistory(pageable));
+    }
+
+    /**
+     * 결제 취소/환불
+     */
+    @PostMapping("/payment/cancel/{orderId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
+    public ResponseEntity<PaymentResponseDTO> cancelPayment(
+            @PathVariable String orderId,
+            @RequestBody Map<String, String> body) {
+        String reason = body.getOrDefault("reason", "관리자 취소");
+        return ResponseEntity.ok(paymentService.cancelPayment(orderId, reason));
     }
 }

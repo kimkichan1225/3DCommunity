@@ -4,20 +4,20 @@
   margin: 0 auto;
 }
 
-.header {
+.chat-log-management .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
 
-.header h1 {
+.chat-log-management .header h1 {
   font-size: 24px;
   font-weight: bold;
   color: #333;
 }
 
-.cleanup-button {
+.chat-log-management .cleanup-button {
   padding: 10px 20px;
   background-color: #ff6b6b;
   color: white;
@@ -28,11 +28,11 @@
   transition: background-color 0.3s;
 }
 
-.cleanup-button:hover {
+.chat-log-management .cleanup-button:hover {
   background-color: #ff5252;
 }
 
-.info-box {
+.chat-log-management .info-box {
   background-color: #e3f2fd;
   border-left: 4px solid #2196f3;
   padding: 15px;
@@ -40,38 +40,46 @@
   border-radius: 5px;
 }
 
-.info-box p {
+.chat-log-management .info-box p {
   margin: 5px 0;
   color: #1976d2;
   font-size: 14px;
 }
 
 /* 필터 영역 */
-.filters {
+.chat-log-management .filters {
   display: flex;
-  gap: 15px;
+  gap: 20px;
   align-items: flex-end;
-  margin-bottom: 20px;
-  padding: 20px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  flex-wrap: wrap;
+  margin-bottom: 25px;
+  padding: 25px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  flex-wrap: nowrap;
 }
 
-.filter-group {
+.chat-log-management .filter-group {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
+  min-width: 120px;
 }
 
-.filter-group label {
+.chat-log-management .filter-group:nth-child(3) {
+  flex: 8;
+  min-width: 300px;
+}
+
+.chat-log-management .filter-group label {
   font-size: 14px;
   font-weight: bold;
   color: #555;
 }
 
-.filter-group select,
-.filter-group input {
+.chat-log-management .filter-group select,
+.chat-log-management .filter-group input {
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 5px;
@@ -79,23 +87,25 @@
   min-width: 150px;
 }
 
-.reset-button {
-  padding: 8px 16px;
+.chat-log-management .reset-button {
+  flex: 0 0 auto;
+  padding: 10px 20px;
   background-color: #757575;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  transition: background-color 0.3s;
+  transition: all 0.2s;
+  height: 40px;
 }
 
-.reset-button:hover {
+.chat-log-management .reset-button:hover {
   background-color: #616161;
 }
 
 /* 에러 메시지 */
-.error-message {
+.chat-log-management .error-message {
   background-color: #ffebee;
   color: #c62828;
   padding: 15px;
@@ -105,7 +115,7 @@
 }
 
 /* 로딩 */
-.loading {
+.chat-log-management .loading {
   text-align: center;
   padding: 40px;
   font-size: 18px;
@@ -113,24 +123,24 @@
 }
 
 /* 테이블 */
-.table-container {
+.chat-log-management .table-container {
   overflow-x: auto;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.chat-log-table {
+.chat-log-management .chat-log-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.chat-log-table thead {
+.chat-log-management .chat-log-table thead {
   background-color: #f5f5f5;
   border-bottom: 2px solid #ddd;
 }
 
-.chat-log-table th {
+.chat-log-management .chat-log-table th {
   padding: 12px;
   text-align: left;
   font-weight: bold;
@@ -138,41 +148,41 @@
   font-size: 14px;
 }
 
-.chat-log-table tbody tr {
+.chat-log-management .chat-log-table tbody tr {
   border-bottom: 1px solid #eee;
   transition: background-color 0.2s;
 }
 
-.chat-log-table tbody tr:hover {
+.chat-log-management .chat-log-table tbody tr:hover {
   background-color: #f9f9f9;
 }
 
-.chat-log-table tbody tr.deleted-row {
+.chat-log-management .chat-log-table tbody tr.deleted-row {
   background-color: #ffebee;
   opacity: 0.7;
 }
 
-.chat-log-table td {
+.chat-log-management .chat-log-table td {
   padding: 12px;
   font-size: 13px;
   color: #555;
 }
 
-.message-content {
+.chat-log-management .message-content {
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.no-data {
+.chat-log-management .no-data {
   text-align: center;
   padding: 40px;
   color: #999;
 }
 
 /* 메시지 타입 뱃지 */
-.message-type {
+.chat-log-management .message-type {
   display: inline-block;
   padding: 4px 8px;
   border-radius: 4px;
@@ -180,23 +190,23 @@
   font-weight: bold;
 }
 
-.message-type.plaza {
+.chat-log-management .message-type.plaza {
   background-color: #e3f2fd;
   color: #1976d2;
 }
 
-.message-type.dm {
+.chat-log-management .message-type.dm {
   background-color: #f3e5f5;
   color: #7b1fa2;
 }
 
-.message-type.local_room {
+.chat-log-management .message-type.local_room {
   background-color: #e8f5e9;
   color: #388e3c;
 }
 
 /* 상태 뱃지 */
-.status {
+.chat-log-management .status {
   display: inline-block;
   padding: 4px 8px;
   border-radius: 4px;
@@ -204,23 +214,23 @@
   font-weight: bold;
 }
 
-.status.active {
+.chat-log-management .status.active {
   background-color: #c8e6c9;
   color: #2e7d32;
 }
 
-.status.deleted {
+.chat-log-management .status.deleted {
   background-color: #ffcdd2;
   color: #c62828;
 }
 
 /* 작업 버튼 */
-.actions {
+.chat-log-management .actions {
   display: flex;
   gap: 5px;
 }
 
-.actions button {
+.chat-log-management .actions button {
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
@@ -230,35 +240,35 @@
   transition: all 0.2s;
 }
 
-.delete-button {
+.chat-log-management .delete-button {
   background-color: #ff9800;
   color: white;
 }
 
-.delete-button:hover {
+.chat-log-management .delete-button:hover {
   background-color: #f57c00;
 }
 
-.restore-button {
+.chat-log-management .restore-button {
   background-color: #4caf50;
   color: white;
 }
 
-.restore-button:hover {
+.chat-log-management .restore-button:hover {
   background-color: #43a047;
 }
 
-.permanent-delete-button {
+.chat-log-management .permanent-delete-button {
   background-color: #f44336;
   color: white;
 }
 
-.permanent-delete-button:hover {
+.chat-log-management .permanent-delete-button:hover {
   background-color: #d32f2f;
 }
 
 /* 페이지네이션 */
-.pagination {
+.chat-log-management .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -267,7 +277,7 @@
   padding: 20px;
 }
 
-.pagination button {
+.chat-log-management .pagination button {
   padding: 8px 16px;
   background-color: #2196f3;
   color: white;
@@ -278,16 +288,16 @@
   transition: background-color 0.3s;
 }
 
-.pagination button:hover:not(:disabled) {
+.chat-log-management .pagination button:hover:not(:disabled) {
   background-color: #1976d2;
 }
 
-.pagination button:disabled {
+.chat-log-management .pagination button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }
 
-.page-info {
+.chat-log-management .page-info {
   font-size: 14px;
   font-weight: bold;
   color: #555;
@@ -297,29 +307,30 @@
 
 /* 반응형 */
 @media (max-width: 1200px) {
-  .chat-log-table th,
-  .chat-log-table td {
+
+  .chat-log-management .chat-log-table th,
+  .chat-log-management .chat-log-table td {
     padding: 8px;
     font-size: 12px;
   }
 
-  .message-content {
+  .chat-log-management .message-content {
     max-width: 200px;
   }
 }
 
 @media (max-width: 768px) {
-  .filters {
+  .chat-log-management .filters {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .filter-group input,
-  .filter-group select {
+  .chat-log-management .filter-group input,
+  .chat-log-management .filter-group select {
     width: 100%;
   }
 
-  .actions {
+  .chat-log-management .actions {
     flex-direction: column;
   }
 }

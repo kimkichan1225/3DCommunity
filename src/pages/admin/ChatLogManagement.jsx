@@ -219,6 +219,22 @@ const ChatLogManagement = () => {
           />
         </div>
 
+        <div className="filter-group">
+          <label>표시 개수:</label>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(0);
+            }}
+          >
+            <option value={5}>5개씩</option>
+            <option value={10}>10개씩</option>
+            <option value={20}>20개씩</option>
+            <option value={50}>50개씩</option>
+          </select>
+        </div>
+
         <button className="reset-button" onClick={handleResetFilters}>
           필터 초기화
         </button>
