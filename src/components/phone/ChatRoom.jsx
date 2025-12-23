@@ -57,6 +57,9 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
       }));
 
       setMessages(formattedMessages);
+
+      // 메시지 읽음 처리 (백엔드에 알림)
+      await messageService.markMessagesAsRead(chat.friendId);
     } catch (error) {
       console.error('메시지 로드 실패:', error);
       // 에러 시 빈 배열로 설정

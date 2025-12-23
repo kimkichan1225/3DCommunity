@@ -42,6 +42,22 @@ class MessageService {
     });
     return response.data;
   }
+
+  // 특정 사용자와의 메시지 읽음 처리
+  async markMessagesAsRead(friendId) {
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/messages/mark-read/${friendId}`,
+        {},
+        { headers: this.getAuthHeader() }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to mark messages as read:', error);
+      // 에러가 나도 계속 진행 (읽음 처리는 optional)
+      return null;
+    }
+  }
 }
 
 export default new MessageService();
