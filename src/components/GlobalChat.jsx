@@ -106,12 +106,9 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
       }
     };
 
-    multiplayerService.onChatMessage(handleChatMessage);
+    const cleanup = multiplayerService.onChatMessage(handleChatMessage);
 
-    return () => {
-      // Cleanup
-      multiplayerService.onChatMessage(null);
-    };
+    return cleanup; // Return the cleanup function properly
   }, [onChatMessage]);
 
   const handleSendMessage = (e) => {
