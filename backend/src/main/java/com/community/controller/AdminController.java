@@ -8,6 +8,7 @@ import com.community.service.AdminService;
 import com.community.service.AdminMessageService;
 import com.community.service.AuditLogService;
 import com.community.service.PaymentService;
+import com.community.service.StatisticsService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
@@ -30,6 +31,7 @@ public class AdminController {
     private final AuditLogService auditLogService;
     private final AdminMessageService adminMessageService;
     private final PaymentService paymentService;
+    private final StatisticsService statisticsService;
 
     /**
      * 대시보드 통계 조회
