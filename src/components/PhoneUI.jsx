@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './PhoneUI.css';
 import FriendList from './phone/FriendList';
 import ChatList from './phone/ChatList';
 
-function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
+function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers, initialFriend, onInitialFriendOpened }) {
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' or 'chats'
   const [isClosing, setIsClosing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -33,6 +33,18 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
     // 채팅 탭으로 전환
     setActiveTab('chats');
   };
+
+  // 외부에서 전달된 initialFriend 처리 (DM 알림 클릭 시)
+  useEffect(() => {
+    if (initialFriend && isOpen) {
+      setSelectedFriend(initialFriend);
+      setActiveTab('chats');
+      // 부모에게 알림이 처리되었음을 통지
+      if (onInitialFriendOpened) {
+        onInitialFriendOpened();
+      }
+    }
+  }, [initialFriend, isOpen, onInitialFriendOpened]);
 
   if (!isOpen) return null;
 

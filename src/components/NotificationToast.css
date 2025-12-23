@@ -23,6 +23,17 @@
   position: relative;
   overflow: hidden;
   pointer-events: auto;
+  transition: all 0.2s;
+}
+
+/* 클릭 가능한 토스트 (채팅 알림 등) */
+.notification-toast.clickable {
+  cursor: pointer;
+}
+
+.notification-toast.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes slideInRight {

@@ -8,9 +8,10 @@ import { FaBell, FaUserPlus, FaGamepad, FaComment, FaTimes, FaCheck } from 'reac
  * @param {Function} onClose - 닫기 콜백
  * @param {Function} onAccept - 수락 버튼 콜백 (친구 요청, 게임 초대 등)
  * @param {Function} onReject - 거절 버튼 콜백 (친구 요청, 게임 초대 등)
+ * @param {Function} onClick - 클릭 콜백 (채팅 알림 등)
  * @param {number} autoCloseDelay - 자동 닫기 시간 (ms, 기본 5000ms)
  */
-function NotificationToast({ notification, onClose, onAccept, onReject, autoCloseDelay = 5000 }) {
+function NotificationToast({ notification, onClose, onAccept, onReject, onClick, autoCloseDelay = 5000 }) {
   const [progress, setProgress] = useState(100);
 
   useEffect(() => {
@@ -52,9 +53,20 @@ function NotificationToast({ notification, onClose, onAccept, onReject, autoClos
   };
 
   const showActionButtons = notification.type === 'friend_request' || notification.type === 'game_invite';
+  const isClickable = notification.type === 'chat' && onClick;
+
+  const handleToastClick = () => {
+    if (isClickable) {
+      onClick(notification);
+      onClose();
+    }
+  };
 
   return (
-    <div className={`notification-toast notification-toast-${notification.type}`}>
+    <div
+      className={`notification-toast notification-toast-${notification.type} ${isClickable ? 'clickable' : ''}`}
+      onClick={handleToastClick}
+    >
       <div className="notification-toast-icon">
         {getIcon()}
       </div>
@@ -87,7 +99,13 @@ function NotificationToast({ notification, onClose, onAccept, onReject, autoClos
         </div>
       )}
 
-      <button className="notification-toast-close" onClick={onClose}>
+      <button
+        className="notification-toast-close"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      >
         <FaTimes />
       </button>
 

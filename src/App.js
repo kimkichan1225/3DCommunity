@@ -66,6 +66,7 @@ function App() {
   const [goldChargeModalTab, setGoldChargeModalTab] = useState('charge'); // 'charge' | 'exchange'
   const [shouldAutoAttendance, setShouldAutoAttendance] = useState(false);
   const [showPhoneUI, setShowPhoneUI] = useState(false);
+  const [phoneInitialFriend, setPhoneInitialFriend] = useState(null); // DM 알림 클릭 시 열 친구 정보
   const [username, setUsername] = useState('');
   const [userId, setUserId] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -567,6 +568,26 @@ function App() {
     } else if (notification.type === 'game_invite') {
       // 게임 초대 거절 - 알림만 삭제
       console.log('게임 초대 거절:', notification.data);
+      notificationService.deleteNotification(notification.id);
+    }
+  };
+
+  // 토스트 알림 클릭 핸들러 (DM 알림 등)
+  const handleToastClick = (notification) => {
+    console.log('알림 클릭:', notification);
+
+    if (notification.type === 'chat') {
+      // DM 알림 클릭 시 PhoneUI의 채팅창 열기
+      const friendInfo = {
+        id: notification.data.senderId,
+        friendId: notification.data.senderId,
+        friendName: notification.data.senderUsername,
+        profileImagePath: notification.data.senderProfileImagePath,
+        outlineImagePath: notification.data.senderOutlineImagePath,
+      };
+      setPhoneInitialFriend(friendInfo);
+      setShowPhoneUI(true);
+      // 알림 삭제
       notificationService.deleteNotification(notification.id);
     }
   };
@@ -1138,6 +1159,7 @@ function App() {
               onClose={() => handleToastClose(notification.id)}
               onAccept={handleToastAccept}
               onReject={handleToastReject}
+              onClick={handleToastClick}
               autoCloseDelay={5000}
             />
           ))}
@@ -1177,6 +1199,8 @@ function App() {
         userId={userId}
         username={username}
         onlinePlayers={otherPlayers}
+        initialFriend={phoneInitialFriend}
+        onInitialFriendOpened={() => setPhoneInitialFriend(null)}
       />
 
       {/* 제재 알림 (로그인한 사용자만) */}
