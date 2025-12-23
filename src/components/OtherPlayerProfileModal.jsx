@@ -74,8 +74,8 @@ const OtherPlayerProfileModal = ({ userId, username, onClose, onAddFriend }) => 
               {/* 아바타 */}
               <div className="avatar-section">
                 <ProfileAvatar
-                  profileImage={profile.selectedProfile}
-                  outlineImage={profile.selectedOutline}
+                  profileImage={{ imagePath: profile.selectedProfile }}
+                  outlineImage={{ imagePath: profile.selectedOutline }}
                   size={150}
                 />
               </div>
