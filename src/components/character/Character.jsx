@@ -211,10 +211,13 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     }
 
     // ===== 점프 입력 처리 =====
-    if (!isJumpingRef.current && !prevSpaceRef.current && space) {
-      // 점프 시작
+    // 착지 상태 확인 (Y 속도가 거의 0 = 바닥에 있음)
+    const currentVel = rigidBodyRef.current.linvel();
+    const isGrounded = Math.abs(currentVel.y) < 0.5;
+
+    if (!isJumpingRef.current && !prevSpaceRef.current && space && isGrounded) {
+      // 점프 시작 (바닥에 있을 때만)
       const currentY = rigidBodyRef.current.translation().y;
-      const currentVel = rigidBodyRef.current.linvel();
 
       isJumpingRef.current = true;
       jumpStartYRef.current = currentY;
@@ -250,16 +253,16 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       const currentY = rigidBodyRef.current.translation().y;
       const currentVel = rigidBodyRef.current.linvel();
 
-      // 시작 높이 이하 + 아래로 떨어지는 중 = 착지
-      if (currentY <= jumpStartYRef.current && currentVel.y < 0) {
+      // 착지 조건 1: Collider Y가 캐릭터 고정 Y 이하로 내려옴 + 하강 중
+      const returnedToStart = currentY <= jumpStartYRef.current && currentVel.y < 0;
+
+      // 착지 조건 2: Collider가 바닥에 닿음 (Y 속도가 거의 0)
+      const touchedGround = Math.abs(currentVel.y) < 0.5 && currentVel.y <= 0;
+
+      if (returnedToStart || touchedGround) {
         isJumpingRef.current = false;
 
-        // 위치 복구
-        const rbPos = rigidBodyRef.current.translation();
-        rigidBodyRef.current.setTranslation({ x: rbPos.x, y: jumpStartYRef.current, z: rbPos.z }, true);
-        rigidBodyRef.current.setLinvel({ x: currentVel.x, y: 0, z: currentVel.z }, true);
-
-        console.log('🎯 착지! Y:', currentY.toFixed(2));
+        console.log('🎯 착지! Y:', currentY.toFixed(2), returnedToStart ? '(원래 위치)' : '(바닥 감지)');
 
         // 착지 애니메이션 전환
         let landingAnim = 'Idle';
@@ -328,7 +331,20 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
 
     // RigidBody의 위치를 모델에 동기화
     const rbPosition = rigidBodyRef.current.translation();
-    modelGroupRef.current.position.set(rbPosition.x, rbPosition.y, rbPosition.z);
+
+    if (isJumpingRef.current) {
+      // 점프 중: X, Z만 동기화, Y는 바닥 높이 유지 (캐릭터는 안 올라감)
+      modelGroupRef.current.position.set(rbPosition.x, jumpStartYRef.current, rbPosition.z);
+    } else {
+      // 평상시: 전체 위치 동기화
+      modelGroupRef.current.position.set(rbPosition.x, rbPosition.y, rbPosition.z);
+    }
+
+    // 애니메이션 루트 모션 무효화 (X, Z만)
+    if (scene && scene.position) {
+      scene.position.x = 0;
+      scene.position.z = 0;
+    }
 
     // 위치가 업데이트되면 부모 컴포넌트에 알림 (Level1 위치 저장용)
     if (onPositionUpdate) {
