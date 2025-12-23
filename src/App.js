@@ -1020,7 +1020,7 @@ function App() {
           </mesh>
 
           <Suspense fallback={null}>
-            <Physics gravity={[0, -40, 0]} debug>
+            <Physics gravity={[0, -40, 0]}>
               {/* 로그인 후에만 캐릭터 표시 */}
               {isLoggedIn && (
                 <>
