@@ -7,6 +7,7 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' or 'chats'
   const [isClosing, setIsClosing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedFriend, setSelectedFriend] = useState(null);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -18,6 +19,19 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
 
   const handleUnreadCountChange = (count) => {
     setUnreadCount(count);
+  };
+
+  const handleOpenChat = (friend) => {
+    // 친구 정보를 ChatList 형식으로 변환
+    setSelectedFriend({
+      id: friend.userId,
+      friendId: friend.userId,
+      friendName: friend.username,
+      profileImagePath: friend.profileImagePath,
+      outlineImagePath: friend.outlineImagePath,
+    });
+    // 채팅 탭으로 전환
+    setActiveTab('chats');
   };
 
   if (!isOpen) return null;
@@ -60,7 +74,12 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
         {/* 컨텐츠 영역 */}
         <div className="phone-content">
           {activeTab === 'friends' && (
-            <FriendList userId={userId} username={username} onlinePlayers={onlinePlayers} />
+            <FriendList
+              userId={userId}
+              username={username}
+              onlinePlayers={onlinePlayers}
+              onOpenChat={handleOpenChat}
+            />
           )}
           {activeTab === 'chats' && (
             <ChatList
@@ -68,6 +87,8 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
               username={username}
               onlinePlayers={onlinePlayers}
               onUnreadCountChange={handleUnreadCountChange}
+              initialFriend={selectedFriend}
+              onChatOpened={() => setSelectedFriend(null)}
             />
           )}
         </div>

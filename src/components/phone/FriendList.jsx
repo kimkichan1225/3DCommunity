@@ -5,7 +5,7 @@ import multiplayerService from '../../services/multiplayerService';
 import Popup from '../Popup';
 import ProfileAvatar from '../ProfileAvatar';
 
-function FriendList({ userId, username, onlinePlayers }) {
+function FriendList({ userId, username, onlinePlayers, onOpenChat }) {
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -203,7 +203,11 @@ function FriendList({ userId, username, onlinePlayers }) {
               );
 
               return (
-                <div key={friend.friendshipId} className="friend-item">
+                <div
+                  key={friend.friendshipId}
+                  className="friend-item"
+                  onClick={() => onOpenChat && onOpenChat(friend)}
+                >
                   <div className="friend-avatar-wrapper">
                     {isOnlineNow && <div className="online-indicator"></div>}
                     <ProfileAvatar
@@ -221,7 +225,10 @@ function FriendList({ userId, username, onlinePlayers }) {
                   </div>
                   <button
                     className="remove-friend-btn"
-                    onClick={() => handleRemoveFriend(friend.friendshipId)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFriend(friend.friendshipId);
+                    }}
                     title="친구 삭제"
                   >
                     ×

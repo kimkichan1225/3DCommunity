@@ -4,7 +4,7 @@ import ChatRoom from './ChatRoom';
 import messageService from '../../services/messageService';
 import ProfileAvatar from '../ProfileAvatar';
 
-function ChatList({ userId, username, onlinePlayers, onUnreadCountChange }) {
+function ChatList({ userId, username, onlinePlayers, onUnreadCountChange, initialFriend, onChatOpened }) {
   const [chatRooms, setChatRooms] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -21,6 +21,16 @@ function ChatList({ userId, username, onlinePlayers, onUnreadCountChange }) {
       onUnreadCountChange(totalUnread);
     }
   }, [chatRooms, onUnreadCountChange]);
+
+  // 초기 친구가 전달된 경우 해당 친구와의 채팅 자동 열기
+  useEffect(() => {
+    if (initialFriend) {
+      setSelectedChat(initialFriend);
+      if (onChatOpened) {
+        onChatOpened();
+      }
+    }
+  }, [initialFriend, onChatOpened]);
 
   const loadConversations = async () => {
     try {

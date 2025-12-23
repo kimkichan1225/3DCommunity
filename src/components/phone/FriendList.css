@@ -116,6 +116,7 @@
   border-radius: 12px;
   transition: all 0.3s;
   position: relative;
+  cursor: pointer;
 }
 
 .friend-item:hover {
