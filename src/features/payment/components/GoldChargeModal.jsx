@@ -357,32 +357,7 @@ function GoldChargeModal({ onClose, onChargeSuccess, initialTab = 'charge' }) {
     <div className="gold-charge-modal-overlay" onClick={onClose}>
       <div className="gold-charge-modal" onClick={(e) => e.stopPropagation()}>
         <div className="gold-charge-modal__header">
-          <div className="modal-tabs" style={{ display: 'flex', gap: '30px' }}>
-            <h2
-              onClick={() => setActiveTab('charge')}
-              style={{
-                cursor: 'pointer',
-                margin: 0,
-                color: activeTab === 'charge' ? '#FFD700' : 'rgba(255, 215, 0, 0.4)',
-                borderBottom: activeTab === 'charge' ? '2px solid #FFD700' : 'none',
-                paddingBottom: '5px'
-              }}
-            >
-              💰 금화 충전
-            </h2>
-            <h2
-              onClick={() => setActiveTab('exchange')}
-              style={{
-                cursor: 'pointer',
-                margin: 0,
-                color: activeTab === 'exchange' ? '#FFD700' : 'rgba(255, 215, 0, 0.4)',
-                borderBottom: activeTab === 'exchange' ? '2px solid #FFD700' : 'none',
-                paddingBottom: '5px'
-              }}
-            >
-              🥈 은화 교환
-            </h2>
-          </div>
+          <h2>💰 금화 충전</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
