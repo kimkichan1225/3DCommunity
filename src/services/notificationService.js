@@ -172,12 +172,18 @@ class NotificationService {
   /**
    * 채팅 알림 생성
    */
-  createChatNotification(senderUsername, message) {
+  createChatNotification(senderUsername, message, senderId, senderProfileImagePath, senderOutlineImagePath) {
     return this.addNotification({
       type: 'chat',
       title: '새 메시지',
       message: `${senderUsername}: ${message.length > 30 ? message.substring(0, 30) + '...' : message}`,
-      data: { senderUsername, message }
+      data: {
+        senderUsername,
+        message,
+        senderId,
+        senderProfileImagePath,
+        senderOutlineImagePath
+      }
     });
   }
 

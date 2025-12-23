@@ -392,7 +392,13 @@ function App() {
 
       // DM 메시지 알림 생성 (content 필드 사용)
       if (data.senderUsername && data.content) {
-        notificationService.createChatNotification(data.senderUsername, data.content);
+        notificationService.createChatNotification(
+          data.senderUsername,
+          data.content,
+          data.senderId,
+          data.senderProfileImagePath,
+          data.senderOutlineImagePath
+        );
         console.log('✅ DM 알림 생성 완료:', data.senderUsername);
       } else {
         console.error('❌ DM 알림 생성 실패 - 필드 누락:', data);
