@@ -110,9 +110,10 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      e.stopPropagation(); // Prevent event from bubbling to parent handlers
       handleSend();
     }
   };
@@ -203,7 +204,7 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
           placeholder="메시지를 입력하세요..."
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
         />
         <button
           className="send-btn"
