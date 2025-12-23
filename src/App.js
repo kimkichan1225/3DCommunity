@@ -683,6 +683,8 @@ function App() {
       });
     } catch (error) {
       console.error('친구 요청 실패:', error);
+      console.error('에러 응답 데이터:', error.response?.data);
+      console.error('에러 상태 코드:', error.response?.status);
       const errorMessage = error.response?.data?.message || '친구 요청에 실패했습니다.';
       setNotification({
         message: errorMessage,
