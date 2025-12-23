@@ -1223,6 +1223,7 @@ function App() {
           playerLeaveEvent={playerLeaveEvent}
           onInputFocusChange={setIsChatInputFocused}
           onChatMessage={handleChatMessage}
+          isPhoneUIOpen={showPhoneUI}
         />
       )}
 

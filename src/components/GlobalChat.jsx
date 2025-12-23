@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './GlobalChat.css';
 import multiplayerService from '../services/multiplayerService';
 
-function GlobalChat({ isVisible = true, username, userId, onlineCount: externalOnlineCount, playerJoinEvent, playerLeaveEvent, onInputFocusChange, onChatMessage }) {
+function GlobalChat({ isVisible = true, username, userId, onlineCount: externalOnlineCount, playerJoinEvent, playerLeaveEvent, onInputFocusChange, onChatMessage, isPhoneUIOpen = false }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
@@ -58,7 +58,8 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
   // 키보드 이벤트 처리 (Enter로 채팅 활성화, ESC로 비활성화)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Enter' && !isFocused && isVisible) {
+      // PhoneUI가 열려있으면 Enter 키를 무시
+      if (e.key === 'Enter' && !isFocused && isVisible && !isPhoneUIOpen) {
         e.preventDefault();
         // 최소화 상태면 먼저 확장
         if (isMinimized) {
@@ -76,7 +77,7 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFocused, isVisible, isMinimized]);
+  }, [isFocused, isVisible, isMinimized, isPhoneUIOpen]);
 
   // 포커스 상태 변경 시 부모에게 알림
   useEffect(() => {
