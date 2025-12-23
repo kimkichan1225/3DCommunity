@@ -58,9 +58,16 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
   // 키보드 이벤트 처리 (Enter로 채팅 활성화, ESC로 비활성화)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Enter' && !isFocused && isVisible && !isMinimized) {
+      if (e.key === 'Enter' && !isFocused && isVisible) {
         e.preventDefault();
-        inputRef.current?.focus();
+        // 최소화 상태면 먼저 확장
+        if (isMinimized) {
+          setIsMinimized(false);
+        }
+        // 입력창 포커스 (확장 후 포커스되도록 setTimeout 사용)
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
       } else if (e.key === 'Escape' && isFocused) {
         e.preventDefault();
         inputRef.current?.blur();
