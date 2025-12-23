@@ -23,7 +23,8 @@ class MinigameService {
     this.userId = userId;
     this.username = username;
 
-    const socket = new SockJS('http://localhost:8080/ws');
+    const wsUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:8080';
+    const socket = new SockJS(`${wsUrl}/ws`);
 
     this.client = new Client({
       webSocketFactory: () => socket,
