@@ -4,7 +4,7 @@ import ChatRoom from './ChatRoom';
 import messageService from '../../services/messageService';
 import ProfileAvatar from '../ProfileAvatar';
 
-function ChatList({ userId, username, onlinePlayers }) {
+function ChatList({ userId, username, onlinePlayers, onUnreadCountChange }) {
   const [chatRooms, setChatRooms] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -13,6 +13,14 @@ function ChatList({ userId, username, onlinePlayers }) {
   useEffect(() => {
     loadConversations();
   }, [userId]);
+
+  // 총 읽지 않은 메시지 개수 계산 및 부모에게 알림
+  useEffect(() => {
+    const totalUnread = chatRooms.reduce((sum, room) => sum + (room.unreadCount || 0), 0);
+    if (onUnreadCountChange) {
+      onUnreadCountChange(totalUnread);
+    }
+  }, [chatRooms, onUnreadCountChange]);
 
   const loadConversations = async () => {
     try {

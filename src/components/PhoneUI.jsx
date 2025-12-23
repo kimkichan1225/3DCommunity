@@ -6,6 +6,7 @@ import ChatList from './phone/ChatList';
 function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
   const [activeTab, setActiveTab] = useState('friends'); // 'friends' or 'chats'
   const [isClosing, setIsClosing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -13,6 +14,10 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
       setIsClosing(false);
       onClose();
     }, 300); // 애니메이션 시간과 동일
+  };
+
+  const handleUnreadCountChange = (count) => {
+    setUnreadCount(count);
   };
 
   if (!isOpen) return null;
@@ -46,6 +51,9 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
           >
             <span className="tab-icon">💬</span>
             <span className="tab-text">채팅</span>
+            {unreadCount > 0 && (
+              <span className="tab-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+            )}
           </button>
         </div>
 
@@ -55,7 +63,12 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers }) {
             <FriendList userId={userId} username={username} onlinePlayers={onlinePlayers} />
           )}
           {activeTab === 'chats' && (
-            <ChatList userId={userId} username={username} onlinePlayers={onlinePlayers} />
+            <ChatList
+              userId={userId}
+              username={username}
+              onlinePlayers={onlinePlayers}
+              onUnreadCountChange={handleUnreadCountChange}
+            />
           )}
         </div>
 
