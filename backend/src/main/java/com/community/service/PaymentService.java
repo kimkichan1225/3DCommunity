@@ -10,6 +10,8 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -271,6 +273,123 @@ public class PaymentService {
                 .stream()
                 .map(this::convertToPaymentHistoryDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 특정 주문의 결제 상태 조회
+     */
+    @Transactional(readOnly = true)
+    public PaymentResponseDTO getPaymentStatus(Long userId, String orderId) {
+        PaymentHistory paymentHistory = paymentHistoryRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment history not found"));
+
+        // 소유권 확인
+        if (!paymentHistory.getUser().getId().equals(userId)) {
+            return PaymentResponseDTO.builder()
+                    .success(false)
+                    .message("Unauthorized")
+                    .build();
+        }
+
+        return PaymentResponseDTO.builder()
+                .success(true)
+                .status(paymentHistory.getStatus().name())
+                .orderId(paymentHistory.getOrderId())
+                .goldAmount(paymentHistory.getGoldAmount())
+                .remainingGoldCoins(paymentHistory.getUser().getGoldCoins())
+                .paymentHistory(convertToPaymentHistoryDTO(paymentHistory))
+                .build();
+    }
+
+    /**
+     * 전체 결제 내역 조회 (Admin)
+     */
+    @Transactional(readOnly = true)
+    public Page<PaymentHistoryDTO> getAllPaymentHistory(Pageable pageable) {
+        return paymentHistoryRepository.findAll(pageable)
+                .map(this::convertToPaymentHistoryDTO);
+    }
+
+    /**
+     * 결제 취소 (Refund/Admin)
+     */
+    @Transactional
+    public PaymentResponseDTO cancelPayment(String orderId, String cancelReason) {
+        log.info("[PaymentService] 결제 취소 요청: orderId={}, reason={}", orderId, cancelReason);
+
+        PaymentHistory paymentHistory = paymentHistoryRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment history not found"));
+
+        if (paymentHistory.getStatus() != PaymentHistory.PaymentStatus.APPROVED) {
+            return PaymentResponseDTO.builder()
+                    .success(false)
+                    .message("Only APPROVED payments can be canceled. Current status: " + paymentHistory.getStatus())
+                    .build();
+        }
+
+        try {
+            // 토스페이먼츠 취소 API 호출
+            callTossPaymentsStatusAPI(paymentHistory.getPaymentKey(), cancelReason);
+
+            // 상태 업데이트
+            paymentHistory.setStatus(PaymentHistory.PaymentStatus.CANCELED);
+            paymentHistory.setCanceledAt(LocalDateTime.now());
+            paymentHistory.setFailReason("Refund: " + cancelReason);
+            paymentHistoryRepository.save(paymentHistory);
+
+            // 사용자 금화 차감
+            User user = paymentHistory.getUser();
+            user.setGoldCoins(user.getGoldCoins() - paymentHistory.getGoldAmount());
+            userRepository.save(user);
+
+            log.info("Payment canceled and gold deducted: orderId={}, userId={}, amount={}",
+                    orderId, user.getId(), paymentHistory.getGoldAmount());
+
+            return PaymentResponseDTO.builder()
+                    .success(true)
+                    .message("Payment canceled successfully")
+                    .orderId(orderId)
+                    .remainingGoldCoins(user.getGoldCoins())
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Payment cancellation failed: orderId={}, error={}", orderId, e.getMessage());
+            return PaymentResponseDTO.builder()
+                    .success(false)
+                    .message("Cancellation failed: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * 토스페이먼츠 결제 취소 API
+     */
+    private void callTossPaymentsStatusAPI(String paymentKey, String cancelReason) {
+        String url = tossApiUrl + "/" + paymentKey + "/cancel";
+
+        // Basic Auth 헤더 생성
+        String auth = tossSecretKey + ":";
+        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Basic " + encodedAuth);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("cancelReason", cancelReason);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<Map> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                Map.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Toss Payments Cancellation API failed");
+        }
     }
 
     // ============ 변환 메서드 ============

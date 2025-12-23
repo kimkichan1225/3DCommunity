@@ -15,5 +15,6 @@ public class PaymentResponseDTO {
     private String orderId;
     private Integer goldAmount;
     private Integer remainingGoldCoins;
+    private String status;
     private PaymentHistoryDTO paymentHistory;
 }

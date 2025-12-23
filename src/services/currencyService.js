@@ -111,6 +111,27 @@ const currencyService = {
     );
 
     return response.data; // { silverCoins: number, goldCoins: number }
+  },
+  /**
+   * Gold Coin을 Silver Coin으로 교환 (1:100)
+   */
+  exchangeGoldToSilver: async (goldAmount) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await axios.post(`${API_URL}/api/currency/exchange/gold-to-silver`,
+      { goldAmount },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    return response.data; // { silverCoins: number, goldCoins: number }
   }
 };
 

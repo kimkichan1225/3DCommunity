@@ -71,4 +71,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("now") LocalDateTime now,
             Pageable pageable
     );
+    /**
+     * 특정 날짜 이후 로그인한 사용자 수 (활성 사용자)
+     */
+    long countByLastLoginAtAfter(LocalDateTime date);
+
+    /**
+     * 특정 날짜 이후 가입한 사용자 목록
+     */
+    java.util.List<User> findAllByCreatedAtAfter(LocalDateTime date);
 }

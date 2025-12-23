@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import paymentService from '../services/paymentService';
+import CurrencyExchangeModal from './CurrencyExchangeModal';
 import './GoldChargeModal.css';
 
-function GoldChargeModal({ onClose, onChargeSuccess }) {
-  const [searchParams, setSearchParams] = useSearchParams();
+function GoldChargeModal({ onClose, onChargeSuccess, initialTab = 'charge' }) {
+  const [activeTab, setActiveTab] = useState(initialTab); // 'charge' | 'exchange'
   const [selectedAmount, setSelectedAmount] = useState(null);
   const [processing, setProcessing] = useState(false);
-  const [ready, setReady] = useState(false);
 
   // 결제 결과 상태
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'fail' | null
   const [resultData, setResultData] = useState(null);
   const [resultError, setResultError] = useState(null);
-  const approvePaymentRef = useRef(false); // 중복 호출 방지
+  const pollingRef = useRef(null); // 팝업 닫힘 감지용 타이머
+  const timeoutRef = useRef(null); // 결제 전체 타임아웃용 타이머
+  const currentOrderIdRef = useRef(null); // 현재 진행 중인 주문 ID
 
   // 금화 충전 옵션
   const goldOptions = [
@@ -24,69 +25,109 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
     { gold: 10000, price: 100000, popular: false },
   ];
 
-  // URL 파라미터 확인 및 결제 승인 처리
+  // 타이머 정리 함수
+  const clearTimers = () => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    pollingRef.current = null;
+    timeoutRef.current = null;
+  };
+
+  // 컴포넌트 언마운트 시 정리
   useEffect(() => {
-    const orderId = searchParams.get('orderId');
-    const paymentKey = searchParams.get('paymentKey');
-    const amount = searchParams.get('amount');
-    const code = searchParams.get('code');
-    const message = searchParams.get('message');
+    return () => clearTimers();
+  }, []);
 
-    // 결제 성공 처리
-    if (orderId && paymentKey && amount && !approvePaymentRef.current) {
-      approvePaymentRef.current = true;
-      setProcessing(true);
-      approvePayment(orderId, paymentKey, parseInt(amount));
-    }
-    // 결제 실패 처리
-    else if (code && message) {
-      setPaymentResult('fail');
-      setResultError(message);
-      setProcessing(false);
-      // URL 파라미터 제거
-      setSearchParams({});
-    }
-  }, [searchParams, setSearchParams]);
-
-  // 결제 승인 API 호출
-  const approvePayment = async (orderId, paymentKey, amount) => {
+  // 서버 상태 교차 확인 (Cross-check)
+  const verifyPaymentStatus = async (orderId) => {
     try {
-      console.log('[GoldChargeModal] 결제 승인 요청:', { orderId, paymentKey, amount });
-
-      const response = await paymentService.approvePayment(orderId, paymentKey, amount);
-
-      console.log('[GoldChargeModal] 결제 승인 응답:', response);
+      console.log('[GoldChargeModal] 서버 상태 확인 중 (Cross-check):', orderId);
+      const response = await paymentService.getPaymentStatus(orderId);
+      console.log('[GoldChargeModal] 서버 상태 응답:', response);
 
       if (response.success) {
-        console.log('[GoldChargeModal] 결제 성공 - 결과 화면 표시');
-        setPaymentResult('success');
-        setResultData(response);
-
-        // 부모 컴포넌트에 성공 알림
-        if (onChargeSuccess) {
-          onChargeSuccess(response);
+        if (response.status === 'APPROVED') {
+          console.log('[GoldChargeModal] 교차 확인 결과: 결제 성공');
+          setPaymentResult('success');
+          setResultData(response);
+          if (onChargeSuccess) onChargeSuccess(response);
+          return true;
+        } else if (response.status === 'FAILED') {
+          console.log('[GoldChargeModal] 교차 확인 결과: 결제 실패');
+          setPaymentResult('fail');
+          setResultError(response.message || '결제에 실패했습니다.');
+          return true;
         }
-      } else {
-        console.log('[GoldChargeModal] 결제 실패:', response.message);
-        setPaymentResult('fail');
-        setResultError(response.message || '결제 승인에 실패했습니다.');
       }
+      return false;
     } catch (err) {
-      console.error('[GoldChargeModal] Payment approval error:', err);
-      setPaymentResult('fail');
-      setResultError('결제 승인 중 오류가 발생했습니다.');
-    } finally {
-      setProcessing(false);
-      // URL 파라미터 제거
-      setSearchParams({});
+      console.error('[GoldChargeModal] 상태 확인 중 오류:', err);
+      return false;
     }
   };
 
+  // 팝업으로부터 메시지 수신 (window.opener.postMessage)
+  const isApprovingRef = useRef(false);
+
+  useEffect(() => {
+    const handleMessage = async (event) => {
+      console.log('[GoldChargeModal] 메시지 수신 시도 - Origin:', event.origin);
+      if (event.origin !== window.location.origin) return;
+
+      console.log('[GoldChargeModal] 수신 데이터:', event.data);
+
+      // 1. 위젯 인증 완료 (paymentKey 획득) -> 메인 창에서 직접 승인 진행
+      if (event.data.type === 'PAYMENT_AUTHORIZED') {
+        if (isApprovingRef.current) {
+          console.warn('[GoldChargeModal] 이미 승인 처리 중입니다. 중복 요청을 무시합니다.');
+          return;
+        }
+
+        console.log('[GoldChargeModal] ✅ 결제 인증 완료 수신 - 최종 승인 진행');
+        isApprovingRef.current = true;
+        clearTimers();
+        setProcessing(true); // 승인 처리 중 표시
+
+        const { paymentKey, orderId, amount } = event.data.data;
+
+        try {
+          const response = await paymentService.approvePayment(orderId, paymentKey, parseInt(amount));
+          console.log('[GoldChargeModal] 최종 승인 결과:', response);
+
+          if (response.success) {
+            setPaymentResult('success');
+            setResultData(response);
+            if (onChargeSuccess) onChargeSuccess(response);
+          } else {
+            setPaymentResult('fail');
+            setResultError(response.message || '결제 승인에 실패했습니다.');
+          }
+        } catch (error) {
+          console.error('[GoldChargeModal] 승인 요청 중 오류:', error);
+          setPaymentResult('fail');
+          setResultError('서버 통신 중 오류가 발생했습니다.');
+        } finally {
+          isApprovingRef.current = false;
+          setProcessing(false);
+        }
+      }
+      // 2. 결제 에러 처리
+      else if (event.data.type === 'PAYMENT_ERROR') {
+        console.error('[GoldChargeModal] ❌ 결제 에러 메시지 수신:', event.data.error);
+        clearTimers();
+        setPaymentResult('fail');
+        setResultError(event.data.error || '결제 중 오류가 발생했습니다.');
+        setProcessing(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onChargeSuccess]);
 
   // 금액 선택
   const handleSelectAmount = (option) => {
     setSelectedAmount(option);
-    setReady(true);
   };
 
   // 결제 요청
@@ -96,46 +137,104 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
       return;
     }
 
+    // [CRITICAL] 팝업 차단을 피하기 위해 즉시 창을 확보합니다.
+    console.log('[GoldChargeModal] 위젯 팝업창 예약 확보...');
+
+    // 화면 중앙 계산
+    const width = 800;
+    const height = 900;
+    const left = (window.screen.width / 2) - (width / 2);
+    const top = (window.screen.height / 2) - (height / 2);
+
+    const popupWindow = window.open(
+      'about:blank',
+      'payment_popup',
+      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+    );
+
+    if (!popupWindow) {
+      alert('팝업창이 차단되었습니다. 팝업 허용을 설정해 주세요.');
+      return;
+    }
+
     try {
       const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const username = localStorage.getItem('username') || 'Guest';
+      currentOrderIdRef.current = orderId;
 
-      console.log('[GoldChargeModal] 결제 요청 데이터:', {
-        goldAmount: selectedAmount.gold,
-        orderId: orderId,
-        amount: selectedAmount.price
-      });
+      setProcessing(true);
 
-      const paymentRequestResult = await paymentService.createDirectPaymentRequest(
+      // 백엔드 결제 요청 예약 (주문 생성)
+      await paymentService.createDirectPaymentRequest(
         selectedAmount.gold,
         orderId,
         selectedAmount.price
       );
 
-      console.log('[GoldChargeModal] 결제 요청 결과:', paymentRequestResult);
+      // 팝업 페이지 이동 (금액, 주문번호 등 전달)
+      const checkoutUrl = `${window.location.origin}/payment/checkout?` +
+        `amount=${selectedAmount.price}&` +
+        `orderId=${orderId}&` +
+        `orderName=금화 ${selectedAmount.gold.toLocaleString()}개&` +
+        `customerName=${username}`;
 
-      // 토스페이먼츠 결제창 열기
-      const clientKey = process.env.REACT_APP_TOSS_CLIENT_KEY || 'test_ck_DnyRpQWGrNDQv6ZKaMPe3Kwv1M9E';
-      const tossPayments = window.TossPayments(clientKey);
+      popupWindow.location.href = checkoutUrl;
 
-      // 현재 URL을 successUrl/failUrl로 사용 (모달로 돌아오기)
-      const currentUrl = window.location.origin + window.location.pathname;
+      clearTimers();
 
-      // 토스 결제창 열기 (동기 함수 - 바로 리턴됨)
-      tossPayments.requestPayment('카드', {
-        amount: selectedAmount.price,
-        orderId: orderId,
-        orderName: `금화 ${selectedAmount.gold.toLocaleString()}개`,
-        customerName: username,
-        successUrl: currentUrl,
-        failUrl: currentUrl,
-      });
+      // 결제 상태 폴링 (팝업 닫힘 및 백엔드 상태 교차 확인)
+      let lastServerCheck = Date.now();
+      pollingRef.current = setInterval(async () => {
+        const isClosed = !popupWindow || popupWindow.closed;
+        const now = Date.now();
 
-      // 결제창이 열리면 이 함수는 종료되고, 사용자가 결제를 완료하면 successUrl로 리다이렉트됨
+        // 3초마다 서버 상태 직접 확인 (안전장치)
+        if (!isClosed && (now - lastServerCheck > 3000)) {
+          lastServerCheck = now;
+          const verified = await verifyPaymentStatus(currentOrderIdRef.current);
+          if (verified) {
+            clearInterval(pollingRef.current);
+            setProcessing(false);
+            if (popupWindow && !popupWindow.closed) popupWindow.close();
+            return;
+          }
+        }
+
+        if (isClosed) {
+          clearInterval(pollingRef.current);
+          setTimeout(async () => {
+            setPaymentResult(prev => {
+              if (prev === null) {
+                verifyPaymentStatus(currentOrderIdRef.current).then(verified => {
+                  if (!verified) {
+                    setResultError('사용자에 의해 결제가 중단되었습니다.');
+                    setPaymentResult('fail');
+                  }
+                });
+              }
+              return prev;
+            });
+            setProcessing(false);
+          }, 1000);
+        }
+      }, 500);
+
+      timeoutRef.current = setTimeout(() => {
+        if (pollingRef.current) {
+          clearTimers();
+          setPaymentResult('fail');
+          setResultError('결제 시간이 초과되었습니다.');
+          setProcessing(false);
+          if (popupWindow && !popupWindow.closed) popupWindow.close();
+        }
+      }, 10 * 60 * 1000);
 
     } catch (error) {
       console.error('[GoldChargeModal] Payment error:', error);
-      alert('결제 처리 중 오류가 발생했습니다.');
+      if (popupWindow) popupWindow.close();
+      alert('결제 준비 중 오류가 발생했습니다.');
+      setProcessing(false);
+      clearTimers();
     }
   };
 
@@ -145,8 +244,6 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
     setResultData(null);
     setResultError(null);
     setSelectedAmount(null);
-    setReady(false);
-    approvePaymentRef.current = false;
     onClose();
   };
 
@@ -156,9 +253,19 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
     setResultData(null);
     setResultError(null);
     setSelectedAmount(null);
-    setReady(false);
-    approvePaymentRef.current = false;
   };
+
+  // 은화 교환 탭 렌더링
+  if (activeTab === 'exchange') {
+    return (
+      <CurrencyExchangeModal
+        onClose={onClose}
+        onExchangeSuccess={(data) => {
+          if (onChargeSuccess) onChargeSuccess(data);
+        }}
+      />
+    );
+  }
 
   // 결제 처리 중 화면
   if (processing) {
@@ -170,9 +277,13 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
           </div>
           <div className="gold-charge-modal__content">
             <div className="loading-spinner">
-              <div className="spinner"></div>
-              <h2>결제를 처리하고 있습니다...</h2>
-              <p>잠시만 기다려주세요.</p>
+              <div className="spinner-container">
+                <div className="spinner-ring"></div>
+              </div>
+              <div className="loading-text">
+                <h2>결제를 처리하고 있습니다...</h2>
+                <p>잠시만 기다려주세요.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -246,7 +357,32 @@ function GoldChargeModal({ onClose, onChargeSuccess }) {
     <div className="gold-charge-modal-overlay" onClick={onClose}>
       <div className="gold-charge-modal" onClick={(e) => e.stopPropagation()}>
         <div className="gold-charge-modal__header">
-          <h2>💰 금화 충전</h2>
+          <div className="modal-tabs" style={{ display: 'flex', gap: '30px' }}>
+            <h2
+              onClick={() => setActiveTab('charge')}
+              style={{
+                cursor: 'pointer',
+                margin: 0,
+                color: activeTab === 'charge' ? '#FFD700' : 'rgba(255, 215, 0, 0.4)',
+                borderBottom: activeTab === 'charge' ? '2px solid #FFD700' : 'none',
+                paddingBottom: '5px'
+              }}
+            >
+              💰 금화 충전
+            </h2>
+            <h2
+              onClick={() => setActiveTab('exchange')}
+              style={{
+                cursor: 'pointer',
+                margin: 0,
+                color: activeTab === 'exchange' ? '#FFD700' : 'rgba(255, 215, 0, 0.4)',
+                borderBottom: activeTab === 'exchange' ? '2px solid #FFD700' : 'none',
+                paddingBottom: '5px'
+              }}
+            >
+              🥈 은화 교환
+            </h2>
+          </div>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 

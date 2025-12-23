@@ -9,12 +9,14 @@ import NoticeManagement from './pages/admin/NoticeManagement';
 import BoardManagement from './pages/admin/BoardManagement';
 import ReportManagement from './pages/admin/ReportManagement';
 import ChatLogManagement from './pages/admin/ChatLogManagement';
+import PaymentManagement from './pages/admin/PaymentManagement';
 import { ShopManagement } from './features/shop';
 import ProtectedRoute from './components/ProtectedRoute';
 import MinigameSelectPage from './pages/MinigameSelectPage';
-import PaymentSuccess from './features/payment/components/PaymentSuccess';
-import PaymentFail from './features/payment/components/PaymentFail';
 import MapGamePageNew from './pages/MapGamePageNew';
+import PaymentCheckout from './features/payment/components/PaymentCheckout';
+import PaymentCallback from './features/payment/components/PaymentCallback';
+import Statistics from './pages/admin/Statistics';
 
 function AppRouter() {
   return (
@@ -41,8 +43,8 @@ function AppRouter() {
           <Route path="boards" element={<BoardManagement />} />
           <Route path="rooms" element={<div>게임 방 관리 (준비 중)</div>} />
           <Route path="shop" element={<ShopManagement />} />
-          <Route path="payments" element={<div>결제/환불 (준비 중)</div>} />
-          <Route path="statistics" element={<div>통계 (준비 중)</div>} />
+          <Route path="payments" element={<PaymentManagement />} />
+          <Route path="statistics" element={<Statistics />} />
           <Route path="audit-logs" element={<div>감사 로그 (준비 중)</div>} />
           <Route path="profile-items" element={<ProfileItemManager />} />
           <Route path="system" element={<div>시스템 (준비 중)</div>} />
@@ -51,9 +53,9 @@ function AppRouter() {
         <Route path="/minigame-select" element={<MinigameSelectPage />} />
         <Route path="/map-game" element={<MapGamePageNew />} />
 
-        {/* 결제 결과 페이지 */}
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/fail" element={<PaymentFail />} />
+        {/* 결제 위젯 팝업용 경로 */}
+        <Route path="/payment/checkout" element={<PaymentCheckout />} />
+        <Route path="/payment/callback/:status" element={<PaymentCallback />} />
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/" replace />} />

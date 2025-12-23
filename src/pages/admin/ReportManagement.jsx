@@ -181,6 +181,19 @@ function ReportManagement() {
           <option value="USER">사용자</option>
         </select>
 
+        <div className="filter-group">
+          <label>표시 개수:</label>
+          <select
+            value={filters.size}
+            onChange={(e) => setFilters({ ...filters, size: Number(e.target.value), page: 0 })}
+          >
+            <option value={5}>5개씩</option>
+            <option value={10}>10개씩</option>
+            <option value={20}>20개씩</option>
+            <option value={50}>50개씩</option>
+          </select>
+        </div>
+
         <button className="btn-reset" onClick={() => setFilters({ status: '', reportType: '', page: 0, size: 20 })}>
           필터 초기화
         </button>
