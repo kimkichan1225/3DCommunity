@@ -50,6 +50,16 @@ toss:
     client-key: ${TOSS_CLIENT_KEY:test_ck_DnyRpQWGrNDQv6ZKaMPe3Kwv1M9E}
     api-url: https://api.tosspayments.com/v1/payments
 
+# Actuator 설정 (Health Check)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
 # 로깅 설정
 logging:
   level:

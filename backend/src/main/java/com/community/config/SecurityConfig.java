@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/boards/**", "/api/posts/**").permitAll()
                         .requestMatchers("/api/comments/**", "/api/likes/**").permitAll()
                         .requestMatchers("/ws/**").permitAll() // WebSocket endpoints
+                        .requestMatchers("/actuator/health/**").permitAll() // Health check endpoint
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
