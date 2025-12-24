@@ -11,6 +11,7 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
   const [loading, setLoading] = useState(false);
   const [popupMessage, setPopupMessage] = useState(null);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   // 대화 내역 불러오기 및 WebSocket 구독
   useEffect(() => {
@@ -73,6 +74,27 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Enter 키로 채팅 입력창 포커스
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Enter 키를 누르고, 현재 다른 input이 포커스되어 있지 않으면 채팅 입력창 포커스
+      if (e.key === 'Enter' && document.activeElement !== inputRef.current) {
+        const isAnyInputFocused = document.activeElement &&
+                                  (document.activeElement.tagName === 'INPUT' ||
+                                   document.activeElement.tagName === 'TEXTAREA');
+
+        // 다른 input이 포커스되어 있지 않으면 이 채팅 입력창 포커스
+        if (!isAnyInputFocused) {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -202,6 +224,7 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
       {/* 입력 영역 */}
       <div className="message-input-container">
         <input
+          ref={inputRef}
           type="text"
           className="message-input"
           placeholder="메시지를 입력하세요..."
