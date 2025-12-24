@@ -371,6 +371,7 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
         let animState = 'idle';
         if (currentAnimation === 'Walk') animState = 'walk';
         else if (currentAnimation === 'Run') animState = 'run';
+        else if (currentAnimation === 'Jump') animState = 'jump';
 
         multiplayerService.sendPositionUpdate(
           [rbPosition.x, rbPosition.y, rbPosition.z],
