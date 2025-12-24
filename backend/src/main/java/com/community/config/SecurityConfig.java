@@ -44,11 +44,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/comments/**", "/api/likes/**").permitAll()
                         .requestMatchers("/ws/**").permitAll() // WebSocket endpoints
                         .requestMatchers("/actuator/health/**").permitAll() // Health check endpoint
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -64,7 +62,7 @@ public class SecurityConfig {
         // 환경 변수에서 허용 도메인 읽기 (쉼표로 구분)
         String allowedOrigins = System.getenv().getOrDefault("ALLOWED_ORIGINS", "http://localhost:3000");
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 

@@ -93,4 +93,14 @@ public class UserShopController {
         shopService.markItemAsViewed(user.getId(), inventoryId);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * 중복 착용 아바타 정리 (데이터베이스 정리용)
+     */
+    @PostMapping("/cleanup-equipped-avatars")
+    public ResponseEntity<String> cleanupEquippedAvatars(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        int cleanedCount = shopService.cleanupDuplicateEquippedAvatars(user.getId());
+        return ResponseEntity.ok("Cleaned up " + cleanedCount + " duplicate equipped avatars");
+    }
 }
