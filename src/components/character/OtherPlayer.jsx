@@ -5,13 +5,13 @@ import { SkeletonUtils } from 'three-stdlib';
 import * as THREE from 'three';
 import ChatBubble from './ChatBubble';
 
-function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick }) {
+function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf' }) {
   const groupRef = useRef();
   const modelRef = useRef();
   const targetPosition = useRef(position || [0, 0, 0]);
   const targetRotation = useRef(rotationY || 0);
 
-  const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
+  const { scene, animations } = useGLTF(modelPath);
 
   // Clone with SkeletonUtils to properly clone skinned meshes
   const clone = React.useMemo(() => {

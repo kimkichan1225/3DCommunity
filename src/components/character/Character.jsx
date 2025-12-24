@@ -384,7 +384,8 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
         multiplayerService.sendPositionUpdate(
           [rbPosition.x, rbPosition.y, rbPosition.z],
           rotationY,
-          animState
+          animState,
+          modelPath
         );
 
         lastPositionUpdateRef.current = currentTime;

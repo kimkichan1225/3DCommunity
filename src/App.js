@@ -804,7 +804,8 @@ function App() {
           username: data.username,
           position: [data.x, data.y, data.z],
           rotationY: data.rotationY,
-          animation: data.animation
+          animation: data.animation,
+          modelPath: data.modelPath || '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
         }
       }));
     });
@@ -1097,6 +1098,7 @@ function App() {
                     animation={player.animation}
                     chatMessage={playerChatMessages[player.userId]?.message}
                     onRightClick={handlePlayerRightClick}
+                    modelPath={player.modelPath}
                   />
                 ))}
 

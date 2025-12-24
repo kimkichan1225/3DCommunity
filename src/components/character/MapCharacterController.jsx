@@ -191,7 +191,8 @@ function MapCharacterController({
         multiplayerService.sendPositionUpdate(
           [translation.x, translation.y, translation.z],
           targetAngleForNetwork !== null ? targetAngleForNetwork : lastRotationYRef.current,
-          currentAnimation
+          currentAnimation,
+          modelPath
         );
       }
     }
