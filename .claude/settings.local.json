@@ -32,7 +32,9 @@
       "Bash(mkdir:*)",
       "Bash(echo.:*)",
       "Bash(touch:*)",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Bash(gradlew clean build:*)",
+      "Bash(gradlew.bat clean build:*)"
     ],
     "deny": [],
     "ask": []
