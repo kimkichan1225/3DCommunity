@@ -38,8 +38,10 @@ public class ProfileController {
             response.put("nickname", user.getNickname());
             response.put("level", profile != null ? profile.getLevel() : 1);
             response.put("statusMessage", profile != null ? profile.getStatusMessage() : "");
-            response.put("selectedProfile", profile != null ? profile.getSelectedProfile() : 0);
-            response.put("selectedOutline", profile != null ? profile.getSelectedOutline() : 0);
+
+            // 프로필 이미지 경로 추가 (User 엔티티의 ProfileItem 관계 사용)
+            response.put("selectedProfile", user.getSelectedProfile() != null ? user.getSelectedProfile().getImagePath() : null);
+            response.put("selectedOutline", user.getSelectedOutline() != null ? user.getSelectedOutline().getImagePath() : null);
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {

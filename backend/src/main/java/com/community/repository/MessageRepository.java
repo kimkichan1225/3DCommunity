@@ -32,9 +32,18 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query("SELECT m FROM Message m WHERE m.messageType = 'PLAZA' AND m.createdAt > :since AND m.isDeleted = false ORDER BY m.createdAt ASC")
     List<Message> findRecentPlazaMessages(@Param("since") LocalDateTime since);
 
-    // 사용자의 읽지 않은 DM 개수
+    // 사용자의 읽지 않은 DM 개수 (deprecated - use countUnreadDMsFromFriend)
     @Query("SELECT COUNT(m) FROM Message m WHERE m.messageType = 'DM' AND m.receiver.id = :userId AND m.createdAt > :lastCheckTime AND m.isDeleted = false")
     Long countUnreadDMs(@Param("userId") Long userId, @Param("lastCheckTime") LocalDateTime lastCheckTime);
+
+    // 특정 친구로부터 받은 읽지 않은 DM 개수
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.messageType = 'DM' AND m.receiver.id = :receiverId AND m.sender.id = :senderId AND m.isRead = false AND m.isDeleted = false")
+    Long countUnreadDMsFromFriend(@Param("receiverId") Long receiverId, @Param("senderId") Long senderId);
+
+    // 특정 친구와의 대화에서 읽지 않은 메시지를 읽음 처리
+    @Query("UPDATE Message m SET m.isRead = true, m.readAt = :readAt WHERE m.messageType = 'DM' AND m.receiver.id = :receiverId AND m.sender.id = :senderId AND m.isRead = false AND m.isDeleted = false")
+    @org.springframework.data.jpa.repository.Modifying
+    void markMessagesAsRead(@Param("receiverId") Long receiverId, @Param("senderId") Long senderId, @Param("readAt") LocalDateTime readAt);
 
     // 관리자: 7일 이상 된 메시지 삭제
     void deleteByCreatedAtBefore(LocalDateTime cutoffDate);

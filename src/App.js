@@ -1,4 +1,4 @@
-import React, { Suspense, useRef, useState, useEffect } from 'react';
+import React, { Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import './App.css';
 import { Physics } from '@react-three/rapier';
@@ -116,16 +116,16 @@ function App() {
   const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showMinigameModal || showShopModal || showGoldChargeModal || showLanding || showNotificationModal;
 
   // 캐릭터 현재 위치 업데이트 콜백
-  const handleCharacterPositionUpdate = (position) => {
+  const handleCharacterPositionUpdate = useCallback((position) => {
     if (!isMapFull) {
       // Level1 모드일 때만 위치 저장
       level1PositionRef.current = position;
       setLevel1Position(position);
     }
-  };
+  }, [isMapFull]);
 
   // 지도 모드에서 캐릭터 위치 업데이트 - Mapbox 지도 중심 이동 (y축 고정, throttle 적용)
-  const handleMapCharacterPositionUpdate = (position) => {
+  const handleMapCharacterPositionUpdate = useCallback((position) => {
     if (!mapHelpers || !mapHelpers.map || !mapHelpers.project) return;
     if (!initialMapCenterRef.current) return;
 
@@ -178,7 +178,7 @@ function App() {
     } catch (e) {
       console.warn('❌ Map position update failed:', e);
     }
-  };
+  }, [mapHelpers]);
 
   // 캐릭터 이동을 막아야 하는 상태 (모달 열림 또는 채팅 입력 중)
   const shouldBlockMovement = isAnyModalOpen || isChatInputFocused;
@@ -634,7 +634,7 @@ function App() {
   };
 
   // 채팅 메시지 처리 함수 (GlobalChat에서 호출됨)
-  const handleChatMessage = (data) => {
+  const handleChatMessage = useCallback((data) => {
     if (String(data.userId) === String(userId)) {
       // My own message
       // 이전 타이머가 있으면 취소
@@ -674,10 +674,10 @@ function App() {
         delete playerMessageTimersRef.current[data.userId];
       }, 5000);
     }
-  };
+  }, [userId]);
 
   // 플레이어 우클릭 핸들러
-  const handlePlayerRightClick = (event, playerData) => {
+  const handlePlayerRightClick = useCallback((event, playerData) => {
     // Three.js 이벤트는 nativeEvent를 통해 브라우저 이벤트에 접근
     const nativeEvent = event.nativeEvent || event;
 
@@ -690,7 +690,7 @@ function App() {
       position: { x: nativeEvent.clientX, y: nativeEvent.clientY },
       playerData: playerData
     });
-  };
+  }, []);
 
   // 프로필 보기
   const handleViewProfile = (playerData) => {

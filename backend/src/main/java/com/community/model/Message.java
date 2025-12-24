@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
     @Index(name = "idx_message_receiver", columnList = "receiver_id"),
     @Index(name = "idx_message_type", columnList = "message_type"),
     @Index(name = "idx_message_created_at", columnList = "created_at"),
-    @Index(name = "idx_message_is_deleted", columnList = "is_deleted")
+    @Index(name = "idx_message_is_deleted", columnList = "is_deleted"),
+    @Index(name = "idx_message_is_read", columnList = "is_read")
 })
 @Data
 @Builder
@@ -54,11 +55,20 @@ public class Message {
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
 
+    @Column(name = "is_read")
+    private Boolean isRead = false;
+
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (isDeleted == null) {
             isDeleted = false;
+        }
+        if (isRead == null) {
+            isRead = false;
         }
     }
 

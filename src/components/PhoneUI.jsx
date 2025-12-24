@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './PhoneUI.css';
 import FriendList from './phone/FriendList';
 import ChatList from './phone/ChatList';
@@ -17,11 +17,11 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers, initialFrie
     }, 300); // 애니메이션 시간과 동일
   };
 
-  const handleUnreadCountChange = (count) => {
+  const handleUnreadCountChange = useCallback((count) => {
     setUnreadCount(count);
-  };
+  }, []);
 
-  const handleOpenChat = (friend) => {
+  const handleOpenChat = useCallback((friend) => {
     // 친구 정보를 ChatList 형식으로 변환
     setSelectedFriend({
       id: friend.userId,
@@ -32,7 +32,7 @@ function PhoneUI({ isOpen, onClose, userId, username, onlinePlayers, initialFrie
     });
     // 채팅 탭으로 전환
     setActiveTab('chats');
-  };
+  }, []);
 
   // 외부에서 전달된 initialFriend 처리 (DM 알림 클릭 시)
   useEffect(() => {
