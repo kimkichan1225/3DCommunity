@@ -102,8 +102,9 @@ public class MessageService {
 
             Message lastMessage = lastMessages.isEmpty() ? null : lastMessages.get(0);
 
-            // 안 읽은 메시지 개수 (TODO: 읽음 처리 기능 구현 후 실제 개수 계산)
-            int unreadCount = 0;
+            // 안 읽은 메시지 개수 (친구로부터 받은 읽지 않은 메시지)
+            Long unreadCountLong = messageRepository.countUnreadDMsFromFriend(userId, friend.getId());
+            int unreadCount = unreadCountLong != null ? unreadCountLong.intValue() : 0;
 
             // 친구 온라인 여부
             boolean isOnline = activeUserService.isUserActive(friend.getId().toString());
@@ -140,5 +141,13 @@ public class MessageService {
                 .build();
 
         return messageRepository.save(message);
+    }
+
+    /**
+     * 특정 친구로부터 받은 메시지 읽음 처리
+     */
+    @Transactional
+    public void markMessagesAsRead(Long receiverId, Long senderId) {
+        messageRepository.markMessagesAsRead(receiverId, senderId, java.time.LocalDateTime.now());
     }
 }

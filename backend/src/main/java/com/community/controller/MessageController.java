@@ -76,4 +76,24 @@ public class MessageController {
         response.put("count", 0);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * 특정 친구와의 메시지 읽음 처리
+     */
+    @PostMapping("/mark-read/{friendId}")
+    public ResponseEntity<?> markMessagesAsRead(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long friendId
+    ) {
+        try {
+            messageService.markMessagesAsRead(currentUser.getId(), friendId);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "메시지를 읽음 처리했습니다.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "읽음 처리 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
 }
