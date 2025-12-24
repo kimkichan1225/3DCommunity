@@ -38,9 +38,9 @@ dependencies {
     // Database
     runtimeOnly 'org.postgresql:postgresql' // PostgreSQL
 
-    // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    // Lombok (explicit version for Docker builds)
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
     // Development Tools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
