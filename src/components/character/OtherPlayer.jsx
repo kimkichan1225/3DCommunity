@@ -1,11 +1,15 @@
 import React, { useRef, useEffect } from 'react';
 import { useGLTF, useAnimations, Text, Billboard } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import { SkeletonUtils } from 'three-stdlib';
+import * as THREE from 'three';
 import ChatBubble from './ChatBubble';
 
 function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick }) {
   const groupRef = useRef();
   const modelRef = useRef();
+  const targetPosition = useRef(position || [0, 0, 0]);
+  const targetRotation = useRef(rotationY || 0);
 
   const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
 
@@ -23,19 +27,44 @@ function OtherPlayer({ userId, username, position, rotationY, animation, chatMes
 
   const { actions } = useAnimations(animations, modelRef);
 
-  // Update position
+  // Initialize position on mount
   useEffect(() => {
     if (groupRef.current && position) {
       groupRef.current.position.set(position[0], position[1], position[2]);
     }
+  }, []); // Run only once on mount
+
+  // Update target position when network data arrives
+  useEffect(() => {
+    if (position) {
+      targetPosition.current = position;
+    }
   }, [position]);
 
-  // Update rotation
+  // Update target rotation when network data arrives
   useEffect(() => {
-    if (modelRef.current && rotationY !== undefined) {
-      modelRef.current.rotation.y = rotationY;
+    if (rotationY !== undefined) {
+      targetRotation.current = rotationY;
     }
   }, [rotationY]);
+
+  // Smooth interpolation in render loop
+  useFrame((state, delta) => {
+    if (!groupRef.current || !modelRef.current) return;
+
+    // Lerp position (smooth movement)
+    const lerpFactor = Math.min(delta * 10, 1); // Adjust speed with delta * 10
+    groupRef.current.position.lerp(
+      new THREE.Vector3(targetPosition.current[0], targetPosition.current[1], targetPosition.current[2]),
+      lerpFactor
+    );
+
+    // Slerp rotation (smooth rotation)
+    const currentQuat = new THREE.Quaternion().setFromEuler(modelRef.current.rotation);
+    const targetQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetRotation.current);
+    currentQuat.slerp(targetQuat, lerpFactor);
+    modelRef.current.rotation.setFromQuaternion(currentQuat);
+  });
 
   // Update animation
   useEffect(() => {
