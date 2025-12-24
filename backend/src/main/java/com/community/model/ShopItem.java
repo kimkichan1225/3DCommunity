@@ -64,6 +64,7 @@ public class ShopItem {
         ACCESSORY,
         CLOTHING,
         HAIR,
+        AVATAR,
         OTHER
     }
 }
