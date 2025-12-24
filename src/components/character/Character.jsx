@@ -4,6 +4,7 @@ import { useGLTF, useAnimations, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { RigidBody, CapsuleCollider } from '@react-three/rapier';
 import { useKeyboardControls } from '../../useKeyboardControls';
+import { SkeletonUtils } from 'three-stdlib';
 import ChatBubble from './ChatBubble';
 
 /**
@@ -19,6 +20,19 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   console.log('🟣 [Character.jsx] 컴포넌트 렌더링, modelPath:', modelPath);
 
   const { scene, animations } = useGLTF(modelPath);
+
+  // Clone scene with proper shadow settings
+  const clonedScene = React.useMemo(() => {
+    const cloned = SkeletonUtils.clone(scene);
+    cloned.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    return cloned;
+  }, [scene]);
+
   const { actions } = useAnimations(animations, characterRef);
 
   const { forward, backward, left, right, shift, space } = useKeyboardControls();
@@ -103,16 +117,6 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   };
 
   useEffect(() => {
-    // Enable shadows on all meshes in the character model
-    if (characterRef.current) {
-      characterRef.current.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-    }
-
     // characterRef를 modelGroupRef로 설정 (카메라가 추적할 수 있도록)
     if (modelGroupRef.current) {
       characterRef.current = modelGroupRef.current;
@@ -415,7 +419,7 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
       <group ref={modelGroupRef}>
         <primitive
           ref={characterRef}
-          object={scene}
+          object={clonedScene}
           scale={2}
           castShadow
           receiveShadow
