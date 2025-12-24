@@ -290,6 +290,23 @@ function App() {
 
   const handleLoginSuccess = async (user) => {
     console.log('로그인 성공:', user);
+
+    // 착용 중인 아바타 먼저 로드 (깜빡임 방지)
+    setIsChangingModel(true);
+    try {
+      const equippedAvatar = await shopService.getEquippedAvatar();
+      if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
+        console.log('✅ 착용 중인 아바타 로드:', equippedAvatar.shopItem.modelUrl);
+        setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
+      } else {
+        console.log('착용 중인 아바타 없음 - BaseCharacter 사용');
+      }
+    } catch (error) {
+      console.error('착용 아바타 로드 실패:', error);
+      // 실패 시 BaseCharacter 사용 (기본값)
+    }
+
+    // 로그인 상태 설정
     setIsLoggedIn(true);
     setShowLanding(false);
     setUsername(user.username || 'Guest');
@@ -318,19 +335,10 @@ function App() {
       setGoldCoins(0);
     }
 
-    // 착용 중인 아바타 로드
-    try {
-      const equippedAvatar = await shopService.getEquippedAvatar();
-      if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
-        console.log('✅ 착용 중인 아바타 로드:', equippedAvatar.shopItem.modelUrl);
-        setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
-      } else {
-        console.log('착용 중인 아바타 없음 - BaseCharacter 사용');
-      }
-    } catch (error) {
-      console.error('착용 아바타 로드 실패:', error);
-      // 실패 시 BaseCharacter 사용 (기본값)
-    }
+    // 로딩 완료
+    setTimeout(() => {
+      setIsChangingModel(false);
+    }, 500);
   };
 
   // 프로필 업데이트 시 호출되는 함수
@@ -885,41 +893,57 @@ function App() {
 
     if (token && user) {
       console.log('[App] 토큰 발견 - 서버 유효성 검증 시작:', user.username);
+      setIsChangingModel(true); // 로딩 시작
 
       // 서버에서 토큰 유효성 확인
       authService.fetchCurrentUser()
         .then(validUser => {
           if (validUser) {
-            console.log('[App] ✅ 토큰 유효 - 로그인 상태 복원:', validUser.username);
-            setIsLoggedIn(true);
-            setShowLanding(false);
+            console.log('[App] ✅ 토큰 유효 - 사용자 정보 로드');
+            // 사용자 정보 저장 (아직 로그인 상태는 설정하지 않음)
             setUsername(validUser.username || 'Guest');
             setUserId(validUser.id || String(Date.now()));
             setUserProfile(validUser);
 
             // 재화 정보 로드
-            return currencyService.getCurrency();
+            return Promise.all([
+              currencyService.getCurrency(),
+              shopService.getEquippedAvatar()
+            ]);
           } else {
             console.log('[App] ❌ 토큰 무효 - 로그아웃 처리');
             authService.logout();
+            setIsChangingModel(false);
             return null;
           }
         })
-        .then(currency => {
-          if (currency) {
-            setSilverCoins(currency.silverCoins || 0);
-            setGoldCoins(currency.goldCoins || 0);
-            console.log('[App] ✅ 재화 정보 복원:', currency);
-          }
-          // 착용 중인 아바타 로드
-          return shopService.getEquippedAvatar();
-        })
-        .then(equippedAvatar => {
-          if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
-            console.log('[App] ✅ 착용 중인 아바타 복원:', equippedAvatar.shopItem.modelUrl);
-            setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
-          } else {
-            console.log('[App] 착용 중인 아바타 없음 - BaseCharacter 사용');
+        .then(results => {
+          if (results) {
+            const [currency, equippedAvatar] = results;
+
+            // 재화 정보 설정
+            if (currency) {
+              setSilverCoins(currency.silverCoins || 0);
+              setGoldCoins(currency.goldCoins || 0);
+              console.log('[App] ✅ 재화 정보 복원:', currency);
+            }
+
+            // 착용 중인 아바타 설정
+            if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
+              console.log('[App] ✅ 착용 중인 아바타 복원:', equippedAvatar.shopItem.modelUrl);
+              setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
+            } else {
+              console.log('[App] 착용 중인 아바타 없음 - BaseCharacter 사용');
+            }
+
+            // 모든 데이터 로드 완료 후 로그인 상태 설정
+            setIsLoggedIn(true);
+            setShowLanding(false);
+
+            // 로딩 완료
+            setTimeout(() => {
+              setIsChangingModel(false);
+            }, 500);
           }
         })
         .catch(error => {
