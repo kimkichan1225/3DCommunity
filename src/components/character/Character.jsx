@@ -15,12 +15,20 @@ import ChatBubble from './ChatBubble';
  * - 멀티플레이어 위치 동기화
  * - 채팅 말풍선 표시
  */
-function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage }) {
-  const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
+function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf' }) {
+  console.log('🟣 [Character.jsx] 컴포넌트 렌더링, modelPath:', modelPath);
+
+  const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, characterRef);
 
   const { forward, backward, left, right, shift, space } = useKeyboardControls();
   const [currentAnimation, setCurrentAnimation] = useState('none');
+
+  // modelPath 변경 감지
+  useEffect(() => {
+    console.log('🟣 [Character.jsx] modelPath 변경 감지!');
+    console.log('🟣 [Character.jsx] 새 모델 경로:', modelPath);
+  }, [modelPath]);
 
   // 점프 관련 변수
   const jumpPowerRef = useRef(20); // 점프 힘 (높을수록 높이 점프)
@@ -438,6 +446,6 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   );
 }
 
-useGLTF.preload('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
+// Models are loaded dynamically based on user selection
 
 export default Character;

@@ -114,8 +114,7 @@ public class ShopService {
                 item.getImageUrl(),
                 item.getModelUrl(),
                 item.getItemType() != null ? item.getItemType().name() : null,
-                item.getIsActive()
-        );
+                item.getIsActive());
     }
 
     private void updateItemFromDTO(ShopItem item, ShopItemDTO dto) {
@@ -145,8 +144,7 @@ public class ShopService {
                 category.getName(),
                 category.getDescription(),
                 category.getDisplayOrder(),
-                category.getIsActive()
-        );
+                category.getIsActive());
     }
 
     private void updateCategoryFromDTO(ItemCategory category, ItemCategoryDTO dto) {
@@ -278,6 +276,7 @@ public class ShopService {
 
     /**
      * 아이템 착용/해제
+     * AVATAR 카테고리의 경우 한 번에 하나만 착용 가능
      */
     @Transactional
     public void toggleEquipItem(Long userId, Long inventoryId) {
@@ -288,7 +287,31 @@ public class ShopService {
             throw new RuntimeException("Unauthorized");
         }
 
-        inventory.setIsEquipped(!inventory.getIsEquipped());
+        boolean willBeEquipped = !inventory.getIsEquipped();
+
+        // 착용하려는 경우
+        if (willBeEquipped) {
+            ShopItem shopItem = inventory.getShopItem();
+
+            // AVATAR 카테고리인 경우, 같은 카테고리의 다른 착용 아이템 모두 해제
+            if (shopItem.getCategory() != null && "AVATAR".equals(shopItem.getCategory().getName())) {
+                List<UserInventory> equippedAvatars = userInventoryRepository.findByUserId(userId)
+                        .stream()
+                        .filter(inv -> inv.getIsEquipped() &&
+                                inv.getShopItem().getCategory() != null &&
+                                "AVATAR".equals(inv.getShopItem().getCategory().getName()))
+                        .collect(Collectors.toList());
+
+                // 모든 착용 중인 아바타 해제
+                for (UserInventory equippedAvatar : equippedAvatars) {
+                    equippedAvatar.setIsEquipped(false);
+                    userInventoryRepository.save(equippedAvatar);
+                }
+            }
+        }
+
+        // 현재 아이템 착용/해제
+        inventory.setIsEquipped(willBeEquipped);
         userInventoryRepository.save(inventory);
     }
 
@@ -322,5 +345,35 @@ public class ShopService {
         dto.setIsNew(inventory.getIsNew());
         dto.setViewedAt(inventory.getViewedAt());
         return dto;
+    }
+
+    /**
+     * 중복 착용 아바타 정리 (데이터베이스 정리용)
+     * 여러 아바타가 착용 상태인 경우, 가장 최근에 구매한 것만 착용 상태로 유지
+     */
+    @Transactional
+    public int cleanupDuplicateEquippedAvatars(Long userId) {
+        // 사용자의 모든 착용 중인 아바타 조회
+        List<UserInventory> equippedAvatars = userInventoryRepository.findByUserId(userId)
+                .stream()
+                .filter(inv -> inv.getIsEquipped() &&
+                        inv.getShopItem().getCategory() != null &&
+                        "AVATAR".equals(inv.getShopItem().getCategory().getName()))
+                .sorted((a, b) -> b.getPurchasedAt().compareTo(a.getPurchasedAt())) // 최신순 정렬
+                .collect(Collectors.toList());
+
+        if (equippedAvatars.size() <= 1) {
+            return 0; // 중복 없음
+        }
+
+        // 첫 번째(가장 최근) 아바타만 착용 상태 유지, 나머지는 해제
+        int cleanedCount = 0;
+        for (int i = 1; i < equippedAvatars.size(); i++) {
+            equippedAvatars.get(i).setIsEquipped(false);
+            userInventoryRepository.save(equippedAvatars.get(i));
+            cleanedCount++;
+        }
+
+        return cleanedCount;
     }
 }

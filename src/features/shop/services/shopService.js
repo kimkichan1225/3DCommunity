@@ -173,6 +173,19 @@ const shopService = {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     return response.data;
+  },
+
+  /**
+   * 중복 착용 아바타 정리 (데이터베이스 정리용)
+   */
+  cleanupEquippedAvatars: async () => {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(
+      `${API_URL}/api/shop/cleanup-equipped-avatars`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
   }
 };
 

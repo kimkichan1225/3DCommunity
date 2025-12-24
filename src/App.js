@@ -89,6 +89,8 @@ function App() {
   const [showNotificationModal, setShowNotificationModal] = useState(false); // 알림 모달 표시 상태
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0); // 읽지 않은 알림 개수
   const [toastNotifications, setToastNotifications] = useState([]); // 실시간 토스트 알림 목록
+  const [characterModelPath, setCharacterModelPathState] = useState('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
+  const [isChangingModel, setIsChangingModel] = useState(false);
   const [appSettings, setAppSettings] = useState(() => {
     // 로컬 스토리지에서 설정 불러오기
     try {
@@ -1061,6 +1063,7 @@ function App() {
                       multiplayerService={multiplayerService}
                       chatMessage={myChatMessage}
                       onPositionUpdate={handleMapCharacterPositionUpdate}
+                      modelPath={characterModelPath}
                     />
                   ) : (
                     /* Level1 모드: 기존 Character 사용 */
@@ -1074,6 +1077,7 @@ function App() {
                       isMapFull={isMapFull}
                       onPositionUpdate={handleCharacterPositionUpdate}
                       chatMessage={myChatMessage}
+                      modelPath={characterModelPath}
                     />
                   )}
                   <CameraLogger />
@@ -1274,6 +1278,19 @@ function App() {
             setSilverCoins(silver);
             setGoldCoins(gold);
           }}
+          setCharacterModelPath={(newModelPath) => {
+            console.log('🟡 [App.js] setCharacterModelPath 호출됨!');
+            console.log('🟡 [App.js] 새 모델 경로:', newModelPath);
+
+            setIsChangingModel(true);
+            setCharacterModelPathState(newModelPath);
+
+            console.log('🟡 [App.js] 로딩 화면 시작 (1.5초)');
+            setTimeout(() => {
+              setIsChangingModel(false);
+              console.log('🟡 [App.js] 로딩 화면 종료');
+            }, 1500);
+          }}
         />
       )}
 
@@ -1291,6 +1308,14 @@ function App() {
             updateCurrency();
           }}
         />
+      )}
+
+      {/* 캐릭터 모델 변경 로딩 오버레이 */}
+      {isChangingModel && (
+        <div className="character-loading-overlay">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Changing Avatar...</div>
+        </div>
       )}
     </div>
   );

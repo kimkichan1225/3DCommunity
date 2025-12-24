@@ -8,7 +8,7 @@ import shopService from '../services/shopService';
  * - 카테고리별 필터, 검색, 정렬 기능
  * - 구매, 착용/해제 기능
  */
-function ShopModal({ onClose, userCoins, onCoinsUpdate }) {
+function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath }) {
   // 상태 관리
   const [activeTab, setActiveTab] = useState('ALL'); // 카테고리 탭
   const [filter, setFilter] = useState('all'); // 전체/미보유/보유중
@@ -30,6 +30,16 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate }) {
   const loadData = async () => {
     try {
       setIsLoading(true);
+
+      // 먼저 중복 착용 아바타 정리
+      try {
+        await shopService.cleanupEquippedAvatars();
+        console.log('✅ 중복 착용 아바타 정리 완료');
+      } catch (cleanupError) {
+        console.warn('⚠️ 중복 착용 아바타 정리 실패:', cleanupError);
+        // 정리 실패해도 계속 진행
+      }
+
       const [categoriesData, itemsData, inventoryData] = await Promise.all([
         shopService.getActiveCategories(),
         shopService.getActiveShopItems(),
@@ -113,6 +123,14 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate }) {
         if (onCoinsUpdate) {
           onCoinsUpdate(response.remainingSilverCoins, response.remainingGoldCoins);
         }
+
+        // 구매 후 자동 착용 시 캐릭터 모델 변경
+        if (autoEquip && setCharacterModelPath) {
+          const equippedItem = allItems.find(item => item.id === itemId);
+          if (equippedItem && equippedItem.modelUrl) {
+            setCharacterModelPath(equippedItem.modelUrl);
+          }
+        }
       } else {
         alert(response.message);
       }
@@ -125,13 +143,48 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate }) {
   // 아이템 착용/해제
   const handleToggleEquip = async (itemId) => {
     try {
+      console.log('🔵 [1] handleToggleEquip 시작, itemId:', itemId);
+
       const inventoryItem = myInventory.find(inv => inv.shopItemId === itemId);
+      console.log('🔵 [2] inventoryItem 찾음:', inventoryItem);
+
       if (inventoryItem) {
+        const wasEquipped = inventoryItem.isEquipped;
+        console.log('🔵 [3] wasEquipped:', wasEquipped);
+
         await shopService.toggleEquipItem(inventoryItem.id);
+        console.log('🔵 [4] API 호출 완료');
+
         await loadData(); // 데이터 새로고침
+        console.log('🔵 [5] loadData 완료');
+
+        // 착용 시 캐릭터 모델 변경
+        if (!wasEquipped && setCharacterModelPath) {
+          console.log('🔵 [6] 캐릭터 모델 변경 시작');
+
+          const equippedItem = allItems.find(item => item.id === itemId);
+          console.log('🔵 [7] equippedItem:', equippedItem);
+
+          // 백엔드는 modelUrl 필드를 사용함
+          if (equippedItem && equippedItem.modelUrl) {
+            console.log('🟢 [8] 모델 경로 변경:', equippedItem.modelUrl);
+            setCharacterModelPath(equippedItem.modelUrl);
+            console.log('🟢 [9] setCharacterModelPath 호출 완료!');
+          } else {
+            console.error('❌ [8] equippedItem 또는 modelUrl 없음:', {
+              equippedItem,
+              modelUrl: equippedItem?.modelUrl
+            });
+          }
+        } else {
+          console.log('⚠️ [6] 캐릭터 모델 변경 건너뜀:', {
+            wasEquipped,
+            hasSetFunction: !!setCharacterModelPath
+          });
+        }
       }
     } catch (error) {
-      console.error('Toggle equip failed:', error);
+      console.error('❌ Toggle equip failed:', error);
       alert('착용/해제에 실패했습니다.');
     }
   };

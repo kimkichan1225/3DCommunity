@@ -11,16 +11,17 @@ import ChatBubble from './ChatBubble';
  * - 지도 모드에서만 사용되는 캐릭터 컨트롤러
  * - 지면(MapFloor) 위에서 움직임
  */
-function MapCharacterController({ 
-  characterRef, 
-  isMovementDisabled, 
-  username, 
-  userId, 
-  multiplayerService, 
+function MapCharacterController({
+  characterRef,
+  isMovementDisabled,
+  username,
+  userId,
+  multiplayerService,
   chatMessage,
-  onPositionUpdate
+  onPositionUpdate,
+  modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
 }) {
-  const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
+  const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, characterRef);
 
   const { forward, backward, left, right, shift } = useKeyboardControls();
@@ -59,7 +60,7 @@ function MapCharacterController({
   const playStepSound = () => {
     if (stepAudioRef.current) {
       stepAudioRef.current.currentTime = 0;
-      stepAudioRef.current.play().catch(() => {});
+      stepAudioRef.current.play().catch(() => { });
     }
   };
 
@@ -170,7 +171,7 @@ function MapCharacterController({
     // 위치 동기화
     const translation = rigidBodyRef.current.translation();
     modelGroupRef.current.position.set(translation.x, translation.y, translation.z);
-    
+
     // RigidBody 회전을 항상 0으로 고정 (기울임 방지)
     rigidBodyRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
     rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
@@ -197,10 +198,10 @@ function MapCharacterController({
   });
 
   // 렌더링 시 디버깅 로그
-  console.log('MapCharacterController 렌더링:', { 
-    sceneLoaded: !!scene, 
+  console.log('MapCharacterController 렌더링:', {
+    sceneLoaded: !!scene,
     modelGroupRefSet: !!modelGroupRef,
-    rigidBodyRefSet: !!rigidBodyRef 
+    rigidBodyRefSet: !!rigidBodyRef
   });
 
   return (
