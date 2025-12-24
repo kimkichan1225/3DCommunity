@@ -58,8 +58,13 @@ function GlobalChat({ isVisible = true, username, userId, onlineCount: externalO
   // 키보드 이벤트 처리 (Enter로 채팅 활성화, ESC로 비활성화)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // PhoneUI가 열려있으면 Enter 키를 무시
-      if (e.key === 'Enter' && !isFocused && isVisible && !isPhoneUIOpen) {
+      // 다른 input이 포커스되어 있으면 무시 (ChatRoom input 등)
+      const isInputFocused = document.activeElement &&
+                            (document.activeElement.tagName === 'INPUT' ||
+                             document.activeElement.tagName === 'TEXTAREA');
+
+      // PhoneUI가 열려있거나 다른 input이 포커스되어 있으면 Enter 키를 무시
+      if (e.key === 'Enter' && !isFocused && isVisible && !isPhoneUIOpen && !isInputFocused) {
         e.preventDefault();
         // 최소화 상태면 먼저 확장
         if (isMinimized) {
