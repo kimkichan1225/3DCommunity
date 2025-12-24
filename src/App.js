@@ -1,4 +1,4 @@
-import React, { Suspense, useRef, useState, useEffect } from 'react';
+import React, { Suspense, useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import './App.css';
 import { Physics } from '@react-three/rapier';
@@ -632,7 +632,7 @@ function App() {
   };
 
   // 채팅 메시지 처리 함수 (GlobalChat에서 호출됨)
-  const handleChatMessage = (data) => {
+  const handleChatMessage = useCallback((data) => {
     if (String(data.userId) === String(userId)) {
       // My own message
       // 이전 타이머가 있으면 취소
@@ -672,7 +672,7 @@ function App() {
         delete playerMessageTimersRef.current[data.userId];
       }, 5000);
     }
-  };
+  }, [userId]);
 
   // 플레이어 우클릭 핸들러
   const handlePlayerRightClick = (event, playerData) => {
