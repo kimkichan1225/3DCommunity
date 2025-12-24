@@ -186,6 +186,17 @@ const shopService = {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     return response.data;
+  },
+
+  /**
+   * 착용 중인 아바타 조회
+   */
+  getEquippedAvatar: async () => {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/api/shop/equipped-avatar`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
   }
 };
 

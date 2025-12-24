@@ -95,6 +95,16 @@ public class UserShopController {
     }
 
     /**
+     * 착용 중인 아바타 조회
+     */
+    @GetMapping("/equipped-avatar")
+    public ResponseEntity<UserInventoryDTO> getEquippedAvatar(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        UserInventoryDTO equippedAvatar = shopService.getEquippedAvatar(user.getId());
+        return ResponseEntity.ok(equippedAvatar);
+    }
+
+    /**
      * 중복 착용 아바타 정리 (데이터베이스 정리용)
      */
     @PostMapping("/cleanup-equipped-avatars")

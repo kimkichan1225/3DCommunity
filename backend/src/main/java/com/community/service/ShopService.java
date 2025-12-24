@@ -348,6 +348,30 @@ public class ShopService {
     }
 
     /**
+     * 착용 중인 아바타 조회
+     */
+    @Transactional(readOnly = true)
+    public UserInventoryDTO getEquippedAvatar(Long userId) {
+        List<UserInventory> equippedAvatars = userInventoryRepository.findByUserId(userId).stream()
+                .filter(inv -> inv.getIsEquipped() &&
+                        inv.getShopItem().getCategory() != null &&
+                        "AVATAR".equals(inv.getShopItem().getCategory().getName()))
+                .collect(Collectors.toList());
+
+        if (equippedAvatars.isEmpty()) {
+            return null;
+        }
+
+        // 가장 최근에 구매한 착용 중인 아바타 반환
+        UserInventory equipped = equippedAvatars.stream()
+                .sorted((a, b) -> b.getPurchasedAt().compareTo(a.getPurchasedAt()))
+                .findFirst()
+                .orElse(null);
+
+        return equipped != null ? convertToInventoryDTO(equipped) : null;
+    }
+
+    /**
      * 중복 착용 아바타 정리 (데이터베이스 정리용)
      * 여러 아바타가 착용 상태인 경우, 가장 최근에 구매한 것만 착용 상태로 유지
      */

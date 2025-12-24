@@ -35,6 +35,7 @@ import authService from './features/auth/services/authService';
 import friendService from './services/friendService';
 import currencyService from './services/currencyService';
 import attendanceService from './services/attendanceService';
+import shopService from './features/shop/services/shopService';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShopModal } from './features/shop';
 import { GoldChargeModal } from './features/payment';
@@ -315,6 +316,20 @@ function App() {
       // 실패 시 기본값 설정
       setSilverCoins(0);
       setGoldCoins(0);
+    }
+
+    // 착용 중인 아바타 로드
+    try {
+      const equippedAvatar = await shopService.getEquippedAvatar();
+      if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
+        console.log('✅ 착용 중인 아바타 로드:', equippedAvatar.shopItem.modelUrl);
+        setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
+      } else {
+        console.log('착용 중인 아바타 없음 - BaseCharacter 사용');
+      }
+    } catch (error) {
+      console.error('착용 아바타 로드 실패:', error);
+      // 실패 시 BaseCharacter 사용 (기본값)
     }
   };
 
@@ -895,6 +910,16 @@ function App() {
             setSilverCoins(currency.silverCoins || 0);
             setGoldCoins(currency.goldCoins || 0);
             console.log('[App] ✅ 재화 정보 복원:', currency);
+          }
+          // 착용 중인 아바타 로드
+          return shopService.getEquippedAvatar();
+        })
+        .then(equippedAvatar => {
+          if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
+            console.log('[App] ✅ 착용 중인 아바타 복원:', equippedAvatar.shopItem.modelUrl);
+            setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
+          } else {
+            console.log('[App] 착용 중인 아바타 없음 - BaseCharacter 사용');
           }
         })
         .catch(error => {
