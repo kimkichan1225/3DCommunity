@@ -85,6 +85,32 @@ public class MinigameController {
 
             // 방 목록 업데이트 브로드캐스트
             messagingTemplate.convertAndSend("/topic/minigame/rooms", room);
+
+            // 개인에게도 성공 ACK 전송 (so joining client gets explicit confirmation)
+            GameEventDto ack = new GameEventDto();
+            ack.setRoomId(request.getRoomId());
+            ack.setType("joinResult");
+            ack.setPlayerId(request.getUserId());
+            ack.setPayload("ok");
+            ack.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/joinResult/" + request.getUserId(), ack);
+            log.info("joinResult(ok) sent to user {} for room {}", request.getUserId(), request.getRoomId());
+        } else {
+            // failure reason checking
+            MinigameRoomDto maybeRoom = roomService.getRoom(request.getRoomId());
+            String reason = "not found or full";
+            if (maybeRoom == null) reason = "room not found";
+            else if (maybeRoom.getCurrentPlayers() >= maybeRoom.getMaxPlayers()) reason = "room full";
+
+            // 실패(방 없음 또는 가득 참)일 때 개인에게 오류 ACK 전송
+            GameEventDto ack = new GameEventDto();
+            ack.setRoomId(request.getRoomId());
+            ack.setType("joinResult");
+            ack.setPlayerId(request.getUserId());
+            ack.setPayload("error: " + reason);
+            ack.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/joinResult/" + request.getUserId(), ack);
+            log.warn("joinResult(error: {}) sent to user {} for room {}", reason, request.getUserId(), request.getRoomId());
         }
     }
 
@@ -178,6 +204,55 @@ public class MinigameController {
             room.setTimestamp(System.currentTimeMillis());
 
             messagingTemplate.convertAndSend("/topic/minigame/room/" + request.getRoomId(), room);
+        }
+    }
+
+    /**
+     * 게임 이벤트 (spawn, hit 등)
+     * Client -> /app/minigame.room.game
+     * Server -> /topic/minigame/room/{roomId}/game (to room)
+     */
+    @MessageMapping("/minigame.room.game")
+    public void handleGameEvent(GameEventDto event) {
+        log.info("게임 이벤트 수신: {}", event);
+        if (event == null || event.getRoomId() == null) return;
+
+        if ("hit".equals(event.getType())) {
+            // validate and update score
+            String roomId = event.getRoomId();
+            String playerId = event.getPlayerId();
+            String playerName = event.getPlayerName();
+            String targetId = event.getTarget() != null ? event.getTarget().getId() : null;
+
+            GameScoreDto result = roomService.handleHit(roomId, playerId, playerName, targetId, event.getTimestamp() == null ? System.currentTimeMillis() : event.getTimestamp());
+
+            // send back an acknowledgement (scoreUpdate already broadcast by service)
+            if (result != null) {
+                GameEventDto scoreEvt = new GameEventDto();
+                scoreEvt.setRoomId(roomId);
+                scoreEvt.setType("hitAck");
+                scoreEvt.setPlayerId(playerId);
+                scoreEvt.setPayload(String.valueOf(result.getScore()));
+                scoreEvt.setTimestamp(System.currentTimeMillis());
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", scoreEvt);
+            }
+        }
+
+        if ("reactionStart".equals(event.getType())) {
+            String roomId = event.getRoomId();
+            boolean immediate = false;
+            if (event.getPayload() != null && event.getPayload().contains("immediate")) {
+                immediate = true;
+            }
+            log.info("reactionStart received for room {} (immediate={})", roomId, immediate);
+            roomService.startReactionRound(roomId, immediate);
+        }
+
+        if ("reactionHit".equals(event.getType())) {
+            String roomId = event.getRoomId();
+            String playerId = event.getPlayerId();
+            String playerName = event.getPlayerName();
+            roomService.handleReactionHit(roomId, playerId, playerName, event.getTimestamp() == null ? System.currentTimeMillis() : event.getTimestamp());
         }
     }
 

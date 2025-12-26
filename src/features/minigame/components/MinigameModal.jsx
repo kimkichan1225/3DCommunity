@@ -4,10 +4,14 @@ import ProfileAvatar from '../../../components/ProfileAvatar';
 import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen } from 'react-icons/fa';
 import friendService from '../../../services/friendService';
 import minigameService from '../../../services/minigameService';
+import AimGame from './AimGame';
+import ReactionRace from './ReactionRace';
 
-function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby' }) {
+function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby', initialRoomId = null }) {
   // 뷰 전환 상태 ('lobby', 'create', 'waiting')
   const [currentView, setCurrentView] = useState(initialMode === 'create' ? 'create' : 'lobby');
+  // 초기 입장 시 서버 ACK로부터 전달된 roomId가 있을 수 있음 (invite 수락 후)
+  const [pendingRoomId, setPendingRoomId] = useState(initialRoomId);
 
   // 현재 참여 중인 방 정보
   const [currentRoom, setCurrentRoom] = useState(null);
@@ -61,6 +65,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
     { id: 'word', name: '끝말잇기', image: '/resources/GameIllust/Word.png', maxPlayers: [2, 4, 6, 8] },
     { id: 'aim', name: '에임 맞추기', image: '/resources/GameIllust/Aim.png', maxPlayers: [2, 4] },
+    { id: 'reaction', name: 'Reaction Race', image: '/resources/GameIllust/Reaction.png', maxPlayers: [2] },
     { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png', maxPlayers: [2, 4, 6] }
   ];
 
@@ -146,60 +151,100 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         setCurrentRoom(roomData);
         setCurrentView('waiting');
       }
-    });
 
-    // 방 삭제 이벤트
-    minigameService.on('roomDelete', (roomData) => {
-      console.log('방 삭제:', roomData);
-      setRooms(prevRooms => prevRooms.filter(r => r.roomId !== roomData.roomId));
-
-      // 내가 있던 방이 삭제되면 로비로 돌아가기
-      if (currentRoom?.roomId === roomData.roomId) {
-        setCurrentRoom(null);
-        setCurrentView('lobby');
-        setRoomChatMessages([]);
-      }
-    });
-
-    // 방 입장/업데이트 이벤트
-    minigameService.on('roomJoin', (roomData) => {
-      console.log('🟢 방 이벤트 수신:', roomData.action, roomData);
-      if (roomData.action === 'join' || roomData.action === 'update' || roomData.action === 'ready' || roomData.action === 'leave') {
-        console.log('🟢 currentRoom 업데이트:', roomData);
+      // 방이 시작된 경우 (action === 'start' 또는 roomData.playing true) -> 게임 화면으로 전환
+      if (roomData.action === 'start' || roomData.playing) {
+        console.log('게임 시작 이벤트 수신: ', roomData.roomId, roomData);
+        // 방 구독 및 현재 방 상태 갱신
+        minigameService.subscribeToRoom(roomData.roomId);
+        minigameService.currentRoomId = roomData.roomId;
         setCurrentRoom(roomData);
-        // 내가 방에 있는지 확인 (join 액션일 때만 화면 전환)
-        if (roomData.action === 'join') {
-          const myUserId = String(userProfile?.id || 'guest');
-          const isInRoom = roomData.players?.some(p => String(p.userId) === myUserId);
-          if (isInRoom && currentView !== 'waiting') {
-            setCurrentView('waiting');
-          }
+        // 대기방 뷰를 유지하되, currentRoom.playing 기반으로 게임 컴포넌트가 렌더링 됩니다
+        setCurrentView('waiting');
+      }
+
+          // Note: roomJoin 이벤트는 컴포넌트가 마운트될 때 한 번 등록합니다 (아래에서)
+
+
+
+      });
+
+    // 게임 이벤트 핸들러
+    minigameService.on('gameEvent', (evt) => {
+      console.log('Game event (Modal):', evt);
+      // If gameStart or spawnTarget/reactionGo occurs, and this modal represents the same room, set playing flag
+      if (evt?.roomId && (evt.type === 'gameStart' || evt.type === 'spawnTarget' || evt.type === 'reactionGo')) {
+        if (currentRoom && evt.roomId === currentRoom.roomId) {
+          setCurrentRoom(prev => prev ? { ...prev, playing: true } : prev);
+          setCurrentView('waiting');
         }
-      } else if (roomData.action === 'start') {
-        // TODO: 게임 시작 처리
-        console.log('게임 시작!');
+        // If pendingRoomId matches, also apply
+        if (pendingRoomId && evt.roomId === pendingRoomId) {
+          setCurrentRoom(prev => ({ ...(prev || {}), roomId: evt.roomId, playing: true }));
+          setCurrentView('waiting');
+          setPendingRoomId(null);
+        }
       }
     });
 
-    // 방 채팅 이벤트
-    minigameService.on('roomChat', (chatData) => {
-      console.log('방 채팅:', chatData);
-      const newMessage = {
-        id: chatData.timestamp,
-        username: chatData.username,
-        message: chatData.message,
-        timestamp: new Date(chatData.timestamp)
-      };
-      setRoomChatMessages(prev => [...prev, newMessage]);
-    });
-
-    // 컴포넌트 언마운트 시 정리
+    // cleanup for this useEffect
     return () => {
-      // ⚠️ React StrictMode에서 cleanup이 테스트 목적으로 실행될 수 있으므로
-      // 여기서는 방 나가기를 하지 않음. handleClose에서만 처리.
+      minigameService.on('roomsList', null);
+      minigameService.on('roomUpdate', null);
+      minigameService.on('roomJoin', null);
+      minigameService.on('roomDelete', null);
+      minigameService.on('roomChat', null);
+      minigameService.on('gameEvent', null);
       console.log('MinigameModal cleanup (StrictMode 테스트일 수 있음)');
     };
   }, []);
+
+  // pendingRoomId(prop)로 초기 입장 요청이 있는 경우 rooms 배열이 들어올 때 target room을 찾아 설정
+  useEffect(() => {
+    if (!pendingRoomId || rooms.length === 0) return;
+    const target = rooms.find(r => r.roomId === pendingRoomId);
+    if (target) {
+      console.log('pendingRoomId에 해당하는 방을 찾음, 자동 입장 설정:', target.roomId);
+      minigameService.subscribeToRoom(target.roomId);
+      minigameService.currentRoomId = target.roomId;
+      setCurrentRoom(target);
+      setCurrentView('waiting');
+      setPendingRoomId(null);
+    }
+  }, [pendingRoomId, rooms]);
+
+  // 초기 prop이 바뀌는 경우 반영 (모달이 이미 열려 있을 때)
+  useEffect(() => {
+    if (initialRoomId) {
+      setPendingRoomId(initialRoomId);
+    }
+  }, [initialRoomId]);
+
+  // roomJoin 이벤트를 등록 - pendingRoomId나 userProfile 변화에 반응하도록 의존성 설정
+  useEffect(() => {
+    const handler = (roomPayload) => {
+      console.log('roomJoin 이벤트 수신 (Modal):', roomPayload);
+      const amInRoom = (roomPayload?.players || []).some(p => String(p.userId) === String(userProfile?.id));
+      if (amInRoom) {
+        console.log('내가 방에 포함됨 - 자동으로 대기방 뷰로 전환:', roomPayload.roomId);
+        minigameService.subscribeToRoom(roomPayload.roomId);
+        minigameService.currentRoomId = roomPayload.roomId;
+        setCurrentRoom(roomPayload);
+        setCurrentView('waiting');
+      }
+
+      if (pendingRoomId && roomPayload.roomId === pendingRoomId) {
+        minigameService.subscribeToRoom(roomPayload.roomId);
+        minigameService.currentRoomId = roomPayload.roomId;
+        setCurrentRoom(roomPayload);
+        setCurrentView('waiting');
+        setPendingRoomId(null);
+      }
+    };
+
+    minigameService.on('roomJoin', handler);
+    return () => minigameService.on('roomJoin', null);
+  }, [pendingRoomId, userProfile]);
 
   // 브라우저 종료/새로고침 시 방에서 나가기
   useEffect(() => {
@@ -318,7 +363,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   };
 
   const handleInviteFriendToRoom = (friend) => {
-    const isOnline = isFriendOnline(friend.username);
+    const isOnline = isFriendOnline(friend);
     if (!isOnline) {
       setInviteNotification({
         type: 'error',
@@ -348,6 +393,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
   const handleGameStart = () => {
     console.log('게임 시작 클릭');
     if (currentRoom?.roomId) {
+      // Optimistic: set local state to playing immediately for host
+      setCurrentRoom(prev => prev ? { ...prev, playing: true } : prev);
       minigameService.startGame(currentRoom.roomId);
     }
   };
@@ -404,12 +451,16 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     // (대기방 화면에서는 친구 목록이 관전자 목록으로 대체되므로 이 함수가 호출되지 않음)
   };
 
-  // 친구의 온라인 상태 확인
-  const isFriendOnline = (friendUsername) => {
+  // 친구의 온라인 상태 확인 (userId 우선, 없으면 username 비교)
+  const isFriendOnline = (friend) => {
     if (!onlinePlayers) return false;
-    return Object.values(onlinePlayers).some(
-      (player) => player.username === friendUsername
-    );
+    // friend may be username string or friend object
+    if (typeof friend === 'string') {
+      return Object.values(onlinePlayers).some(p => p.username === friend);
+    }
+    if (friend.userId && onlinePlayers[String(friend.userId)]) return true;
+    if (friend.username) return Object.values(onlinePlayers).some(p => p.username === friend.username);
+    return false;
   };
 
   return (
@@ -438,6 +489,15 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
               <FaTimes />
             </button>
           </div>
+
+          {/* AimGame overlay when playing Aim Duel */}
+          {(currentRoom?.isPlaying || currentRoom?.playing) && currentRoom?.gameName === '에임 맞추기' && (
+            <AimGame roomId={currentRoom.roomId} />
+          )}
+
+          {(currentRoom?.isPlaying || currentRoom?.playing) && currentRoom?.gameName === 'Reaction Race' && (
+            <ReactionRace roomId={currentRoom.roomId} isHost={isHost} />
+          )}
 
           {/* 방 목록 / 방 만들기 폼 / 대기방 */}
           {currentView === 'create' ? (
@@ -795,7 +855,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                   <div className="friends-empty">친구가 없습니다</div>
                 ) : (
                   friends.map((friend, index) => {
-                    const isOnline = isFriendOnline(friend.username);
+                    const isOnline = (typeof friend.isOnline !== 'undefined') ? friend.isOnline : isFriendOnline(friend);
                     return (
                       <div
                         key={friend.friendshipId || friend.id || `friend-${index}`}
@@ -842,7 +902,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
               ) : (
                 <div className="friend-invite-list">
                   {friends.map((friend, index) => {
-                    const isOnline = isFriendOnline(friend.username);
+                    const isOnline = (typeof friend.isOnline !== 'undefined') ? friend.isOnline : isFriendOnline(friend);
                     return (
                       <div
                         key={friend.friendshipId || friend.id || `friend-${index}`}
