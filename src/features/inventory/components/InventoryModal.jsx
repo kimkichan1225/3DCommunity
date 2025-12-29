@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import './InventoryModal.css';
 import shopService from '../../shop/services/shopService';
 
+const CATEGORIES = ['AVATAR', 'ACCESSORY', 'EMOTE', 'EFFECT'];
+
 function InventoryModal({ onClose }) {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('AVATAR');
 
   useEffect(() => {
     loadInventory();
@@ -36,6 +39,11 @@ function InventoryModal({ onClose }) {
     }
   };
 
+  // 선택된 카테고리의 아이템만 필터링
+  const filteredInventory = inventory.filter(
+    (item) => item.shopItem?.category?.name === selectedCategory
+  );
+
   return (
     <div className="inventory-modal-overlay" onClick={onClose}>
       <div className="inventory-modal-container" onClick={(e) => e.stopPropagation()}>
@@ -46,19 +54,32 @@ function InventoryModal({ onClose }) {
           </button>
         </div>
 
+        {/* 카테고리 탭 */}
+        <div className="inventory-tabs">
+          {CATEGORIES.map((category) => (
+            <button
+              key={category}
+              className={`inventory-tab ${selectedCategory === category ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
         <div className="inventory-modal-content">
           {loading ? (
             <div className="inventory-loading">로딩 중...</div>
           ) : error ? (
             <div className="inventory-error">{error}</div>
-          ) : inventory.length === 0 ? (
+          ) : filteredInventory.length === 0 ? (
             <div className="inventory-empty">
-              <p>보유한 아이템이 없습니다.</p>
+              <p>이 카테고리에 아이템이 없습니다.</p>
               <p className="inventory-empty-hint">상점에서 아이템을 구매해보세요!</p>
             </div>
           ) : (
             <div className="inventory-grid">
-              {inventory.map((item) => (
+              {filteredInventory.map((item) => (
                 <div
                   key={item.id}
                   className={`inventory-item ${item.isEquipped ? 'equipped' : ''}`}

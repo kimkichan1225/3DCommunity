@@ -56,6 +56,40 @@
   color: #333;
 }
 
+.inventory-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e0e0e0;
+  padding: 0 30px;
+  background: #f9f9f9;
+}
+
+.inventory-tab {
+  flex: 1;
+  padding: 15px 20px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  position: relative;
+  top: 2px;
+}
+
+.inventory-tab:hover {
+  color: #4CAF50;
+  background: rgba(76, 175, 80, 0.05);
+}
+
+.inventory-tab.active {
+  color: #4CAF50;
+  border-bottom-color: #4CAF50;
+  background: white;
+}
+
 .inventory-modal-content {
   padding: 30px;
   overflow-y: auto;
