@@ -368,16 +368,18 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                               <button
                                 className="btn-purchase"
                                 onClick={() => handlePurchase(selectedItem.id, 'SILVER', false)}
-                                style={{ flex: 1 }}
+                                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                               >
-                                💰 {selectedItem.silverCoinPrice?.toLocaleString()}
+                                <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
+                                {selectedItem.silverCoinPrice?.toLocaleString()}
                               </button>
                               <button
                                 className="btn-purchase"
                                 onClick={() => handlePurchase(selectedItem.id, 'GOLD', false)}
-                                style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' }}
+                                style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                               >
-                                🪙 {selectedItem.goldCoinPrice?.toLocaleString()}
+                                <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
+                                {selectedItem.goldCoinPrice?.toLocaleString()}
                               </button>
                             </div>
                             <button
@@ -396,14 +398,18 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                             <button
                               className="btn-purchase"
                               onClick={() => handlePurchase(selectedItem.id, 'SILVER', false)}
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                             >
-                              💰 {selectedItem.silverCoinPrice?.toLocaleString()} 구매
+                              <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
+                              {selectedItem.silverCoinPrice?.toLocaleString()} 구매
                             </button>
                             <button
                               className="btn-purchase-equip"
                               onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                             >
-                              💰 구매 후 착용
+                              <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
+                              구매 후 착용
                             </button>
                           </>
                         ) : selectedItem.goldCoinPrice > 0 ? (
@@ -412,16 +418,18 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                             <button
                               className="btn-purchase"
                               onClick={() => handlePurchase(selectedItem.id, 'GOLD', false)}
-                              style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' }}
+                              style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                             >
-                              🪙 {selectedItem.goldCoinPrice?.toLocaleString()} 구매
+                              <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
+                              {selectedItem.goldCoinPrice?.toLocaleString()} 구매
                             </button>
                             <button
                               className="btn-purchase-equip"
                               onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
-                              style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' }}
+                              style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                             >
-                              🪙 구매 후 착용
+                              <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
+                              구매 후 착용
                             </button>
                           </>
                         ) : (

@@ -518,6 +518,8 @@
   background: linear-gradient(135deg, #4CAF50, #45a049);
   color: white;
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  white-space: nowrap;
+  min-width: 150px;
 }
 
 .btn-purchase-equip:hover {
