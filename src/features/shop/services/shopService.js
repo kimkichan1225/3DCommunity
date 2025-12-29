@@ -137,13 +137,14 @@ const shopService = {
   /**
    * 아이템 구매
    * @param {number} shopItemId - 구매할 아이템 ID
+   * @param {string} currencyType - 사용할 화폐 타입 ('SILVER' 또는 'GOLD')
    * @param {boolean} autoEquip - 구매 후 즉시 착용 여부
    */
-  purchaseItem: async (shopItemId, autoEquip = false) => {
+  purchaseItem: async (shopItemId, currencyType = 'SILVER', autoEquip = false) => {
     const token = localStorage.getItem('token');
     const response = await axios.post(
       `${API_URL}/api/shop/purchase`,
-      { shopItemId, autoEquip },
+      { shopItemId, currencyType, autoEquip },
       { headers: { Authorization: `Bearer ${token}` } }
     );
     return response.data;

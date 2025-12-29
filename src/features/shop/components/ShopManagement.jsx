@@ -302,7 +302,19 @@ const ShopManagement = () => {
                   <td>
                     {categories.find(c => c.id === item.categoryId)?.name || '-'}
                   </td>
-                  <td>{item.price?.toLocaleString()} 코인</td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {item.silverCoinPrice > 0 && (
+                        <span>💰 {item.silverCoinPrice?.toLocaleString()}</span>
+                      )}
+                      {item.goldCoinPrice > 0 && (
+                        <span>🪙 {item.goldCoinPrice?.toLocaleString()}</span>
+                      )}
+                      {item.silverCoinPrice === 0 && item.goldCoinPrice === 0 && (
+                        <span style={{ color: '#999' }}>가격 미설정</span>
+                      )}
+                    </div>
+                  </td>
                   <td>
                     <span className={`status-badge ${item.isActive ? 'active' : 'inactive'}`}>
                       {item.isActive ? '활성' : '비활성'}
@@ -525,6 +537,8 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
     description: item?.description || '',
     categoryId: item?.categoryId || '',
     price: item?.price || 0,
+    silverCoinPrice: item?.silverCoinPrice || 0,
+    goldCoinPrice: item?.goldCoinPrice || 0,
     imageUrl: item?.imageUrl || '',
     modelUrl: item?.modelUrl || '',
     itemType: item?.itemType || 'ACCESSORY',
@@ -533,8 +547,12 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.price) {
-      alert('아이템명과 가격은 필수 입력 사항입니다.');
+    if (!formData.name) {
+      alert('아이템명은 필수 입력 사항입니다.');
+      return;
+    }
+    if (formData.silverCoinPrice === 0 && formData.goldCoinPrice === 0) {
+      alert('은화 또는 금화 가격 중 최소 하나는 설정해야 합니다.');
       return;
     }
     onSave(formData);
@@ -577,15 +595,27 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
             </div>
 
             <div className="form-group">
-              <label>가격 (코인) *</label>
+              <label>은화 가격 💰</label>
               <input
                 type="number"
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
+                value={formData.silverCoinPrice}
+                onChange={(e) => setFormData(prev => ({ ...prev, silverCoinPrice: parseInt(e.target.value) || 0 }))}
                 placeholder="0"
                 min="0"
-                required
               />
+              <small style={{ color: '#666', fontSize: '0.85em' }}>0으로 설정하면 은화로 구매 불가</small>
+            </div>
+
+            <div className="form-group">
+              <label>금화 가격 🪙</label>
+              <input
+                type="number"
+                value={formData.goldCoinPrice}
+                onChange={(e) => setFormData(prev => ({ ...prev, goldCoinPrice: parseInt(e.target.value) || 0 }))}
+                placeholder="0"
+                min="0"
+              />
+              <small style={{ color: '#666', fontSize: '0.85em' }}>0으로 설정하면 금화로 구매 불가</small>
             </div>
 
             <div className="form-group">

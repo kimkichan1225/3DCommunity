@@ -246,18 +246,54 @@ public class ShopService {
                     .build();
         }
 
-        // 잔액 확인 (실버 코인 기준)
-        if (user.getSilverCoins() < shopItem.getPrice()) {
-            return PurchaseResponse.builder()
-                    .success(false)
-                    .message("Insufficient silver coins")
-                    .remainingSilverCoins(user.getSilverCoins())
-                    .remainingGoldCoins(user.getGoldCoins())
-                    .build();
+        // 화폐 타입에 따른 가격 및 잔액 확인
+        String currencyType = request.getCurrencyType() != null ? request.getCurrencyType() : "SILVER";
+        int price;
+
+        if ("GOLD".equalsIgnoreCase(currencyType)) {
+            // 금화로 구매
+            price = shopItem.getGoldCoinPrice() != null ? shopItem.getGoldCoinPrice() : 0;
+            if (price <= 0) {
+                return PurchaseResponse.builder()
+                        .success(false)
+                        .message("This item cannot be purchased with gold coins")
+                        .remainingSilverCoins(user.getSilverCoins())
+                        .remainingGoldCoins(user.getGoldCoins())
+                        .build();
+            }
+            if (user.getGoldCoins() < price) {
+                return PurchaseResponse.builder()
+                        .success(false)
+                        .message("Insufficient gold coins")
+                        .remainingSilverCoins(user.getSilverCoins())
+                        .remainingGoldCoins(user.getGoldCoins())
+                        .build();
+            }
+            // 금화 차감
+            user.setGoldCoins(user.getGoldCoins() - price);
+        } else {
+            // 은화로 구매
+            price = shopItem.getSilverCoinPrice() != null ? shopItem.getSilverCoinPrice() : shopItem.getPrice();
+            if (price <= 0) {
+                return PurchaseResponse.builder()
+                        .success(false)
+                        .message("This item cannot be purchased with silver coins")
+                        .remainingSilverCoins(user.getSilverCoins())
+                        .remainingGoldCoins(user.getGoldCoins())
+                        .build();
+            }
+            if (user.getSilverCoins() < price) {
+                return PurchaseResponse.builder()
+                        .success(false)
+                        .message("Insufficient silver coins")
+                        .remainingSilverCoins(user.getSilverCoins())
+                        .remainingGoldCoins(user.getGoldCoins())
+                        .build();
+            }
+            // 은화 차감
+            user.setSilverCoins(user.getSilverCoins() - price);
         }
 
-        // 코인 차감
-        user.setSilverCoins(user.getSilverCoins() - shopItem.getPrice());
         userRepository.save(user);
 
         // 인벤토리에 추가

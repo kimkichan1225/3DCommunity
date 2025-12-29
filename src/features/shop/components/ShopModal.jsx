@@ -115,9 +115,9 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
   };
 
   // 아이템 구매
-  const handlePurchase = async (itemId, autoEquip = false) => {
+  const handlePurchase = async (itemId, currencyType = 'SILVER', autoEquip = false) => {
     try {
-      const response = await shopService.purchaseItem(itemId, autoEquip);
+      const response = await shopService.purchaseItem(itemId, currencyType, autoEquip);
       if (response.success) {
         setPopup({ message: '구매가 완료되었습니다!', type: 'success' });
         await loadData(); // 데이터 새로고침
@@ -361,18 +361,74 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                   <div className="detail-actions">
                     {!isOwned(selectedItem.id) ? (
                       <>
-                        <button
-                          className="btn-purchase"
-                          onClick={() => handlePurchase(selectedItem.id, false)}
-                        >
-                          구매하기
-                        </button>
-                        <button
-                          className="btn-purchase-equip"
-                          onClick={() => handlePurchase(selectedItem.id, true)}
-                        >
-                          구매 후 착용
-                        </button>
+                        {selectedItem.silverCoinPrice > 0 && selectedItem.goldCoinPrice > 0 ? (
+                          /* 은화와 금화 둘 다 가능 */
+                          <>
+                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                              <button
+                                className="btn-purchase"
+                                onClick={() => handlePurchase(selectedItem.id, 'SILVER', false)}
+                                style={{ flex: 1 }}
+                              >
+                                💰 {selectedItem.silverCoinPrice?.toLocaleString()}
+                              </button>
+                              <button
+                                className="btn-purchase"
+                                onClick={() => handlePurchase(selectedItem.id, 'GOLD', false)}
+                                style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' }}
+                              >
+                                🪙 {selectedItem.goldCoinPrice?.toLocaleString()}
+                              </button>
+                            </div>
+                            <button
+                              className="btn-purchase-equip"
+                              onClick={() => {
+                                // 은화 우선 시도
+                                handlePurchase(selectedItem.id, 'SILVER', true);
+                              }}
+                            >
+                              구매 후 착용
+                            </button>
+                          </>
+                        ) : selectedItem.silverCoinPrice > 0 ? (
+                          /* 은화만 가능 */
+                          <>
+                            <button
+                              className="btn-purchase"
+                              onClick={() => handlePurchase(selectedItem.id, 'SILVER', false)}
+                            >
+                              💰 {selectedItem.silverCoinPrice?.toLocaleString()} 구매
+                            </button>
+                            <button
+                              className="btn-purchase-equip"
+                              onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
+                            >
+                              💰 구매 후 착용
+                            </button>
+                          </>
+                        ) : selectedItem.goldCoinPrice > 0 ? (
+                          /* 금화만 가능 */
+                          <>
+                            <button
+                              className="btn-purchase"
+                              onClick={() => handlePurchase(selectedItem.id, 'GOLD', false)}
+                              style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' }}
+                            >
+                              🪙 {selectedItem.goldCoinPrice?.toLocaleString()} 구매
+                            </button>
+                            <button
+                              className="btn-purchase-equip"
+                              onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
+                              style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' }}
+                            >
+                              🪙 구매 후 착용
+                            </button>
+                          </>
+                        ) : (
+                          <div style={{ color: '#999', textAlign: 'center', padding: '20px' }}>
+                            가격이 설정되지 않은 아이템입니다
+                          </div>
+                        )}
                       </>
                     ) : (
                       <button
