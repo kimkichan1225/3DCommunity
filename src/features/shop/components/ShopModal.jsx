@@ -341,10 +341,23 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
 
                   <div className="detail-price-box">
                     <h4>가격</h4>
-                    <div className="price-display">
-                      <img src="/resources/Icon/Silver-Coin.png" alt="실버 코인" />
-                      <span className="price-value">{selectedItem.price}</span>
-                    </div>
+                    {selectedItem.silverCoinPrice > 0 && (
+                      <div className="price-display">
+                        <img src="/resources/Icon/Silver-Coin.png" alt="실버 코인" style={{ width: '24px', height: '24px' }} />
+                        <span className="price-value">{selectedItem.silverCoinPrice?.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {selectedItem.goldCoinPrice > 0 && (
+                      <div className="price-display">
+                        <img src="/resources/Icon/Gold-Coin.png" alt="골드 코인" style={{ width: '24px', height: '24px' }} />
+                        <span className="price-value">{selectedItem.goldCoinPrice?.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {selectedItem.silverCoinPrice === 0 && selectedItem.goldCoinPrice === 0 && (
+                      <div className="price-display">
+                        <span className="price-value" style={{ color: '#999' }}>가격 미설정</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* 상태 표시 */}
