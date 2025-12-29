@@ -115,12 +115,21 @@ public class ProfileItemService {
     @Transactional
     public void unlockProfileItemByAvatarName(Long userId, String avatarName) {
         try {
+            System.out.println("🔵 [자동 해금] 시작 - userId: " + userId + ", avatarName: " + avatarName);
+
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
             // 아바타 이름에 해당하는 프로필 아이템 찾기
             // 예: "Casual Male" -> "Casual_Male-profile"
             String profileImageName = avatarName.replace(" ", "_") + "-profile";
+            System.out.println("🔵 [자동 해금] 찾을 프로필 이미지 이름: " + profileImageName);
+
+            // 모든 프로필 아이템 출력 (디버깅용)
+            System.out.println("🔵 [자동 해금] 등록된 프로필 아이템 목록:");
+            profileItemRepository.findAll().stream()
+                    .filter(item -> item.getItemType() == ItemType.PROFILE)
+                    .forEach(item -> System.out.println("  - " + item.getItemName() + " (imagePath: " + item.getImagePath() + ")"));
 
             // imagePath에 해당 이름이 포함된 PROFILE 타입 아이템 찾기
             ProfileItem profileItem = profileItemRepository.findAll().stream()
@@ -131,13 +140,15 @@ public class ProfileItemService {
                     .orElse(null);
 
             if (profileItem == null) {
-                System.out.println("⚠️ 프로필 아이템을 찾을 수 없습니다: " + profileImageName);
+                System.err.println("❌ [자동 해금] 프로필 아이템을 찾을 수 없습니다: " + profileImageName);
                 return;
             }
 
+            System.out.println("🔵 [자동 해금] 찾은 프로필 아이템: " + profileItem.getItemName());
+
             // 이미 보유 중인지 확인
             if (userProfileItemRepository.existsByUserIdAndProfileItemId(userId, profileItem.getId())) {
-                System.out.println("ℹ️ 이미 보유한 프로필 아이템입니다: " + profileItem.getItemName());
+                System.out.println("ℹ️ [자동 해금] 이미 보유한 프로필 아이템입니다: " + profileItem.getItemName());
                 return;
             }
 
@@ -147,10 +158,11 @@ public class ProfileItemService {
             userItem.setProfileItem(profileItem);
             userProfileItemRepository.save(userItem);
 
-            System.out.println("✅ 프로필 아이템 자동 해금 성공: " + profileItem.getItemName());
+            System.out.println("✅ [자동 해금] 프로필 아이템 자동 해금 성공: " + profileItem.getItemName());
 
         } catch (Exception e) {
-            System.err.println("⚠️ 프로필 아이템 자동 해금 실패: " + e.getMessage());
+            System.err.println("❌ [자동 해금] 프로필 아이템 자동 해금 실패: " + e.getMessage());
+            e.printStackTrace();
             // 에러가 발생해도 아바타 구매는 정상적으로 완료되도록 함
         }
     }
@@ -389,50 +401,79 @@ public class ProfileItemService {
      * 잠금해제 조건 확인
      */
     private boolean checkUnlockCondition(User user, ProfileItem item) {
-        // 조건 타입이 NONE이거나 null이면 조건 없음
-        if (item.getUnlockConditionType() == null || item.getUnlockConditionType() == UnlockConditionType.NONE) {
-            return true;
-        }
-
-        // AVATAR_PURCHASE 조건: 해당 아바타를 보유하고 있는지 확인
-        if (item.getUnlockConditionType() == UnlockConditionType.AVATAR_PURCHASE) {
-            // 아이템 코드에서 아바타 이름 추출
-            // 예: "casual-male-profile" -> "Casual_Male"
-            String itemCode = item.getItemCode();
-            String tempAvatarName = itemCode.replace("-profile", "")
-                    .replace("-", "_");
-
-            // 첫 글자를 대문자로 변환 (예: casual_male -> Casual_male)
-            final String avatarName;
-            if (!tempAvatarName.isEmpty()) {
-                String[] parts = tempAvatarName.split("_");
-                StringBuilder formattedName = new StringBuilder();
-                for (int i = 0; i < parts.length; i++) {
-                    if (!parts[i].isEmpty()) {
-                        formattedName.append(Character.toUpperCase(parts[i].charAt(0)))
-                                .append(parts[i].substring(1).toLowerCase());
-                        if (i < parts.length - 1) {
-                            formattedName.append(" ");
-                        }
-                    }
-                }
-                avatarName = formattedName.toString();
-            } else {
-                avatarName = tempAvatarName;
+        try {
+            // 조건 타입이 NONE이거나 null이면 조건 없음
+            if (item.getUnlockConditionType() == null || item.getUnlockConditionType() == UnlockConditionType.NONE) {
+                return true;
             }
 
-            // 사용자 인벤토리에서 해당 아바타 찾기
-            boolean hasAvatar = userInventoryRepository.findByUserId(user.getId()).stream()
-                    .anyMatch(inventory -> inventory.getShopItem() != null &&
-                            inventory.getShopItem().getName() != null &&
-                            inventory.getShopItem().getName().contains(avatarName));
+            // AVATAR_PURCHASE 조건: 해당 아바타를 보유하고 있는지 확인
+            if (item.getUnlockConditionType() == UnlockConditionType.AVATAR_PURCHASE) {
+                System.out.println("🔍 [조건 확인] 아바타 구매 조건 체크 시작");
 
-            return hasAvatar;
+                // 아이템 코드에서 아바타 이름 추출
+                String itemCode = item.getItemCode();
+                System.out.println("🔍 [조건 확인] itemCode: " + itemCode);
+
+                if (itemCode == null || itemCode.isEmpty()) {
+                    System.err.println("❌ [조건 확인] itemCode가 null 또는 빈 문자열입니다.");
+                    return false;
+                }
+
+                String tempAvatarName = itemCode.replace("-profile", "")
+                        .replace("-", "_");
+                System.out.println("🔍 [조건 확인] tempAvatarName: " + tempAvatarName);
+
+                // 첫 글자를 대문자로 변환 (예: casual_male -> Casual Male)
+                final String avatarName;
+                if (!tempAvatarName.isEmpty()) {
+                    String[] parts = tempAvatarName.split("_");
+                    StringBuilder formattedName = new StringBuilder();
+                    for (int i = 0; i < parts.length; i++) {
+                        if (!parts[i].isEmpty()) {
+                            formattedName.append(Character.toUpperCase(parts[i].charAt(0)))
+                                    .append(parts[i].substring(1).toLowerCase());
+                            if (i < parts.length - 1) {
+                                formattedName.append(" ");
+                            }
+                        }
+                    }
+                    avatarName = formattedName.toString();
+                } else {
+                    avatarName = tempAvatarName;
+                }
+                System.out.println("🔍 [조건 확인] 변환된 avatarName: " + avatarName);
+
+                // 사용자 인벤토리 조회
+                var userInventories = userInventoryRepository.findByUserId(user.getId());
+                System.out.println("🔍 [조건 확인] 사용자 인벤토리 개수: " + userInventories.size());
+
+                // 사용자가 보유한 아바타 목록 출력
+                userInventories.stream()
+                        .filter(inv -> inv.getShopItem() != null &&
+                                inv.getShopItem().getCategory() != null &&
+                                "AVATAR".equals(inv.getShopItem().getCategory().getName()))
+                        .forEach(inv -> System.out.println("  - 보유 아바타: " + inv.getShopItem().getName()));
+
+                // 사용자 인벤토리에서 해당 아바타 찾기
+                boolean hasAvatar = userInventories.stream()
+                        .anyMatch(inventory -> inventory.getShopItem() != null &&
+                                inventory.getShopItem().getName() != null &&
+                                inventory.getShopItem().getName().contains(avatarName));
+
+                System.out.println("🔍 [조건 확인] 아바타 보유 여부: " + hasAvatar);
+                return hasAvatar;
+            }
+
+            // TODO: 다른 조건 타입들 구현 (LEVEL, POST_COUNT 등)
+
+            // 기본적으로 false 반환 (조건 체크 미구현)
+            return false;
+
+        } catch (Exception e) {
+            System.err.println("❌ [조건 확인] 에러 발생: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
-
-        // TODO: 다른 조건 타입들 구현 (LEVEL, POST_COUNT 등)
-
-        // 기본적으로 false 반환 (조건 체크 미구현)
-        return false;
     }
 }
