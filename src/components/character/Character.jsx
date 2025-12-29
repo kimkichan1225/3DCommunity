@@ -216,8 +216,8 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     if (!rigidBodyRef.current || !modelGroupRef.current) return;
 
     // 맵 밖으로 떨어진 경우 스폰 위치로 리스폰
-    const rbPosition = rigidBodyRef.current.translation();
-    if (rbPosition.y < -10) {
+    const currentPos = rigidBodyRef.current.translation();
+    if (currentPos.y < -10) {
       console.log('⚠️ 캐릭터가 맵 밖으로 떨어짐 - 리스폰');
       const [x, y, z] = initialPosition || [0, 5, 0];
       rigidBodyRef.current.setTranslation({ x, y, z }, true);
