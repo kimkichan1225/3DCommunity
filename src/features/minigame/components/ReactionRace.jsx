@@ -2,28 +2,33 @@ import React, { useEffect, useState } from 'react';
 import minigameService from '../../../services/minigameService';
 import './ReactionRace.css';
 
-export default function ReactionRace({ roomId, isHost = false, onStartGame }) {
+export default function ReactionRace({ roomId, isHost, userProfile, players }) {
   const [phase, setPhase] = useState('idle'); // idle, prepare, go, ended
   const [message, setMessage] = useState('');
   const [winner, setWinner] = useState(null);
 
   useEffect(() => {
     const handler = (evt) => {
-      if (!evt || !evt.type) return;
-      if (evt.type === 'reactionPrepare') {
-        console.log('reactionPrepare received');
-        setPhase('prepare');
-        setMessage('Get Ready...');
-        setWinner(null);
-      } else if (evt.type === 'reactionGo') {
-        console.log('reactionGo received');
-        setPhase('go');
-        setMessage('GO! Click now!');
-      } else if (evt.type === 'reactionResult' || evt.type === 'reactionEnd') {
-        console.log('reaction end/result received', evt);
-        setPhase('ended');
-        setWinner(evt.playerName || evt.payload || null);
-        setMessage(evt.playerName ? `${evt.playerName} won!` : 'No winner');
+      if (!evt || !evt.type || evt.roomId !== roomId) return;
+      
+      switch(evt.type) {
+        case 'reactionPrepare':
+          setPhase('prepare');
+          setMessage('Get Ready...');
+          setWinner(null);
+          break;
+        case 'reactionGo':
+          setPhase('go');
+          setMessage('GO! Click now!');
+          break;
+        case 'reactionResult':
+        case 'reactionEnd':
+          setPhase('ended');
+          setWinner(evt.playerName || evt.payload || 'N/A');
+          setMessage(evt.playerName ? `${evt.playerName} won!` : 'Round over!');
+          break;
+        default:
+          break;
       }
     };
 
@@ -31,15 +36,10 @@ export default function ReactionRace({ roomId, isHost = false, onStartGame }) {
     return () => minigameService.on('gameEvent', null);
   }, [roomId]);
 
-  // This function is no longer the primary action for the host, 
-  // but is kept in case the reaction game logic is used elsewhere.
-  const sendStart = (immediate = true) => {
-    // Prevent double start and show immediate prepare feedback
-    setPhase('prepare');
-    setMessage('Get Ready...');
-    const payload = immediate ? 'immediate' : null;
-    minigameService.sendGameEvent(roomId, { type: 'reactionStart', payload });
-    console.log('reactionStart sent (immediate=', immediate, ')');
+  const sendStart = () => {
+    if (isHost) {
+      minigameService.sendGameEvent(roomId, { type: 'reactionStart' });
+    }
   };
 
   const sendHit = () => {
@@ -47,24 +47,31 @@ export default function ReactionRace({ roomId, isHost = false, onStartGame }) {
     minigameService.sendGameEvent(roomId, { type: 'reactionHit' });
   };
 
-  const handleStartClick = (e) => {
-    e.stopPropagation();
-    if (onStartGame) {
-      onStartGame();
-    }
-  };
-
   return (
     <div className="reaction-overlay" onClick={sendHit}>
       <div className="reaction-box">
-        <div className="reaction-message">{message || 'Waiting...'}</div>
+        <div className="reaction-message">{message || 'Reaction Race'}</div>
+        
         {phase === 'idle' && isHost && (
-          <button className="reaction-start" onClick={handleStartClick}>Start Aiming Game</button>
+          <button className="reaction-start" onClick={sendStart}>Start Round</button>
         )}
+
         {phase === 'idle' && !isHost && (
-          <div className="reaction-wait">Waiting for host to start</div>
+          <div className="reaction-wait">Waiting for host to start the round...</div>
         )}
-        {winner && <div className="reaction-winner">Winner: {winner}</div>}
+
+        {phase === 'ended' && (
+            <div className="reaction-winner">Winner: {winner}</div>
+        )}
+
+        {/* Display players and scores if available */}
+        <div className="aim-game-players" style={{marginTop: '20px'}}>
+            {players.map(p => (
+                <div key={p.userId} className={`player-score ${p.userId === userProfile.id ? 'self' : ''}`}>
+                <span className="player-name">{p.username}</span>
+                </div>
+            ))}
+        </div>
       </div>
     </div>
   );

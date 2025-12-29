@@ -22,6 +22,7 @@ const SimplePlayerList = ({ scores, players, userProfile }) => (
 );
 
 export default function AimingGame({ roomId, isHost, userProfile, players = [], onGameEnd }) {
+  console.log('AimingGame mounted');
   const [targets, setTargets] = useState({}); // Using an object for quick lookup by ID
   const [scores, setScores] = useState({});
   const [gameStatus, setGameStatus] = useState('playing'); // playing, ended
@@ -34,6 +35,7 @@ export default function AimingGame({ roomId, isHost, userProfile, players = [], 
       initialScores[p.userId] = 0;
     });
     setScores(initialScores);
+    return () => console.log('AimingGame unmounted');
   }, [players]);
 
   // Main event handler for backend communication
@@ -41,20 +43,25 @@ export default function AimingGame({ roomId, isHost, userProfile, players = [], 
     const handler = (evt) => {
       if (!evt || !evt.type || evt.roomId !== roomId) return;
 
-      console.log('AimGame received event:', evt);
+      console.log('AimGame received event:', evt); // Uncommented log
 
       switch (evt.type) {
         case 'spawnTarget':
-          setTargets(prev => ({
-            ...prev,
-            [evt.target.id]: evt.target,
-          }));
+          setTargets(prev => {
+            const newTargets = {
+              ...prev,
+              [evt.target.id]: evt.target,
+            };
+            console.log('Targets after spawn:', newTargets); // Added log
+            return newTargets;
+          });
           break;
 
         case 'targetRemoved':
           setTargets(prev => {
             const newTargets = { ...prev };
             delete newTargets[evt.target.id];
+            console.log('Targets after removal:', newTargets); // Added log
             return newTargets;
           });
           break;
@@ -68,11 +75,9 @@ export default function AimingGame({ roomId, isHost, userProfile, players = [], 
 
         case 'gameEnd':
           setGameStatus('ended');
-          // The payload from the backend is a string like "{uuid=10, uuid2=5}"
-          // We'll just show a generic game over message and let the modal handle closing.
-          // For a more advanced view, this payload would need to be parsed.
           setFinalScores(evt.payload);
           setTargets({}); // Clear all targets
+          console.log('Game ended. Final scores:', evt.payload); // Added log
           break;
         
         default:
@@ -96,6 +101,8 @@ export default function AimingGame({ roomId, isHost, userProfile, players = [], 
       Date.now()
     );
   };
+
+  console.log('Rendering targets:', Object.values(targets).length, targets); // Added log
 
   return (
     <div className="aim-game-overlay">
