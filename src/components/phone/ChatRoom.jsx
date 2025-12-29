@@ -61,6 +61,11 @@ function ChatRoom({ chat, currentUserId, currentUsername, onBack, onSendMessage 
 
       // 메시지 읽음 처리 (백엔드에 알림)
       await messageService.markMessagesAsRead(chat.friendId);
+
+      // 메시지 로드 후 하단으로 스크롤 (약간의 딜레이 후 실행)
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }, 100);
     } catch (error) {
       console.error('메시지 로드 실패:', error);
       // 에러 시 빈 배열로 설정
