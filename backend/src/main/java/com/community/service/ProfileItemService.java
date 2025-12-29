@@ -263,15 +263,34 @@ public class ProfileItemService {
                 .orElseThrow(() -> new RuntimeException("아이템을 찾을 수 없습니다."));
 
         // 사용자가 선택 중인 아이템인지 확인
-        long usersUsingItem = userRepository.findAll().stream()
+        List<User> usersUsingItem = userRepository.findAll().stream()
                 .filter(u -> (u.getSelectedProfile() != null && u.getSelectedProfile().getId().equals(itemId)) ||
                              (u.getSelectedOutline() != null && u.getSelectedOutline().getId().equals(itemId)))
-                .count();
+                .collect(Collectors.toList());
 
-        if (usersUsingItem > 0) {
-            throw new RuntimeException("현재 사용 중인 사용자가 있어 삭제할 수 없습니다.");
+        if (!usersUsingItem.isEmpty()) {
+            // 선택 중인 사용자가 있으면 해당 선택을 먼저 해제
+            for (User user : usersUsingItem) {
+                if (user.getSelectedProfile() != null && user.getSelectedProfile().getId().equals(itemId)) {
+                    user.setSelectedProfile(null);
+                }
+                if (user.getSelectedOutline() != null && user.getSelectedOutline().getId().equals(itemId)) {
+                    user.setSelectedOutline(null);
+                }
+                userRepository.save(user);
+            }
         }
 
+        // user_profile_items에서 해당 프로필 아이템을 참조하는 모든 레코드 삭제
+        List<UserProfileItem> userProfileItems = userProfileItemRepository.findAll().stream()
+                .filter(upi -> upi.getProfileItem().getId().equals(itemId))
+                .collect(Collectors.toList());
+
+        for (UserProfileItem userProfileItem : userProfileItems) {
+            userProfileItemRepository.delete(userProfileItem);
+        }
+
+        // 프로필 아이템 삭제
         profileItemRepository.delete(item);
     }
 
