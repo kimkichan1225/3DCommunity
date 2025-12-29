@@ -172,7 +172,7 @@ const ShopManagement = () => {
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      const matchesCategory = selectedCategory === 'all' || item.categoryId === selectedCategory;
+      const matchesCategory = selectedCategory === 'all' || item.categoryId === parseInt(selectedCategory);
 
       return hasImage && matchesSearch && matchesCategory;
     });
