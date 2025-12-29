@@ -3,6 +3,8 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import './AdminLayout.css';
 import { jwtDecode } from 'jwt-decode';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const AdminLayout = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -48,7 +50,6 @@ const AdminLayout = () => {
   const handleUpdateProfile = async (nickname) => {
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const response = await fetch(`${API_URL}/api/profile/update`, {
         method: 'PUT',
         headers: {

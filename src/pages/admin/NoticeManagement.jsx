@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import './NoticeManagement.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const NoticeManagement = () => {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +22,6 @@ const NoticeManagement = () => {
   const fetchNotices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const response = await fetch(`${API_URL}/api/notices`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -45,7 +46,6 @@ const NoticeManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const url = editingNotice
         ? `${API_URL}/api/admin/notices/${editingNotice.id}`
         : `${API_URL}/api/admin/notices`;
@@ -92,7 +92,10 @@ const NoticeManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
+<<<<<<< HEAD
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+=======
+>>>>>>> kim
       const response = await fetch(`${API_URL}/api/admin/notices/${noticeId}`, {
         method: 'DELETE',
         headers: {
