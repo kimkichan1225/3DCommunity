@@ -74,20 +74,30 @@
 /* 검색 및 필터 섹션 */
 .shop-management .filters-section {
   background: white;
-  padding: 25px;
+  padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+}
+
+.shop-management .filters-row {
   display: flex;
-  gap: 20px;
-  flex-wrap: nowrap;
+  gap: 16px;
   align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.shop-management .filters-right {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-left: auto;
 }
 
 .shop-management .search-box {
-  flex: 8;
+  flex: 1;
   position: relative;
-  min-width: 300px;
+  min-width: 280px;
 }
 
 .shop-management .search-input {
@@ -156,6 +166,72 @@
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.shop-management .items-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  white-space: nowrap;
+}
+
+.shop-management .count-badge {
+  font-size: 16px;
+  font-weight: 700;
+  color: #007bff;
+}
+
+.shop-management .count-label {
+  font-size: 13px;
+  color: #6c757d;
+}
+
+/* 페이징 */
+.shop-management .pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px;
+  padding: 20px 0;
+}
+
+.shop-management .pagination-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #dee2e6;
+  background-color: white;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shop-management .pagination-btn:hover:not(:disabled):not(.active) {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.shop-management .pagination-btn.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+  font-weight: 600;
+}
+
+.shop-management .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* 테이블 */
@@ -489,11 +565,25 @@
     justify-content: center;
   }
 
-  .shop-management .filters-section {
-    grid-template-columns: 1fr;
+  .shop-management .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .shop-management .filters-right {
+    flex-direction: column;
+    margin-left: 0;
+  }
+
+  .shop-management .search-box {
+    min-width: 100%;
   }
 
   .shop-management .tabs-nav {
     overflow-x: auto;
+  }
+
+  .shop-management .pagination {
+    flex-wrap: wrap;
   }
 }
