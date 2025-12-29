@@ -322,6 +322,17 @@ public class ShopService {
             }
         }
 
+        // 테두리 구매 시 자동으로 해당 프로필 테두리 해금
+        if (shopItem.getItemType() == ShopItem.ItemType.OUTLINE) {
+            // imageUrl에서 테두리 이름 추출 (예: "/resources/ProfileOutline/rainbow-outline.png" -> "rainbow-outline")
+            String outlineName = extractOutlineNameFromImageUrl(shopItem.getImageUrl());
+            if (outlineName != null) {
+                profileItemService.unlockProfileItemByOutlineName(userId, outlineName);
+            } else {
+                System.err.println("⚠️ imageUrl에서 테두리 이름 추출 실패: " + shopItem.getImageUrl());
+            }
+        }
+
         return PurchaseResponse.builder()
                 .success(true)
                 .message("Purchase successful")
@@ -452,6 +463,31 @@ public class ShopService {
             return avatarName;
         } catch (Exception e) {
             System.err.println("❌ [아바타 이름 추출] 실패: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * imageUrl에서 테두리 이름 추출
+     * 예: "/resources/ProfileOutline/rainbow-outline.png" -> "rainbow-outline"
+     */
+    private String extractOutlineNameFromImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return null;
+        }
+
+        try {
+            // 파일명 추출 (마지막 / 이후)
+            String fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+
+            // 확장자 제거 (.png, .jpg 등)
+            String nameWithoutExt = fileName.replaceAll("\\.(png|jpg|jpeg|PNG|JPG|JPEG)$", "");
+
+            System.out.println("🟣 [테두리 이름 추출] imageUrl: " + imageUrl + " → outlineName: " + nameWithoutExt);
+
+            return nameWithoutExt;
+        } catch (Exception e) {
+            System.err.println("❌ [테두리 이름 추출] 실패: " + e.getMessage());
             return null;
         }
     }

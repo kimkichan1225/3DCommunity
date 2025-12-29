@@ -627,6 +627,7 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
                 <option value="ACCESSORY">악세서리</option>
                 <option value="CLOTHING">의상</option>
                 <option value="HAIR">헤어</option>
+                <option value="OUTLINE">프로필 테두리</option>
                 <option value="OTHER">기타</option>
               </select>
             </div>

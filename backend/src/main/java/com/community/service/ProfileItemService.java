@@ -168,6 +168,59 @@ public class ProfileItemService {
     }
 
     /**
+     * 테두리 구매 시 자동으로 프로필 테두리 아이템 해금 (조건 체크 없이)
+     */
+    @Transactional
+    public void unlockProfileItemByOutlineName(Long userId, String outlineName) {
+        try {
+            System.out.println("🟣 [테두리 해금] 시작 - userId: " + userId + ", outlineName: " + outlineName);
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+            // 모든 테두리 아이템 출력 (디버깅용)
+            System.out.println("🟣 [테두리 해금] 등록된 테두리 아이템 목록:");
+            profileItemRepository.findAll().stream()
+                    .filter(item -> item.getItemType() == ItemType.OUTLINE)
+                    .forEach(item -> System.out.println("  - " + item.getItemName() + " (imagePath: " + item.getImagePath() + ")"));
+
+            // imagePath에 해당 이름이 포함된 OUTLINE 타입 아이템 찾기
+            ProfileItem outlineItem = profileItemRepository.findAll().stream()
+                    .filter(item -> item.getItemType() == ItemType.OUTLINE &&
+                            item.getImagePath() != null &&
+                            item.getImagePath().contains(outlineName))
+                    .findFirst()
+                    .orElse(null);
+
+            if (outlineItem == null) {
+                System.err.println("❌ [테두리 해금] 테두리 아이템을 찾을 수 없습니다: " + outlineName);
+                return;
+            }
+
+            System.out.println("🟣 [테두리 해금] 찾은 테두리 아이템: " + outlineItem.getItemName());
+
+            // 이미 보유 중인지 확인
+            if (userProfileItemRepository.existsByUserIdAndProfileItemId(userId, outlineItem.getId())) {
+                System.out.println("ℹ️ [테두리 해금] 이미 보유한 테두리 아이템입니다: " + outlineItem.getItemName());
+                return;
+            }
+
+            // 테두리 아이템 자동 해금
+            UserProfileItem userItem = new UserProfileItem();
+            userItem.setUser(user);
+            userItem.setProfileItem(outlineItem);
+            userProfileItemRepository.save(userItem);
+
+            System.out.println("✅ [테두리 해금] 테두리 아이템 자동 해금 성공: " + outlineItem.getItemName());
+
+        } catch (Exception e) {
+            System.err.println("❌ [테두리 해금] 테두리 아이템 자동 해금 실패: " + e.getMessage());
+            e.printStackTrace();
+            // 에러가 발생해도 테두리 구매는 정상적으로 완료되도록 함
+        }
+    }
+
+    /**
      * 프로필 이미지/테두리 선택
      */
     @Transactional
