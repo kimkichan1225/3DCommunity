@@ -408,15 +408,24 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                                 {selectedItem.goldCoinPrice?.toLocaleString()}
                               </button>
                             </div>
-                            <button
-                              className="btn-purchase-equip"
-                              onClick={() => {
-                                // 은화 우선 시도
-                                handlePurchase(selectedItem.id, 'SILVER', true);
-                              }}
-                            >
-                              구매 후 착용
-                            </button>
+                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                              <button
+                                className="btn-purchase-equip"
+                                onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
+                                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                              >
+                                <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '18px', height: '18px' }} />
+                                구매 후 착용
+                              </button>
+                              <button
+                                className="btn-purchase-equip"
+                                onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
+                                style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', color: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                              >
+                                <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '18px', height: '18px' }} />
+                                구매 후 착용
+                              </button>
+                            </div>
                           </>
                         ) : selectedItem.silverCoinPrice > 0 ? (
                           /* 은화만 가능 */
