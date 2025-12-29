@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import './Dashboard.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const Dashboard = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -18,7 +20,7 @@ const Dashboard = () => {
   const fetchDashboardStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/admin/dashboard/stats', {
+      const response = await fetch(`${API_URL}/api/admin/dashboard/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
