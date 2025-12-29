@@ -86,7 +86,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => {
-            minigameService.on('roomsList', null);
+            minigameService.off('roomsList', onRoomsList);
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
     }, [userProfile]);
@@ -95,7 +95,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         const onRoomUpdate = (roomData) => {
             setRooms(prev => prev.map(r => r.roomId === roomData.roomId ? roomData : r).filter(r => !r.isDeleted));
             if (currentRoom && roomData.roomId === currentRoom.roomId) {
-                setCurrentRoom(prev => ({...prev, ...roomData}));
+                setCurrentRoom(prev => ({ ...prev, ...roomData }));
             }
             if (roomData.action === 'create' && String(roomData.hostId) === String(userProfile?.id)) {
                 minigameService.subscribeToRoom(roomData.roomId);
@@ -119,9 +119,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         minigameService.on('roomJoin', onRoomJoin);
         minigameService.on('gameEvent', onGameEvent);
         return () => {
-            minigameService.on('roomUpdate', null);
-            minigameService.on('roomJoin', null);
-            minigameService.on('gameEvent', null);
+            minigameService.off('roomUpdate', onRoomUpdate);
+            minigameService.off('roomJoin', onRoomJoin);
+            minigameService.off('gameEvent', onGameEvent);
         };
     }, [currentRoom, userProfile]);
 
@@ -153,10 +153,10 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const handleInviteFriend = () => setShowFriendInviteModal(true);
     const handleInviteFriendToRoom = (friend) => {
         if (!isFriendOnline(friend)) {
-          setInviteNotification({ type: 'error', message: '오프라인 상태의 친구는 초대할 수 없습니다.' });
+            setInviteNotification({ type: 'error', message: '오프라인 상태의 친구는 초대할 수 없습니다.' });
         } else {
-          minigameService.sendGameInvite(friend.userId, friend.username, currentRoom.roomId, currentRoom.gameName);
-          setInviteNotification({ type: 'success', message: `${friend.username}님에게 초대를 보냈습니다!` });
+            minigameService.sendGameInvite(friend.userId, friend.username, currentRoom.roomId, currentRoom.gameName);
+            setInviteNotification({ type: 'success', message: `${friend.username}님에게 초대를 보냈습니다!` });
         }
         setTimeout(() => setInviteNotification(null), 3000);
         setShowFriendInviteModal(false);
@@ -190,10 +190,10 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 console.log('[MinigameModal renderContent] Returning Create Room Form');
                 return (
                     <div className="create-room-form">
-                        <div className="form-group"><label>방 이름</label><input type="text" placeholder="방 이름을 입력하세요" value={roomForm.roomName} onChange={(e) => handleFormChange('roomName', e.target.value)} maxLength={30}/></div>
+                        <div className="form-group"><label>방 이름</label><input type="text" placeholder="방 이름을 입력하세요" value={roomForm.roomName} onChange={(e) => handleFormChange('roomName', e.target.value)} maxLength={30} /></div>
                         <div className="form-group"><label>게임 종류</label><div className="game-type-grid">{gameTypes.map((game) => (<div key={game.id} className={`game-type-card ${roomForm.gameType === game.name ? 'selected' : ''}`} onClick={() => handleFormChange('gameType', game.name)}><img src={game.image} alt={game.name} className="game-type-image" /><div className="game-type-name">{game.name}</div></div>))}</div></div>
                         <div className="form-group"><label>최대 인원</label><select value={roomForm.maxPlayers} onChange={(e) => handleFormChange('maxPlayers', parseInt(e.target.value))}>{getCurrentMaxPlayersOptions().map((c) => (<option key={c} value={c}>{c}명</option>))}</select></div>
-                        <div className="form-group"><label className="checkbox-label"><input type="checkbox" checked={roomForm.isPrivate} onChange={(e) => handleFormChange('isPrivate', e.target.checked)}/><FaLock /> 비공개 방</label></div>
+                        <div className="form-group"><label className="checkbox-label"><input type="checkbox" checked={roomForm.isPrivate} onChange={(e) => handleFormChange('isPrivate', e.target.checked)} /><FaLock /> 비공개 방</label></div>
                         <div className="form-actions"><button className="btn-cancel" onClick={handleCancelCreateRoom}>취소</button><button className="btn-submit" onClick={handleSubmitCreateRoom} disabled={!roomForm.roomName.trim()}>방 만들기</button></div>
                     </div>
                 );
@@ -201,8 +201,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 return (
                     <div className="waiting-room">
                         <div className="waiting-room-info"><div className="waiting-room-info-left"><div className="info-item"><FaGamepad /><span>게임: {currentRoom?.gameName}</span></div><div className="info-item"><FaCrown /><span>방장: {currentRoom?.hostName}</span></div></div></div>
-                        <div className="waiting-room-section"><h3>참가 인원 ({currentRoom?.players?.length || 0}/{currentRoom?.maxPlayers})</h3><div className="players-grid">{currentRoom?.players?.map((p) => (<div key={p.userId} className={`player-card ${p.ready ? 'ready' : ''}`}><ProfileAvatar profileImage={formatProfileImage(p.selectedProfile)} outlineImage={formatOutlineImage(p.selectedOutline)} size={50}/><div className="player-info"><div className="player-name">{p.host && <FaCrown className="host-icon" />}{p.username}</div><div className="player-level">Lv. {p.level}</div></div>{!p.host && (<div className={`player-ready-badge ${p.ready ? 'ready' : 'waiting'}`}>{p.ready ? '✓ 준비' : '대기'}</div>)}</div>))}</div></div>
-                        <div className="waiting-room-actions"><button className="invite-friend-btn" onClick={handleInviteFriend}><FaPlus /> 친구 초대</button>{isHost ? (<button className="game-start-btn" onClick={handleGameStart}><FaGamepad /> 게임 시작</button>) : (<button className={`ready-btn ${currentRoom?.players?.find(p=>p.userId===userProfile.id)?.ready ? 'ready' : ''}`} onClick={handleReady}><FaUsers />{currentRoom?.players?.find(p=>p.userId===userProfile.id)?.ready ? '준비 완료' : '준비'}</button>)}</div>
+                        <div className="waiting-room-section"><h3>참가 인원 ({currentRoom?.players?.length || 0}/{currentRoom?.maxPlayers})</h3><div className="players-grid">{currentRoom?.players?.map((p) => (<div key={p.userId} className={`player-card ${p.ready ? 'ready' : ''}`}><ProfileAvatar profileImage={formatProfileImage(p.selectedProfile)} outlineImage={formatOutlineImage(p.selectedOutline)} size={50} /><div className="player-info"><div className="player-name">{p.host && <FaCrown className="host-icon" />}{p.username}</div><div className="player-level">Lv. {p.level}</div></div>{!p.host && (<div className={`player-ready-badge ${p.ready ? 'ready' : 'waiting'}`}>{p.ready ? '✓ 준비' : '대기'}</div>)}</div>))}</div></div>
+                        <div className="waiting-room-actions"><button className="invite-friend-btn" onClick={handleInviteFriend}><FaPlus /> 친구 초대</button>{isHost ? (<button className="game-start-btn" onClick={handleGameStart}><FaGamepad /> 게임 시작</button>) : (<button className={`ready-btn ${currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? 'ready' : ''}`} onClick={handleReady}><FaUsers />{currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? '준비 완료' : '준비'}</button>)}</div>
                     </div>
                 );
             case 'lobby':
@@ -227,8 +227,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     <div className="minigame-header">
                         <h2>
                             {currentView === 'create' ? <><FaPlus /> 방 만들기</> :
-                             currentView === 'waiting' ? <><FaUsers /> {currentRoom?.roomName || '대기방'}</> :
-                             '미니게임 로비'}
+                                currentView === 'waiting' ? <><FaUsers /> {currentRoom?.roomName || '대기방'}</> :
+                                    '미니게임 로비'}
                         </h2>
                         <button className="minigame-close-btn" onClick={handleClose}><FaTimes /></button>
                     </div>
@@ -241,7 +241,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     ) : (
                         <div className="sidebar-nav-buttons"><button className="leave-room-btn" onClick={handleLeaveRoom}><FaTimes /><span>방 나가기</span></button></div>
                     )}
-                    <div className="sidebar-friends"><h3 className="friends-title">친구 목록 ({friends.length})</h3><div className="friends-list">{isLoadingFriends ? <div>로딩 중...</div> : friends.length === 0 ? <div>친구가 없습니다</div> : friends.map((friend) => { const isOnline = isFriendOnline(friend); return (<div key={friend.friendshipId} className={`friend-item ${isOnline ? 'online' : 'offline'}`}><ProfileAvatar profileImage={{ imagePath: friend.profileImagePath }} outlineImage={{ imagePath: friend.outlineImagePath }} size={40} className="friend-avatar" /><div className="friend-info"><div className="friend-name">{friend.username}</div><div className="friend-level">Lv. {friend.level || 1}</div></div>{isOnline && <div className="friend-status-online">온라인</div>}<div className="friend-status-dot"></div></div>);})}</div></div>
+                    <div className="sidebar-friends"><h3 className="friends-title">친구 목록 ({friends.length})</h3><div className="friends-list">{isLoadingFriends ? <div>로딩 중...</div> : friends.length === 0 ? <div>친구가 없습니다</div> : friends.map((friend) => { const isOnline = isFriendOnline(friend); return (<div key={friend.friendshipId} className={`friend-item ${isOnline ? 'online' : 'offline'}`}><ProfileAvatar profileImage={{ imagePath: friend.profileImagePath }} outlineImage={{ imagePath: friend.outlineImagePath }} size={40} className="friend-avatar" /><div className="friend-info"><div className="friend-name">{friend.username}</div><div className="friend-level">Lv. {friend.level || 1}</div></div>{isOnline && <div className="friend-status-online">온라인</div>}<div className="friend-status-dot"></div></div>); })}</div></div>
                 </div>
             </div>
             {showFriendInviteModal && (

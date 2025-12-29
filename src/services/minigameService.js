@@ -9,15 +9,18 @@ class MinigameService {
     this.username = null;
     this.currentRoomId = null;
 
-    // Callbacks
-    this.onRoomsListCallback = null;
-    this.onRoomUpdateCallback = null;
-    this.onRoomJoinCallback = null;
-    this.onRoomLeaveCallback = null;
-    this.onRoomChatCallback = null;
-    this.onRoomDeleteCallback = null;
-    this.onGameInviteCallback = null; // 게임 초대 받음
-    this.onJoinResultCallback = null; // join result ACK
+    // Event Listeners (Map<EventType, Set<Callback>>)
+    this.listeners = {
+      roomsList: new Set(),
+      roomUpdate: new Set(),
+      roomJoin: new Set(),
+      roomLeave: new Set(),
+      roomChat: new Set(),
+      roomDelete: new Set(),
+      gameInvite: new Set(),
+      gameEvent: new Set(),
+      joinResult: new Set()
+    };
   }
 
   connect(userId, username, timeoutMs = 10000) {
@@ -28,7 +31,7 @@ class MinigameService {
     this.username = username;
 
     const wsUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:8080';
-    const socket = new SockJS(`${wsUrl}/ws`);
+    // const socket = new SockJS(`${wsUrl}/ws`); // Move inside factory to avoid race condition
 
     // Create a promise that will resolve when onConnect is called
     return new Promise((resolve, reject) => {
@@ -41,11 +44,14 @@ class MinigameService {
       }, timeoutMs);
 
       this.client = new Client({
-        webSocketFactory: () => socket,
+        webSocketFactory: () => {
+          console.log('[MinigameService] Creating SockJS instance...');
+          return new SockJS(`${wsUrl}/ws`);
+        },
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
-        debug: () => {},
+        debug: () => { },
         onConnect: () => {
           console.log('✅ Minigame WebSocket Connected');
           this.connected = true;
@@ -56,9 +62,9 @@ class MinigameService {
             console.log('Room update:', data);
 
             if (data.action === 'create' || data.action === 'update' || data.action === 'join' || data.action === 'leave') {
-              this.onRoomUpdateCallback?.(data);
+              this.emit('roomUpdate', data);
             } else if (data.action === 'delete') {
-              this.onRoomDeleteCallback?.(data);
+              this.emit('roomDelete', data);
             }
           });
 
@@ -66,21 +72,21 @@ class MinigameService {
           this.client.subscribe('/topic/minigame/rooms-list', (message) => {
             const data = JSON.parse(message.body);
             console.log('Rooms list:', data);
-            this.onRoomsListCallback?.(data);
+            this.emit('roomsList', data);
           });
 
           // 개인 게임 초대 구독
           this.client.subscribe('/topic/minigame/invite/' + this.userId, (message) => {
             const data = JSON.parse(message.body);
             console.log('Game invite received:', data);
-            this.onGameInviteCallback?.(data);
+            this.emit('gameInvite', data);
           });
 
           // 개인 입장 결과(ACK) 구독
           this.client.subscribe('/topic/minigame/joinResult/' + this.userId, (message) => {
             const data = JSON.parse(message.body);
             console.log('Join result received:', data);
-            this.onJoinResultCallback?.(data);
+            this.emit('joinResult', data);
           });
 
           // 초기 방 목록 요청
@@ -200,21 +206,21 @@ class MinigameService {
     this.client.subscribe('/topic/minigame/room/' + roomId, (message) => {
       const data = JSON.parse(message.body);
       console.log('Room event:', data);
-      this.onRoomJoinCallback?.(data);
+      this.emit('roomJoin', data); // Reuse roomJoin or add roomUpdate specific listener
     });
 
     // 방 채팅 구독
     this.client.subscribe('/topic/minigame/room/' + roomId + '/chat', (message) => {
       const data = JSON.parse(message.body);
       console.log('Room chat:', data);
-      this.onRoomChatCallback?.(data);
+      this.emit('roomChat', data);
     });
 
     // 게임 이벤트(타겟 스폰, 점수 업데이트 등) 구독
     this.client.subscribe('/topic/minigame/room/' + roomId + '/game', (message) => {
       const data = JSON.parse(message.body);
       console.log('Game event:', data);
-      this.onGameEventCallback?.(data);
+      this.emit('gameEvent', data);
     });
   }
 
@@ -357,6 +363,38 @@ class MinigameService {
   }
 
   /**
+   * 과녁 맞춤 처리
+   */
+  handleHit(roomId, playerId, playerName, targetId, timestamp) {
+    this.sendGameEvent(roomId, {
+      type: 'hit',
+      targetId,
+      playerId,
+      playerName, // Optional, depending on backend requirement
+      clientTimestamp: timestamp
+    });
+  }
+
+  /**
+   * 게임 상태 요청 (동기화)
+   */
+  requestGameState(roomId) {
+    if (!this.connected || !this.client) return;
+
+    const payload = {
+      roomId,
+      playerId: this.userId,
+      type: 'stateRequest'
+    };
+
+    this.client.publish({
+      destination: '/app/minigame.room.state',
+      body: JSON.stringify(payload)
+    });
+    console.log('게임 상태 요청 전송:', payload);
+  }
+
+  /**
    * 게임 초대 전송
    */
   sendGameInvite(targetUserId, targetUsername, roomId, gameName) {
@@ -383,43 +421,31 @@ class MinigameService {
   }
 
   /**
-   * 콜백 등록
+   * 콜백 등록 (Observer Pattern)
    */
   on(event, callback) {
-    switch (event) {
-      case 'roomsList':
-        this.onRoomsListCallback = callback;
-        break;
-      case 'roomUpdate':
-        this.onRoomUpdateCallback = callback;
-        break;
-      case 'roomJoin':
-        this.onRoomJoinCallback = callback;
-        break;
-      case 'roomLeave':
-        this.onRoomLeaveCallback = callback;
-        break;
-      case 'roomChat':
-        this.onRoomChatCallback = callback;
-        break;
-      case 'roomDelete':
-        this.onRoomDeleteCallback = callback;
-        break;
-      case 'gameInvite':
-        this.onGameInviteCallback = callback;
-        break;
-      case 'gameEvent':
-        this.onGameEventCallback = callback;
-        break;
-      case 'joinResult':
-        this.onJoinResultCallback = callback;
-        break;
-      case 'roomJoin':
-        // keep existing alias
-        this.onRoomJoinCallback = callback;
-        break;
-      default:
-        console.warn('Unknown event:', event);
+    if (this.listeners[event]) {
+      this.listeners[event].add(callback);
+    } else {
+      console.warn('Unknown event type:', event);
+    }
+  }
+
+  off(event, callback) {
+    if (this.listeners[event]) {
+      this.listeners[event].delete(callback);
+    }
+  }
+
+  emit(event, data) {
+    if (this.listeners[event]) {
+      this.listeners[event].forEach(callback => {
+        try {
+          callback(data);
+        } catch (err) {
+          console.error(`Error in listener for ${event}:`, err);
+        }
+      });
     }
   }
 }

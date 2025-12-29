@@ -79,14 +79,18 @@ export default function AimingGame({ roomId, isHost, userProfile, players = [], 
           setTargets({}); // Clear all targets
           console.log('Game ended. Final scores:', evt.payload); // Added log
           break;
-        
+
         default:
           break;
       }
     };
 
     minigameService.on('gameEvent', handler);
-    return () => minigameService.on('gameEvent', null);
+
+    // Mount 시 현재 게임 상태 요청 (중간 입장/새로고침 대비)
+    minigameService.requestGameState(roomId);
+
+    return () => minigameService.off('gameEvent', handler);
   }, [roomId]);
 
   const handleTargetClick = (targetId) => {
@@ -122,10 +126,10 @@ export default function AimingGame({ roomId, isHost, userProfile, players = [], 
               key={target.id}
               className="aim-game-target"
               style={{
-                left: `${target.x * (GAME_CONFIG.GAME_AREA_WIDTH - (target.size * 2 * 100))}px`,
-                top: `${target.y * (GAME_CONFIG.GAME_AREA_HEIGHT - (target.size * 2 * 100))}px`,
-                width: `${target.size * 2 * 100}px`,
-                height: `${target.size * 2 * 100}px`,
+                left: `${target.x * (GAME_CONFIG.GAME_AREA_WIDTH - (target.size * 400))}px`,
+                top: `${target.y * (GAME_CONFIG.GAME_AREA_HEIGHT - (target.size * 400))}px`,
+                width: `${target.size * 400}px`,
+                height: `${target.size * 400}px`,
               }}
               onClick={() => handleTargetClick(target.id)}
             />
@@ -136,7 +140,7 @@ export default function AimingGame({ roomId, isHost, userProfile, players = [], 
               <h2>Game Over</h2>
               <p>The round has finished!</p>
               {/* The finalScores payload could be displayed here if parsed */}
-              <button onClick={onGameEnd} style={{marginTop: '10px'}}>Back to Lobby</button>
+              <button onClick={onGameEnd} style={{ marginTop: '10px' }}>Back to Lobby</button>
             </div>
           )}
         </div>

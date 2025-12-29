@@ -39,8 +39,8 @@ public class MinigameRoomService {
      * 방 생성
      */
     public MinigameRoomDto createRoom(String roomName, String gameName, String hostId, String hostName,
-                                       int maxPlayers, boolean isLocked, int hostLevel,
-                                       String selectedProfile, String selectedOutline) {
+            int maxPlayers, boolean isLocked, int hostLevel,
+            String selectedProfile, String selectedOutline) {
         String roomId = UUID.randomUUID().toString();
 
         MinigameRoomDto room = new MinigameRoomDto();
@@ -103,7 +103,7 @@ public class MinigameRoomService {
 
         log.info("방 상태 before join - roomId: {}, currentPlayers: {}, maxPlayers: {}, players: {}",
                 roomId, room.getCurrentPlayers(), room.getMaxPlayers(),
-                room.getPlayers().stream().map(p->p.getUserId()).toList());
+                room.getPlayers().stream().map(p -> p.getUserId()).toList());
 
         if (room.getCurrentPlayers() >= room.getMaxPlayers()) {
             log.warn("방이 가득 찼습니다: {} (현재 {}/{})", roomId, room.getCurrentPlayers(), room.getMaxPlayers());
@@ -113,7 +113,8 @@ public class MinigameRoomService {
         room.getPlayers().add(player);
         room.setCurrentPlayers(room.getCurrentPlayers() + 1);
 
-        log.info("플레이어 {} 방 입장: {} (현재 {}/{})", player.getUsername(), roomId, room.getCurrentPlayers(), room.getMaxPlayers());
+        log.info("플레이어 {} 방 입장: {} (현재 {}/{})", player.getUsername(), roomId, room.getCurrentPlayers(),
+                room.getMaxPlayers());
         return room;
     }
 
@@ -195,10 +196,24 @@ public class MinigameRoomService {
             this.roomId = roomId;
         }
 
-        public int getRemainingSeconds() { return remainingSeconds; }
-        public void setRemainingSeconds(int s) { remainingSeconds = s; }
-        public void decrementRemainingSeconds() { remainingSeconds--; }
+        public int getRemainingSeconds() {
+            return remainingSeconds;
+        }
+
+        public void setRemainingSeconds(int s) {
+            remainingSeconds = s;
+        }
+
+        public void decrementRemainingSeconds() {
+            remainingSeconds--;
+        }
     }
+
+    /**
+     * 게임 시작
+     */
+    // Aiming Game Constants
+    private static final int WINNING_SCORE = 10;
 
     /**
      * 게임 시작
@@ -223,30 +238,76 @@ public class MinigameRoomService {
         startEvent.setTimestamp(System.currentTimeMillis());
         messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", startEvent);
 
-        // Schedule periodic target spawns and stop after duration (e.g., 20s)
-        final int totalDurationSec = 20;
-        session.setRemainingSeconds(totalDurationSec);
-
-        session.future = scheduler.scheduleAtFixedRate(() -> {
-            try {
-                // spawn a target
-                spawnTarget(roomId);
-                session.decrementRemainingSeconds();
-                if (session.getRemainingSeconds() <= 0) {
-                    // end game
-                    endGameSession(roomId);
+        // [Serial Logic] Start by spawning the FIRST target immediately
+        if ("에임 맞추기".equals(room.getGameName())) {
+            // Add slight delay to ensure clients are ready to receive spawn event
+            new Thread(() -> {
+                try {
+                    Thread.sleep(500);
+                    spawnTarget(roomId);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                log.error("Error in game scheduler for room {}: {}", roomId, e.getMessage());
-            }
-        }, 0, 2, TimeUnit.SECONDS); // spawn every 2s
+            }).start();
+        } else if ("Reaction Race".equals(room.getGameName())) {
+            // Reaction Race logic
+            startReactionRound(roomId);
+        }
 
         return room;
     }
 
+    public void sendGameState(String roomId, String userId) {
+        GameSession session = sessions.get(roomId);
+        if (session == null)
+            return;
+
+        // 1. Send active targets
+        for (GameTargetDto target : session.activeTargets.values()) {
+            GameEventDto evt = new GameEventDto();
+            evt.setRoomId(roomId);
+            evt.setType("spawnTarget");
+            evt.setTarget(target);
+            evt.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", evt);
+            // Note: Broadcasting to room is fine, but ideally we should send to specific
+            // user
+            // using separate destination like /topic/minigame/room/{roomId}/game/{userId}
+            // or just rely on client filtering. But for now broadcasting "state" again to
+            // everyone is messy.
+            // Let's assume the frontend will dedup or we send to user specific channel if
+            // possible.
+            // Wait, standard STOMP pattern for user specific is /user/queue/... or specific
+            // topic.
+            // The user is subscribed to /topic/minigame/room/{roomId}/game.
+            // If I broadcast, everyone gets it again.
+            // Better: use convertAndSendToUser if we had user sessions set up affecting
+            // destinations,
+            // or just create a specific temporary topic.
+            // However, typical simple approach: Just broadcast. Frontend "spawnTarget"
+            // usually just updates map.
+            // Idempotent: yes.
+        }
+
+        // 2. Send current scores
+        for (Map.Entry<String, Integer> entry : session.scores.entrySet()) {
+            GameEventDto scoreEvt = new GameEventDto();
+            scoreEvt.setRoomId(roomId);
+            scoreEvt.setType("scoreUpdate");
+            scoreEvt.setPlayerId(entry.getKey());
+            scoreEvt.setPayload(String.valueOf(entry.getValue()));
+            scoreEvt.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", scoreEvt);
+        }
+    }
+
     private void spawnTarget(String roomId) {
         GameSession session = sessions.get(roomId);
-        if (session == null) return;
+        if (session == null)
+            return;
+
+        // Clear existing targets (ensure only one exists)
+        session.activeTargets.clear();
 
         GameTargetDto target = new GameTargetDto();
         target.setId(UUID.randomUUID().toString());
@@ -254,7 +315,7 @@ public class MinigameRoomService {
         target.setY(random.nextDouble());
         target.setSize(0.06 + random.nextDouble() * 0.08); // radius normalized
         target.setCreatedAt(System.currentTimeMillis());
-        target.setDuration(1500 + random.nextInt(1500)); // ms
+        target.setDuration(10000); // 10s timeout, enough for players to click
 
         session.activeTargets.put(target.getId(), target);
 
@@ -269,7 +330,8 @@ public class MinigameRoomService {
 
     private void endGameSession(String roomId) {
         GameSession session = sessions.remove(roomId);
-        if (session == null) return;
+        if (session == null)
+            return;
         if (session.future != null && !session.future.isCancelled()) {
             session.future.cancel(false);
         }
@@ -290,38 +352,27 @@ public class MinigameRoomService {
         }
     }
 
-    public synchronized GameScoreDto handleHit(String roomId, String playerId, String playerName, String targetId, long clientTs) {
+    public synchronized GameScoreDto handleHit(String roomId, String playerId, String playerName, String targetId,
+            long clientTs) {
         GameSession session = sessions.get(roomId);
         GameScoreDto result = new GameScoreDto();
         result.setPlayerId(playerId);
         result.setScore(0);
 
-        if (session == null) return result;
+        if (session == null)
+            return result;
 
         GameTargetDto target = session.activeTargets.get(targetId);
-        if (target == null) return result; // already taken or expired
+        if (target == null)
+            return result; // already taken or expired
 
-        long now = System.currentTimeMillis();
-        if (now > target.getCreatedAt() + target.getDuration()) {
-            // expired
-            session.activeTargets.remove(targetId);
-            // notify removal
-            GameEventDto removed = new GameEventDto();
-            removed.setRoomId(roomId);
-            removed.setType("targetRemoved");
-            removed.setTarget(target);
-            removed.setTimestamp(now);
-            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", removed);
-            return result;
-        }
-
-        // valid hit
+        // hit successful
         session.activeTargets.remove(targetId);
         int newScore = session.scores.getOrDefault(playerId, 0) + 1;
         session.scores.put(playerId, newScore);
         result.setScore(newScore);
 
-        // broadcast score update and target removed
+        // broadcast score update
         GameEventDto scoreEvt = new GameEventDto();
         scoreEvt.setRoomId(roomId);
         scoreEvt.setType("scoreUpdate");
@@ -331,12 +382,21 @@ public class MinigameRoomService {
         scoreEvt.setTimestamp(System.currentTimeMillis());
         messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", scoreEvt);
 
+        // broadcast target removed
         GameEventDto removed = new GameEventDto();
         removed.setRoomId(roomId);
         removed.setType("targetRemoved");
         removed.setTarget(target);
         removed.setTimestamp(System.currentTimeMillis());
         messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", removed);
+
+        // Check Win Condition
+        if (newScore >= WINNING_SCORE) {
+            endGameSession(roomId);
+        } else {
+            // Spawn NEXT target immediately for fast paced game
+            spawnTarget(roomId);
+        }
 
         return result;
     }
@@ -415,8 +475,10 @@ public class MinigameRoomService {
 
     public synchronized String handleReactionHit(String roomId, String playerId, String playerName, long clientTs) {
         Boolean active = reactionActive.get(roomId);
-        if (active == null || !active) return null;
-        if (reactionWinner.get(roomId) != null) return null; // already have winner
+        if (active == null || !active)
+            return null;
+        if (reactionWinner.get(roomId) != null)
+            return null; // already have winner
 
         reactionWinner.put(roomId, playerName != null ? playerName : playerId);
         reactionActive.remove(roomId);
