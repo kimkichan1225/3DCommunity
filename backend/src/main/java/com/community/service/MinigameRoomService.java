@@ -354,23 +354,34 @@ public class MinigameRoomService {
 
     public synchronized GameScoreDto handleHit(String roomId, String playerId, String playerName, String targetId,
             long clientTs) {
+        log.info("handleHit called: room={}, player={}, target={}", roomId, playerId, targetId);
+
         GameSession session = sessions.get(roomId);
         GameScoreDto result = new GameScoreDto();
         result.setPlayerId(playerId);
         result.setScore(0);
 
-        if (session == null)
+        if (session == null) {
+            log.warn("Session not found for roomId: {}", roomId);
             return result;
+        }
 
         GameTargetDto target = session.activeTargets.get(targetId);
-        if (target == null)
+        if (target == null) {
+            log.warn("Target not found in session activeTargets. ID: {}", targetId);
+            log.info("Current active targets: {}", session.activeTargets.keySet());
             return result; // already taken or expired
+        }
+
+        log.info("Target HIT! Removing target: {}", targetId);
 
         // hit successful
         session.activeTargets.remove(targetId);
         int newScore = session.scores.getOrDefault(playerId, 0) + 1;
         session.scores.put(playerId, newScore);
         result.setScore(newScore);
+
+        log.info("New score for player {}: {}", playerId, newScore);
 
         // broadcast score update
         GameEventDto scoreEvt = new GameEventDto();
@@ -392,9 +403,11 @@ public class MinigameRoomService {
 
         // Check Win Condition
         if (newScore >= WINNING_SCORE) {
+            log.info("Player {} won the game!", playerId);
             endGameSession(roomId);
         } else {
             // Spawn NEXT target immediately for fast paced game
+            log.info("Spawning next target...");
             spawnTarget(roomId);
         }
 

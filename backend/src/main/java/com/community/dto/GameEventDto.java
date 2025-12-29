@@ -9,6 +9,7 @@ public class GameEventDto {
     private String playerId;
     private String playerName;
     private GameTargetDto target;
+    private String targetId; // Added for convenience to pass just ID
     private String payload; // optional
     private Long timestamp;
 }

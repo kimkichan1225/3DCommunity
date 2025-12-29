@@ -224,7 +224,7 @@ public class MinigameController {
             String roomId = event.getRoomId();
             String playerId = event.getPlayerId();
             String playerName = event.getPlayerName();
-            String targetId = event.getTarget() != null ? event.getTarget().getId() : null;
+            String targetId = event.getTarget() != null ? event.getTarget().getId() : event.getTargetId();
 
             GameScoreDto result = roomService.handleHit(roomId, playerId, playerName, targetId,
                     event.getTimestamp() == null ? System.currentTimeMillis() : event.getTimestamp());
