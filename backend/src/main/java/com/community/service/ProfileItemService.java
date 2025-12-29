@@ -105,6 +105,52 @@ public class ProfileItemService {
     }
 
     /**
+     * 아바타 구매 시 자동으로 프로필 아이템 해금 (조건 체크 없이)
+     */
+    @Transactional
+    public void unlockProfileItemByAvatarName(Long userId, String avatarName) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+            // 아바타 이름에 해당하는 프로필 아이템 찾기
+            // 예: "Casual Male" -> "Casual_Male-profile"
+            String profileImageName = avatarName.replace(" ", "_") + "-profile";
+
+            // imagePath에 해당 이름이 포함된 PROFILE 타입 아이템 찾기
+            ProfileItem profileItem = profileItemRepository.findAll().stream()
+                    .filter(item -> item.getItemType() == ItemType.PROFILE &&
+                            item.getImagePath() != null &&
+                            item.getImagePath().contains(profileImageName))
+                    .findFirst()
+                    .orElse(null);
+
+            if (profileItem == null) {
+                System.out.println("⚠️ 프로필 아이템을 찾을 수 없습니다: " + profileImageName);
+                return;
+            }
+
+            // 이미 보유 중인지 확인
+            if (userProfileItemRepository.existsByUserIdAndProfileItemId(userId, profileItem.getId())) {
+                System.out.println("ℹ️ 이미 보유한 프로필 아이템입니다: " + profileItem.getItemName());
+                return;
+            }
+
+            // 프로필 아이템 자동 해금
+            UserProfileItem userItem = new UserProfileItem();
+            userItem.setUser(user);
+            userItem.setProfileItem(profileItem);
+            userProfileItemRepository.save(userItem);
+
+            System.out.println("✅ 프로필 아이템 자동 해금 성공: " + profileItem.getItemName());
+
+        } catch (Exception e) {
+            System.err.println("⚠️ 프로필 아이템 자동 해금 실패: " + e.getMessage());
+            // 에러가 발생해도 아바타 구매는 정상적으로 완료되도록 함
+        }
+    }
+
+    /**
      * 프로필 이미지/테두리 선택
      */
     @Transactional

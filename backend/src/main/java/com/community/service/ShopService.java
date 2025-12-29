@@ -19,6 +19,7 @@ public class ShopService {
     private final ItemCategoryRepository categoryRepository;
     private final UserInventoryRepository userInventoryRepository;
     private final UserRepository userRepository;
+    private final ProfileItemService profileItemService;
 
     // ============ 아이템 관리 ============
 
@@ -269,6 +270,11 @@ public class ShopService {
         inventory.setViewedAt(null);
 
         UserInventory savedInventory = userInventoryRepository.save(inventory);
+
+        // 아바타 구매 시 자동으로 해당 프로필 이미지 해금
+        if (shopItem.getCategory() != null && "AVATAR".equals(shopItem.getCategory().getName())) {
+            profileItemService.unlockProfileItemByAvatarName(userId, shopItem.getName());
+        }
 
         return PurchaseResponse.builder()
                 .success(true)
