@@ -112,6 +112,17 @@ function MapCharacterController({
       return;
     }
 
+    // 맵 밖으로 떨어진 경우 스폰 위치로 리스폰
+    const rbPosition = rigidBodyRef.current.translation();
+    if (rbPosition.y < -10) {
+      console.log('⚠️ 캐릭터가 맵 밖으로 떨어짐 - 리스폰 (지도 모드)');
+      rigidBodyRef.current.setTranslation({ x: 0, y: 5, z: 0 }, true);
+      rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      modelGroupRef.current.position.set(0, 5, 0);
+      return;
+    }
+
     // 이동 비활성화
     if (isMovementDisabled) {
       rigidBodyRef.current.setLinvel({ x: 0, y: rigidBodyRef.current.linvel().y, z: 0 }, true);

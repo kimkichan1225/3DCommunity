@@ -215,6 +215,18 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
   useFrame((state, delta) => {
     if (!rigidBodyRef.current || !modelGroupRef.current) return;
 
+    // 맵 밖으로 떨어진 경우 스폰 위치로 리스폰
+    const rbPosition = rigidBodyRef.current.translation();
+    if (rbPosition.y < -10) {
+      console.log('⚠️ 캐릭터가 맵 밖으로 떨어짐 - 리스폰');
+      const [x, y, z] = initialPosition || [0, 5, 0];
+      rigidBodyRef.current.setTranslation({ x, y, z }, true);
+      rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      modelGroupRef.current.position.set(x, y, z);
+      return;
+    }
+
     // 모달이 열려있으면 이동 비활성화
     if (isMovementDisabled) {
       // 속도를 0으로 설정하여 정지
