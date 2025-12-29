@@ -165,13 +165,16 @@ const ShopManagement = () => {
 
   const getFilteredItems = () => {
     return items.filter(item => {
+      // image_url이 있는 아이템만 표시 (상점에 보이는 아이템들)
+      const hasImage = item.imageUrl && item.imageUrl.trim() !== '';
+
       const matchesSearch = searchTerm === '' ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesCategory = selectedCategory === 'all' || item.categoryId === selectedCategory;
 
-      return matchesSearch && matchesCategory;
+      return hasImage && matchesSearch && matchesCategory;
     });
   };
 
