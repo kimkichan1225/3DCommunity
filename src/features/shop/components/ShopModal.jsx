@@ -408,24 +408,27 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                                 {selectedItem.goldCoinPrice?.toLocaleString()}
                               </button>
                             </div>
-                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                              <button
-                                className="btn-purchase-equip"
-                                onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
-                                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                              >
-                                <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '18px', height: '18px' }} />
-                                구매 후 착용
-                              </button>
-                              <button
-                                className="btn-purchase-equip"
-                                onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
-                                style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', color: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                              >
-                                <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '18px', height: '18px' }} />
-                                구매 후 착용
-                              </button>
-                            </div>
+                            {/* OUTLINE 타입이 아닐 때만 구매 후 착용 버튼 표시 */}
+                            {selectedItem.itemType !== 'OUTLINE' && (
+                              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                <button
+                                  className="btn-purchase-equip"
+                                  onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
+                                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                >
+                                  <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '18px', height: '18px' }} />
+                                  구매 후 착용
+                                </button>
+                                <button
+                                  className="btn-purchase-equip"
+                                  onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
+                                  style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', color: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                >
+                                  <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '18px', height: '18px' }} />
+                                  구매 후 착용
+                                </button>
+                              </div>
+                            )}
                           </>
                         ) : selectedItem.silverCoinPrice > 0 ? (
                           /* 은화만 가능 */
@@ -438,14 +441,17 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                               <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
                               {selectedItem.silverCoinPrice?.toLocaleString()} 구매
                             </button>
-                            <button
-                              className="btn-purchase-equip"
-                              onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
-                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                            >
-                              <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
-                              구매 후 착용
-                            </button>
+                            {/* OUTLINE 타입이 아닐 때만 구매 후 착용 버튼 표시 */}
+                            {selectedItem.itemType !== 'OUTLINE' && (
+                              <button
+                                className="btn-purchase-equip"
+                                onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                              >
+                                <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
+                                구매 후 착용
+                              </button>
+                            )}
                           </>
                         ) : selectedItem.goldCoinPrice > 0 ? (
                           /* 금화만 가능 */
@@ -458,14 +464,17 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                               <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
                               {selectedItem.goldCoinPrice?.toLocaleString()} 구매
                             </button>
-                            <button
-                              className="btn-purchase-equip"
-                              onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
-                              style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                            >
-                              <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
-                              구매 후 착용
-                            </button>
+                            {/* OUTLINE 타입이 아닐 때만 구매 후 착용 버튼 표시 */}
+                            {selectedItem.itemType !== 'OUTLINE' && (
+                              <button
+                                className="btn-purchase-equip"
+                                onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
+                                style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                              >
+                                <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
+                                구매 후 착용
+                              </button>
+                            )}
                           </>
                         ) : (
                           <div style={{ color: '#999', textAlign: 'center', padding: '20px' }}>
@@ -474,12 +483,19 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                         )}
                       </>
                     ) : (
-                      <button
-                        className={`btn-equip ${isEquipped(selectedItem.id) ? 'equipped' : ''}`}
-                        onClick={() => handleToggleEquip(selectedItem.id)}
-                      >
-                        {isEquipped(selectedItem.id) ? '착용 해제' : '착용하기'}
-                      </button>
+                      /* 보유 중인 아이템 - OUTLINE이 아닐 때만 착용 버튼 표시 */
+                      selectedItem.itemType !== 'OUTLINE' ? (
+                        <button
+                          className={`btn-equip ${isEquipped(selectedItem.id) ? 'equipped' : ''}`}
+                          onClick={() => handleToggleEquip(selectedItem.id)}
+                        >
+                          {isEquipped(selectedItem.id) ? '착용 해제' : '착용하기'}
+                        </button>
+                      ) : (
+                        <div style={{ color: '#4CAF50', textAlign: 'center', padding: '20px', fontSize: '14px' }}>
+                          프로필 커스터마이징에서 착용하실 수 있습니다
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
