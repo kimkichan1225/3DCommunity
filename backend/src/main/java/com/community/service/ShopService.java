@@ -273,7 +273,13 @@ public class ShopService {
 
         // 아바타 구매 시 자동으로 해당 프로필 이미지 해금
         if (shopItem.getCategory() != null && "AVATAR".equals(shopItem.getCategory().getName())) {
-            profileItemService.unlockProfileItemByAvatarName(userId, shopItem.getName());
+            // modelUrl에서 아바타 이름 추출 (예: "/resources/.../Soldier_Male.gltf" -> "Soldier_Male")
+            String avatarName = extractAvatarNameFromModelUrl(shopItem.getModelUrl());
+            if (avatarName != null) {
+                profileItemService.unlockProfileItemByAvatarName(userId, avatarName);
+            } else {
+                System.err.println("⚠️ modelUrl에서 아바타 이름 추출 실패: " + shopItem.getModelUrl());
+            }
         }
 
         return PurchaseResponse.builder()
@@ -380,6 +386,34 @@ public class ShopService {
                 .orElse(null);
 
         return equipped != null ? convertToInventoryDTO(equipped) : null;
+    }
+
+    /**
+     * modelUrl에서 아바타 이름 추출
+     * 예: "/resources/Ultimate Animated Character Pack - Nov 2019/glTF/Soldier_Male.gltf" -> "Soldier Male"
+     */
+    private String extractAvatarNameFromModelUrl(String modelUrl) {
+        if (modelUrl == null || modelUrl.isEmpty()) {
+            return null;
+        }
+
+        try {
+            // 파일명 추출 (마지막 / 이후)
+            String fileName = modelUrl.substring(modelUrl.lastIndexOf('/') + 1);
+
+            // 확장자 제거 (.gltf, .glb 등)
+            String nameWithoutExt = fileName.replaceAll("\\.(gltf|glb|GLTF|GLB)$", "");
+
+            // 언더스코어를 공백으로 변환
+            String avatarName = nameWithoutExt.replace("_", " ");
+
+            System.out.println("🔵 [아바타 이름 추출] modelUrl: " + modelUrl + " → avatarName: " + avatarName);
+
+            return avatarName;
+        } catch (Exception e) {
+            System.err.println("❌ [아바타 이름 추출] 실패: " + e.getMessage());
+            return null;
+        }
     }
 
     /**
