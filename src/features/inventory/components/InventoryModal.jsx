@@ -18,6 +18,12 @@ function InventoryModal({ onClose }) {
     try {
       setLoading(true);
       const data = await shopService.getMyInventory();
+      console.log('📦 인벤토리 데이터:', data);
+
+      // 카테고리 이름 확인
+      const categories = data.map(item => item.shopItem?.category?.name);
+      console.log('📂 카테고리 목록:', [...new Set(categories)]);
+
       setInventory(data);
       setError(null);
     } catch (err) {
@@ -43,6 +49,9 @@ function InventoryModal({ onClose }) {
   const filteredInventory = inventory.filter(
     (item) => item.shopItem?.category?.name === selectedCategory
   );
+
+  console.log(`🔍 선택된 카테고리: ${selectedCategory}`);
+  console.log(`📋 필터링된 아이템 수: ${filteredInventory.length}`);
 
   return (
     <div className="inventory-modal-overlay" onClick={onClose}>
