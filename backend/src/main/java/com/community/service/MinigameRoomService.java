@@ -185,10 +185,15 @@ public class MinigameRoomService {
 
     // Inner class to hold session state
     private static class GameSession {
+        private final String roomId;
         Map<String, GameTargetDto> activeTargets = new ConcurrentHashMap<>();
         Map<String, Integer> scores = new ConcurrentHashMap<>();
         java.util.concurrent.ScheduledFuture<?> future;
         private int remainingSeconds = 0;
+
+        public GameSession(String roomId) {
+            this.roomId = roomId;
+        }
 
         public int getRemainingSeconds() { return remainingSeconds; }
         public void setRemainingSeconds(int s) { remainingSeconds = s; }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import minigameService from '../../../services/minigameService';
 import './ReactionRace.css';
 
-export default function ReactionRace({ roomId, isHost = false }) {
+export default function ReactionRace({ roomId, isHost = false, onStartGame }) {
   const [phase, setPhase] = useState('idle'); // idle, prepare, go, ended
   const [message, setMessage] = useState('');
   const [winner, setWinner] = useState(null);
@@ -31,6 +31,8 @@ export default function ReactionRace({ roomId, isHost = false }) {
     return () => minigameService.on('gameEvent', null);
   }, [roomId]);
 
+  // This function is no longer the primary action for the host, 
+  // but is kept in case the reaction game logic is used elsewhere.
   const sendStart = (immediate = true) => {
     // Prevent double start and show immediate prepare feedback
     setPhase('prepare');
@@ -45,12 +47,19 @@ export default function ReactionRace({ roomId, isHost = false }) {
     minigameService.sendGameEvent(roomId, { type: 'reactionHit' });
   };
 
+  const handleStartClick = (e) => {
+    e.stopPropagation();
+    if (onStartGame) {
+      onStartGame();
+    }
+  };
+
   return (
     <div className="reaction-overlay" onClick={sendHit}>
       <div className="reaction-box">
         <div className="reaction-message">{message || 'Waiting...'}</div>
         {phase === 'idle' && isHost && (
-          <button className="reaction-start" onClick={(e) => { e.stopPropagation(); sendStart(e.shiftKey); }} title="Shift+Click to send immediate GO">Start Round</button>
+          <button className="reaction-start" onClick={handleStartClick}>Start Aiming Game</button>
         )}
         {phase === 'idle' && !isHost && (
           <div className="reaction-wait">Waiting for host to start</div>

@@ -1,0 +1,116 @@
+.aim-game-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.aim-game-container {
+  background-color: #282c34;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  color: white;
+  text-align: center;
+}
+
+.aim-game-header {
+  margin-bottom: 15px;
+}
+
+.aim-game-score {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.aim-game-area {
+  position: relative;
+  background-color: #4a4e57;
+  border-radius: 5px;
+  cursor: crosshair;
+  overflow: hidden;
+}
+
+.aim-game-target {
+  position: absolute;
+  background-color: #ff4757;
+  border: 2px solid #ff6b81;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.1s ease-out;
+  box-shadow: 0 0 15px #ff4757;
+}
+
+.aim-game-target:hover {
+  transform: scale(1.1);
+  background-color: #ff6b81;
+}
+
+.aim-game-over-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.aim-game-over-screen h2 {
+  font-size: 2.5em;
+  color: #ff4757;
+  margin: 0;
+}
+
+.aim-game-over-screen p {
+  font-size: 1.2em;
+  margin: 15px 0;
+}
+
+.aim-game-over-screen button {
+  background-color: #ff4757;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1em;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.aim-game-over-screen button:hover {
+  background-color: #ff6b81;
+}
+
+.aim-game-players {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+
+.player-score {
+  font-size: 1.1em;
+}
+
+.player-score.self {
+  font-weight: bold;
+  color: #ffda79;
+}
+
+.player-name {
+  margin-right: 10px;
+}
+
+.player-points {
+  padding: 3px 8px;
+  background-color: #ff4757;
+  border-radius: 4px;
+}
