@@ -313,8 +313,21 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                     <div className="shop-item-info">
                       <h4>{item.name}</h4>
                       <div className="shop-item-price">
-                        <img src="/resources/Icon/Silver-Coin.png" alt="코인" />
-                        <span>{item.price}</span>
+                        {item.silverCoinPrice > 0 && (
+                          <div className="price-item">
+                            <img src="/resources/Icon/Silver-Coin.png" alt="실버" style={{ width: '16px', height: '16px' }} />
+                            <span>{item.silverCoinPrice?.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {item.goldCoinPrice > 0 && (
+                          <div className="price-item">
+                            <img src="/resources/Icon/Gold-Coin.png" alt="골드" style={{ width: '16px', height: '16px' }} />
+                            <span>{item.goldCoinPrice?.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {item.silverCoinPrice === 0 && item.goldCoinPrice === 0 && (
+                          <span style={{ fontSize: '12px', color: '#999' }}>가격 미설정</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -341,23 +354,23 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
 
                   <div className="detail-price-box">
                     <h4>가격</h4>
-                    {selectedItem.silverCoinPrice > 0 && (
-                      <div className="price-display">
-                        <img src="/resources/Icon/Silver-Coin.png" alt="실버 코인" style={{ width: '24px', height: '24px' }} />
-                        <span className="price-value">{selectedItem.silverCoinPrice?.toLocaleString()}</span>
-                      </div>
-                    )}
-                    {selectedItem.goldCoinPrice > 0 && (
-                      <div className="price-display">
-                        <img src="/resources/Icon/Gold-Coin.png" alt="골드 코인" style={{ width: '24px', height: '24px' }} />
-                        <span className="price-value">{selectedItem.goldCoinPrice?.toLocaleString()}</span>
-                      </div>
-                    )}
-                    {selectedItem.silverCoinPrice === 0 && selectedItem.goldCoinPrice === 0 && (
-                      <div className="price-display">
+                    <div className="price-display-horizontal">
+                      {selectedItem.silverCoinPrice > 0 && (
+                        <div className="price-item-detail">
+                          <img src="/resources/Icon/Silver-Coin.png" alt="실버 코인" style={{ width: '24px', height: '24px' }} />
+                          <span className="price-value">{selectedItem.silverCoinPrice?.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {selectedItem.goldCoinPrice > 0 && (
+                        <div className="price-item-detail">
+                          <img src="/resources/Icon/Gold-Coin.png" alt="골드 코인" style={{ width: '24px', height: '24px' }} />
+                          <span className="price-value">{selectedItem.goldCoinPrice?.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {selectedItem.silverCoinPrice === 0 && selectedItem.goldCoinPrice === 0 && (
                         <span className="price-value" style={{ color: '#999' }}>가격 미설정</span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* 상태 표시 */}

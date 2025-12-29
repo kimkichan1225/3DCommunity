@@ -339,7 +339,14 @@
 .shop-item-price {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shop-item-price .price-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .shop-item-price img {
@@ -453,6 +460,19 @@
   width: 32px;
   height: 32px;
   object-fit: contain;
+}
+
+.price-display-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.price-item-detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .price-value {
