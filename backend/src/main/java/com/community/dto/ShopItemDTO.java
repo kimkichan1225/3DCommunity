@@ -12,6 +12,7 @@ public class ShopItemDTO {
     private String name;
     private String description;
     private Long categoryId;
+    private ItemCategoryDTO category; // 카테고리 전체 정보 추가
     private Integer price;
     private String imageUrl;
     private String modelUrl;

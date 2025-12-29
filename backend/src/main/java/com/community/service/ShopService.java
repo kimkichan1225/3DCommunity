@@ -110,6 +110,7 @@ public class ShopService {
                 item.getName(),
                 item.getDescription(),
                 item.getCategory() != null ? item.getCategory().getId() : null,
+                item.getCategory() != null ? convertToCategoryDTO(item.getCategory()) : null,
                 item.getPrice(),
                 item.getImageUrl(),
                 item.getModelUrl(),

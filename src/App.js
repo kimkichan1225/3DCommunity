@@ -39,6 +39,7 @@ import shopService from './features/shop/services/shopService';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShopModal } from './features/shop';
 import { GoldChargeModal } from './features/payment';
+import { InventoryModal } from './features/inventory';
 
 function App() {
   const navigate = useNavigate();
@@ -63,6 +64,7 @@ function App() {
   const [showMinigameModal, setShowMinigameModal] = useState(false);
   const [minigameModalMode, setMinigameModalMode] = useState('lobby'); // 'lobby' or 'create'
   const [showShopModal, setShowShopModal] = useState(false);
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [showGoldChargeModal, setShowGoldChargeModal] = useState(false);
   const [goldChargeModalTab, setGoldChargeModalTab] = useState('charge'); // 'charge' | 'exchange'
   const [shouldAutoAttendance, setShouldAutoAttendance] = useState(false);
@@ -114,7 +116,7 @@ function App() {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
-  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showMinigameModal || showShopModal || showGoldChargeModal || showLanding || showNotificationModal;
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showMinigameModal || showShopModal || showInventoryModal || showGoldChargeModal || showLanding || showNotificationModal;
 
   // 캐릭터 현재 위치 업데이트 콜백
   const handleCharacterPositionUpdate = useCallback((position) => {
@@ -1044,6 +1046,9 @@ function App() {
             <button className="icon-button" onClick={() => setShowShopModal(true)} title="상점">
               <img src="/resources/Icon/Shop-icon.png" alt="Shop" />
             </button>
+            <button className="icon-button" onClick={() => setShowInventoryModal(true)} title="인벤토리">
+              <img src="/resources/Icon/Inventory-icon.png" alt="Inventory" />
+            </button>
           </div>
 
           {/* 게시판 아이콘 */}
@@ -1343,6 +1348,10 @@ function App() {
             }, 1500);
           }}
         />
+      )}
+
+      {showInventoryModal && (
+        <InventoryModal onClose={() => setShowInventoryModal(false)} />
       )}
 
       {showGoldChargeModal && (
