@@ -6,9 +6,11 @@ import com.community.model.ProfileItem;
 import com.community.model.User;
 import com.community.model.UserProfileItem;
 import com.community.model.enums.ItemType;
+import com.community.model.enums.UnlockConditionType;
 import com.community.repository.ProfileItemRepository;
 import com.community.repository.UserProfileItemRepository;
 import com.community.repository.UserRepository;
+import com.community.repository.UserInventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ public class ProfileItemService {
     private final ProfileItemRepository profileItemRepository;
     private final UserProfileItemRepository userProfileItemRepository;
     private final UserRepository userRepository;
+    private final UserInventoryRepository userInventoryRepository;
 
     /**
      * 사용자의 보유 아이템 목록 조회 (잠금 상태 포함)
@@ -88,8 +91,10 @@ public class ProfileItemService {
             throw new RuntimeException("이미 보유한 아이템입니다.");
         }
 
-        // 조건 체크 (현재는 기본 구현, 추후 UnlockConditionService로 분리)
-        // TODO: 조건 검증 로직 추가
+        // 조건 체크
+        if (!checkUnlockCondition(user, item)) {
+            throw new RuntimeException("잠금해제 조건을 만족하지 않습니다.");
+        }
 
         // 아이템 잠금해제
         UserProfileItem userItem = new UserProfileItem();
@@ -308,5 +313,104 @@ public class ProfileItemService {
         }
 
         return grantedCount;
+    }
+
+    /**
+     * 기존 아바타 보유자들에게 프로필 아이템 소급 지급 (관리자용)
+     */
+    @Transactional
+    public int grantProfileItemsForExistingAvatars() {
+        int grantedCount = 0;
+
+        // 모든 사용자 조회
+        List<User> allUsers = userRepository.findAll();
+
+        for (User user : allUsers) {
+            // 사용자의 아바타 인벤토리 조회
+            var userInventories = userInventoryRepository.findByUserId(user.getId());
+
+            for (var inventory : userInventories) {
+                if (inventory.getShopItem() != null &&
+                    inventory.getShopItem().getCategory() != null &&
+                    "AVATAR".equals(inventory.getShopItem().getCategory().getName())) {
+
+                    String avatarName = inventory.getShopItem().getName();
+
+                    // 해당 아바타의 프로필 아이템 찾기
+                    String profileImageName = avatarName.replace(" ", "_") + "-profile";
+
+                    ProfileItem profileItem = profileItemRepository.findAll().stream()
+                            .filter(item -> item.getItemType() == ItemType.PROFILE &&
+                                    item.getImagePath() != null &&
+                                    item.getImagePath().contains(profileImageName))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (profileItem != null) {
+                        // 이미 보유하고 있는지 확인
+                        if (!userProfileItemRepository.existsByUserIdAndProfileItemId(user.getId(), profileItem.getId())) {
+                            // 프로필 아이템 지급
+                            UserProfileItem userItem = new UserProfileItem();
+                            userItem.setUser(user);
+                            userItem.setProfileItem(profileItem);
+                            userProfileItemRepository.save(userItem);
+                            grantedCount++;
+
+                            System.out.println("✅ 소급 지급: " + user.getNickname() + " -> " + profileItem.getItemName());
+                        }
+                    }
+                }
+            }
+        }
+
+        return grantedCount;
+    }
+
+    /**
+     * 잠금해제 조건 확인
+     */
+    private boolean checkUnlockCondition(User user, ProfileItem item) {
+        // 조건 타입이 NONE이거나 null이면 조건 없음
+        if (item.getUnlockConditionType() == null || item.getUnlockConditionType() == UnlockConditionType.NONE) {
+            return true;
+        }
+
+        // AVATAR_PURCHASE 조건: 해당 아바타를 보유하고 있는지 확인
+        if (item.getUnlockConditionType() == UnlockConditionType.AVATAR_PURCHASE) {
+            // 아이템 코드에서 아바타 이름 추출
+            // 예: "casual-male-profile" -> "Casual_Male"
+            String itemCode = item.getItemCode();
+            String avatarName = itemCode.replace("-profile", "")
+                    .replace("-", "_");
+
+            // 첫 글자를 대문자로 변환 (예: casual_male -> Casual_male)
+            if (!avatarName.isEmpty()) {
+                String[] parts = avatarName.split("_");
+                StringBuilder formattedName = new StringBuilder();
+                for (int i = 0; i < parts.length; i++) {
+                    if (!parts[i].isEmpty()) {
+                        formattedName.append(Character.toUpperCase(parts[i].charAt(0)))
+                                .append(parts[i].substring(1).toLowerCase());
+                        if (i < parts.length - 1) {
+                            formattedName.append(" ");
+                        }
+                    }
+                }
+                avatarName = formattedName.toString();
+            }
+
+            // 사용자 인벤토리에서 해당 아바타 찾기
+            boolean hasAvatar = userInventoryRepository.findByUserId(user.getId()).stream()
+                    .anyMatch(inventory -> inventory.getShopItem() != null &&
+                            inventory.getShopItem().getName() != null &&
+                            inventory.getShopItem().getName().contains(avatarName));
+
+            return hasAvatar;
+        }
+
+        // TODO: 다른 조건 타입들 구현 (LEVEL, POST_COUNT 등)
+
+        // 기본적으로 false 반환 (조건 체크 미구현)
+        return false;
     }
 }
