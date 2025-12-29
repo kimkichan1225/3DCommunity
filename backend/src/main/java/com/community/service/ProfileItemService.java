@@ -453,13 +453,27 @@ public class ProfileItemService {
                         .filter(inv -> inv.getShopItem() != null &&
                                 inv.getShopItem().getCategory() != null &&
                                 "AVATAR".equals(inv.getShopItem().getCategory().getName()))
-                        .forEach(inv -> System.out.println("  - 보유 아바타: " + inv.getShopItem().getName()));
+                        .forEach(inv -> System.out.println("  - 보유 아바타: " + inv.getShopItem().getName() +
+                                " (modelUrl: " + inv.getShopItem().getModelUrl() + ")"));
 
-                // 사용자 인벤토리에서 해당 아바타 찾기
+                // 사용자 인벤토리에서 해당 아바타 찾기 (modelUrl 기반)
                 boolean hasAvatar = userInventories.stream()
-                        .anyMatch(inventory -> inventory.getShopItem() != null &&
-                                inventory.getShopItem().getName() != null &&
-                                inventory.getShopItem().getName().contains(avatarName));
+                        .anyMatch(inventory -> {
+                            if (inventory.getShopItem() == null ||
+                                inventory.getShopItem().getModelUrl() == null) {
+                                return false;
+                            }
+
+                            // modelUrl에서 아바타 이름 추출
+                            String ownedAvatarName = extractAvatarNameFromModelUrl(inventory.getShopItem().getModelUrl());
+                            boolean matches = ownedAvatarName != null && ownedAvatarName.equalsIgnoreCase(avatarName);
+
+                            if (matches) {
+                                System.out.println("  ✅ 매칭 성공: " + ownedAvatarName + " == " + avatarName);
+                            }
+
+                            return matches;
+                        });
 
                 System.out.println("🔍 [조건 확인] 아바타 보유 여부: " + hasAvatar);
                 return hasAvatar;
@@ -474,6 +488,34 @@ public class ProfileItemService {
             System.err.println("❌ [조건 확인] 에러 발생: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    /**
+     * modelUrl에서 아바타 이름 추출
+     * 예: "/resources/Ultimate Animated Character Pack - Nov 2019/glTF/Soldier_Male.gltf" -> "Soldier Male"
+     */
+    private String extractAvatarNameFromModelUrl(String modelUrl) {
+        if (modelUrl == null || modelUrl.isEmpty()) {
+            return null;
+        }
+
+        try {
+            // 파일명 추출 (마지막 / 이후)
+            String fileName = modelUrl.substring(modelUrl.lastIndexOf('/') + 1);
+
+            // 확장자 제거 (.gltf, .glb 등)
+            String nameWithoutExt = fileName.replaceAll("\\.(gltf|glb|GLTF|GLB)$", "");
+
+            // 언더스코어를 공백으로 변환
+            String avatarName = nameWithoutExt.replace("_", " ");
+
+            System.out.println("🔵 [아바타 이름 추출] modelUrl: " + modelUrl + " → avatarName: " + avatarName);
+
+            return avatarName;
+        } catch (Exception e) {
+            System.err.println("❌ [아바타 이름 추출] 실패: " + e.getMessage());
+            return null;
         }
     }
 }
