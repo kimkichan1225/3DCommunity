@@ -9,5 +9,6 @@ public enum UnlockConditionType {
     LOGIN_DAYS,      // 연속 로그인 일수
     ACHIEVEMENT,     // 특정 업적 달성
     AVATAR_PURCHASE, // 아바타 구매 시 자동 해금
+    SHOP_PURCHASE,   // 상점 구매 시 자동 해금
     CUSTOM           // 커스텀 조건 (향후 확장)
 }
