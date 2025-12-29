@@ -189,61 +189,81 @@ const ShopManagement = () => {
       }
     };
 
+    // 페이지 번호 생성 (최대 5개씩 표시)
+    const getPageNumbers = () => {
+      const pages = [];
+      const maxVisible = 5;
+      let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+      let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+
+      // 끝에서 시작할 경우 startPage 조정
+      if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(0, endPage - maxVisible + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+      return pages;
+    };
+
     return (
       <>
         <div className="filters-section">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              placeholder="아이템명, 설명으로 검색... (Ctrl+K)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="search-clear">
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="filter-group">
-            <label>카테고리</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="all">전체 카테고리</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>총 아이템</label>
-            <div style={{ padding: '10px 12px', color: '#6c757d', fontSize: '14px' }}>
-              {items.length}개 중 {filteredItems.length}개 검색됨
+          <div className="filters-row">
+            <div className="search-box">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="아이템명, 설명으로 검색... (Ctrl+K)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="search-clear">
+                  ✕
+                </button>
+              )}
             </div>
-          </div>
 
-          <div className="filter-group page-size-selector">
-            <label>표시 개수</label>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
-              }}
-            >
-              <option value={5}>5개씩</option>
-              <option value={10}>10개씩</option>
-              <option value={20}>20개씩</option>
-              <option value={50}>50개씩</option>
-            </select>
+            <div className="filters-right">
+              <div className="filter-group">
+                <label>카테고리</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="all">전체</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label>표시 개수</label>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                >
+                  <option value={5}>5개</option>
+                  <option value={10}>10개</option>
+                  <option value={20}>20개</option>
+                  <option value={50}>50개</option>
+                </select>
+              </div>
+
+              <div className="items-count">
+                <span className="count-badge">{filteredItems.length}</span>
+                <span className="count-label">/ {items.length}개</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -331,21 +351,35 @@ const ShopManagement = () => {
             </button>
           </div>
         )}
-      </>
-    );
-
-    return (
-      <>
-        {/* ... existing code ... */}
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="pagination" style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
-            <button onClick={() => handlePageChange(0)} disabled={currentPage === 0}>처음</button>
-            <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 0}>이전</button>
-            <span className="page-info" style={{ lineHeight: '32px' }}>{currentPage + 1} / {totalPages} 페이지</span>
-            <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= totalPages - 1}>다음</button>
-            <button onClick={() => handlePageChange(totalPages - 1)} disabled={currentPage >= totalPages - 1}>마지막</button>
+          <div className="pagination">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 0}
+              className="pagination-btn"
+            >
+              ‹
+            </button>
+
+            {getPageNumbers().map(pageNum => (
+              <button
+                key={pageNum}
+                onClick={() => handlePageChange(pageNum)}
+                className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+              >
+                {pageNum + 1}
+              </button>
+            ))}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1}
+              className="pagination-btn"
+            >
+              ›
+            </button>
           </div>
         )}
       </>
@@ -581,20 +615,20 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
             <div className="form-group">
               <label>이미지 URL</label>
               <input
-                type="url"
+                type="text"
                 value={formData.imageUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                placeholder="https://example.com/image.png"
+                placeholder="https://example.com/image.png 또는 /resources/..."
               />
             </div>
 
             <div className="form-group">
-              <label>3D 모델 URL (.glb)</label>
+              <label>3D 모델 URL (.glb / .gltf)</label>
               <input
-                type="url"
+                type="text"
                 value={formData.modelUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, modelUrl: e.target.value }))}
-                placeholder="https://example.com/model.glb"
+                placeholder="https://example.com/model.glb 또는 /resources/..."
               />
             </div>
           </div>
