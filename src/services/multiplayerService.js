@@ -125,7 +125,7 @@ class MultiplayerService {
     }
   }
 
-  sendPositionUpdate(position, rotationY, animation, modelPath) {
+  sendPositionUpdate(position, rotationY, animation, modelPath, isChangingAvatar = false) {
     if (this.connected && this.client) {
       this.client.publish({
         destination: '/app/player.position',
@@ -137,7 +137,8 @@ class MultiplayerService {
           z: position[2],
           rotationY: rotationY,
           animation: animation,
-          modelPath: modelPath
+          modelPath: modelPath,
+          isChangingAvatar: isChangingAvatar
         })
       });
     }

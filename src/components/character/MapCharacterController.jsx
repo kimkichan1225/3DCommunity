@@ -19,7 +19,8 @@ function MapCharacterController({
   multiplayerService,
   chatMessage,
   onPositionUpdate,
-  modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
+  modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf',
+  isChangingAvatar = false
 }) {
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, characterRef);
@@ -203,7 +204,8 @@ function MapCharacterController({
           [translation.x, translation.y, translation.z],
           targetAngleForNetwork !== null ? targetAngleForNetwork : lastRotationYRef.current,
           currentAnimation,
-          modelPath
+          modelPath,
+          isChangingAvatar
         );
       }
     }

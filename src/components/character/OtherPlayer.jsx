@@ -5,7 +5,7 @@ import { SkeletonUtils } from 'three-stdlib';
 import * as THREE from 'three';
 import ChatBubble from './ChatBubble';
 
-function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf' }) {
+function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf', isChangingAvatar = false }) {
   const groupRef = useRef();
   const modelRef = useRef();
   const targetPosition = useRef(position || [0, 0, 0]);
@@ -100,11 +100,26 @@ function OtherPlayer({ userId, username, position, rotationY, animation, chatMes
 
   return (
     <group ref={groupRef} onContextMenu={handleContextMenu}>
-      <primitive
-        ref={modelRef}
-        object={clone}
-        scale={2}
-      />
+      {isChangingAvatar ? (
+        /* 아바타 변경 중일 때 하늘색 구 표시 */
+        <mesh position={[0, 3, 0]}>
+          <sphereGeometry args={[2, 32, 32]} />
+          <meshStandardMaterial
+            color="#60a5fa"
+            transparent={true}
+            opacity={0.7}
+            emissive="#60a5fa"
+            emissiveIntensity={0.3}
+          />
+        </mesh>
+      ) : (
+        /* 일반 캐릭터 모델 */
+        <primitive
+          ref={modelRef}
+          object={clone}
+          scale={2}
+        />
+      )}
 
       {/* Name tag above player */}
       {username && (
