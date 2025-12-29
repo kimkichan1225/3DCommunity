@@ -1351,7 +1351,22 @@ function App() {
       )}
 
       {showInventoryModal && (
-        <InventoryModal onClose={() => setShowInventoryModal(false)} />
+        <InventoryModal
+          onClose={() => setShowInventoryModal(false)}
+          setCharacterModelPath={(newModelPath) => {
+            console.log('🟡 [App.js] setCharacterModelPath 호출됨 (from Inventory)!');
+            console.log('🟡 [App.js] 새 모델 경로:', newModelPath);
+
+            setIsChangingModel(true);
+            setCharacterModelPathState(newModelPath);
+
+            console.log('🟡 [App.js] 로딩 화면 시작 (1.5초)');
+            setTimeout(() => {
+              setIsChangingModel(false);
+              console.log('🟡 [App.js] 로딩 화면 종료');
+            }, 1500);
+          }}
+        />
       )}
 
       {showGoldChargeModal && (
