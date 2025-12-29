@@ -830,7 +830,8 @@ function App() {
           position: [data.x, data.y, data.z],
           rotationY: data.rotationY,
           animation: data.animation,
-          modelPath: data.modelPath || '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
+          modelPath: data.modelPath || '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf',
+          isChangingAvatar: data.isChangingAvatar || false
         }
       }));
     });
@@ -1119,6 +1120,7 @@ function App() {
                       chatMessage={myChatMessage}
                       onPositionUpdate={handleMapCharacterPositionUpdate}
                       modelPath={characterModelPath}
+                      isChangingAvatar={isChangingModel}
                     />
                   ) : (
                     /* Level1 모드: 기존 Character 사용 */
@@ -1133,6 +1135,7 @@ function App() {
                       onPositionUpdate={handleCharacterPositionUpdate}
                       chatMessage={myChatMessage}
                       modelPath={characterModelPath}
+                      isChangingAvatar={isChangingModel}
                     />
                   )}
                   <CameraLogger />
@@ -1153,6 +1156,7 @@ function App() {
                     chatMessage={playerChatMessages[player.userId]?.message}
                     onRightClick={handlePlayerRightClick}
                     modelPath={player.modelPath}
+                    isChangingAvatar={player.isChangingAvatar}
                   />
                 ))}
 

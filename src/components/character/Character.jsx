@@ -16,7 +16,7 @@ import ChatBubble from './ChatBubble';
  * - 멀티플레이어 위치 동기화
  * - 채팅 말풍선 표시
  */
-function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf' }) {
+function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf', isChangingAvatar = false }) {
   const { scene, animations } = useGLTF(modelPath);
 
   // Clone scene with proper shadow settings
@@ -399,7 +399,8 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
           [rbPosition.x, rbPosition.y, rbPosition.z],
           rotationY,
           animState,
-          modelPath
+          modelPath,
+          isChangingAvatar
         );
 
         lastPositionUpdateRef.current = currentTime;
