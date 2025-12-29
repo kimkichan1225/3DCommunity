@@ -380,12 +380,13 @@ public class ProfileItemService {
             // 아이템 코드에서 아바타 이름 추출
             // 예: "casual-male-profile" -> "Casual_Male"
             String itemCode = item.getItemCode();
-            String avatarName = itemCode.replace("-profile", "")
+            String tempAvatarName = itemCode.replace("-profile", "")
                     .replace("-", "_");
 
             // 첫 글자를 대문자로 변환 (예: casual_male -> Casual_male)
-            if (!avatarName.isEmpty()) {
-                String[] parts = avatarName.split("_");
+            final String avatarName;
+            if (!tempAvatarName.isEmpty()) {
+                String[] parts = tempAvatarName.split("_");
                 StringBuilder formattedName = new StringBuilder();
                 for (int i = 0; i < parts.length; i++) {
                     if (!parts[i].isEmpty()) {
@@ -397,6 +398,8 @@ public class ProfileItemService {
                     }
                 }
                 avatarName = formattedName.toString();
+            } else {
+                avatarName = tempAvatarName;
             }
 
             // 사용자 인벤토리에서 해당 아바타 찾기
