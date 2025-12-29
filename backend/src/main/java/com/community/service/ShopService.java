@@ -158,22 +158,26 @@ public class ShopService {
 
     /**
      * 활성화된 상점 아이템 조회 (유저용)
+     * 이미지가 없는 아이템은 제외
      */
     @Transactional(readOnly = true)
     public List<ShopItemDTO> getActiveShopItems() {
         return shopItemRepository.findByIsActiveTrueOrderByCreatedAtDesc()
                 .stream()
+                .filter(item -> item.getImageUrl() != null && !item.getImageUrl().trim().isEmpty())
                 .map(this::convertToItemDTO)
                 .collect(Collectors.toList());
     }
 
     /**
      * 카테고리별 활성화된 상점 아이템 조회
+     * 이미지가 없는 아이템은 제외
      */
     @Transactional(readOnly = true)
     public List<ShopItemDTO> getShopItemsByCategory(Long categoryId) {
         return shopItemRepository.findByCategoryIdAndIsActiveTrue(categoryId)
                 .stream()
+                .filter(item -> item.getImageUrl() != null && !item.getImageUrl().trim().isEmpty())
                 .map(this::convertToItemDTO)
                 .collect(Collectors.toList());
     }
