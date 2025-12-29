@@ -20,7 +20,8 @@ const NoticeManagement = () => {
   const fetchNotices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/notices', {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${API_URL}/api/notices`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -44,9 +45,10 @@ const NoticeManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
       const url = editingNotice
-        ? `http://localhost:8080/api/admin/notices/${editingNotice.id}`
-        : 'http://localhost:8080/api/admin/notices';
+        ? `${API_URL}/api/admin/notices/${editingNotice.id}`
+        : `${API_URL}/api/admin/notices`;
 
       const response = await fetch(url, {
         method: editingNotice ? 'PUT' : 'POST',
@@ -90,7 +92,8 @@ const NoticeManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/admin/notices/${noticeId}`, {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${API_URL}/api/admin/notices/${noticeId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
