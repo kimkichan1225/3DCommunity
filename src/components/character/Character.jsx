@@ -17,8 +17,6 @@ import ChatBubble from './ChatBubble';
  * - 채팅 말풍선 표시
  */
 function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf' }) {
-  console.log('🟣 [Character.jsx] 컴포넌트 렌더링, modelPath:', modelPath);
-
   const { scene, animations } = useGLTF(modelPath);
 
   // Clone scene with proper shadow settings
