@@ -113,6 +113,8 @@ public class ShopService {
                 item.getCategory() != null ? item.getCategory().getId() : null,
                 item.getCategory() != null ? convertToCategoryDTO(item.getCategory()) : null,
                 item.getPrice(),
+                item.getSilverCoinPrice(),
+                item.getGoldCoinPrice(),
                 item.getImageUrl(),
                 item.getModelUrl(),
                 item.getItemType() != null ? item.getItemType().name() : null,
@@ -130,6 +132,8 @@ public class ShopService {
         }
 
         item.setPrice(dto.getPrice());
+        item.setSilverCoinPrice(dto.getSilverCoinPrice());
+        item.setGoldCoinPrice(dto.getGoldCoinPrice());
         item.setImageUrl(dto.getImageUrl());
         item.setModelUrl(dto.getModelUrl());
 
