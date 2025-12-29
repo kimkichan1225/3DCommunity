@@ -15,6 +15,7 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
   const [sortBy, setSortBy] = useState('latest'); // 정렬 기준
   const [searchQuery, setSearchQuery] = useState(''); // 검색어
   const [selectedItem, setSelectedItem] = useState(null); // 선택된 아이템
+  const [popup, setPopup] = useState(null); // { message, type: 'success' | 'error' }
 
   // 데이터
   const [categories, setCategories] = useState([]);
@@ -118,7 +119,7 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
     try {
       const response = await shopService.purchaseItem(itemId, autoEquip);
       if (response.success) {
-        alert(response.message);
+        setPopup({ message: '구매가 완료되었습니다!', type: 'success' });
         await loadData(); // 데이터 새로고침
         if (onCoinsUpdate) {
           onCoinsUpdate(response.remainingSilverCoins, response.remainingGoldCoins);
@@ -132,11 +133,11 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
           }
         }
       } else {
-        alert(response.message);
+        setPopup({ message: response.message, type: 'error' });
       }
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert('구매에 실패했습니다.');
+      setPopup({ message: '구매에 실패했습니다.', type: 'error' });
     }
   };
 
@@ -185,7 +186,7 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
       }
     } catch (error) {
       console.error('❌ Toggle equip failed:', error);
-      alert('착용/해제에 실패했습니다.');
+      setPopup({ message: '착용/해제에 실패했습니다.', type: 'error' });
     }
   };
 
@@ -392,6 +393,21 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
           </div>
         </div>
       </div>
+
+      {/* 팝업 메시지 */}
+      {popup && (
+        <div className="shop-popup-overlay" onClick={() => setPopup(null)}>
+          <div className={`shop-popup ${popup.type}`} onClick={(e) => e.stopPropagation()}>
+            <div className="shop-popup-icon">
+              {popup.type === 'success' ? '✓' : '✕'}
+            </div>
+            <div className="shop-popup-message">{popup.message}</div>
+            <button className="shop-popup-close" onClick={() => setPopup(null)}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
