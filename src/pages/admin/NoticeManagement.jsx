@@ -92,10 +92,6 @@ const NoticeManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-<<<<<<< HEAD
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-=======
->>>>>>> kim
       const response = await fetch(`${API_URL}/api/admin/notices/${noticeId}`, {
         method: 'DELETE',
         headers: {
