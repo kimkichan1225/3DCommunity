@@ -184,6 +184,23 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     }
   }, [initialPosition, isMapFull]);
 
+  // 아바타 변경 상태가 바뀔 때 즉시 위치 업데이트 전송
+  useEffect(() => {
+    if (multiplayerService && userId && rigidBodyRef.current) {
+      const rbPosition = rigidBodyRef.current.translation();
+
+      console.log('🔄 [Character] isChangingAvatar 변경됨:', isChangingAvatar);
+
+      multiplayerService.sendPositionUpdate(
+        [rbPosition.x, rbPosition.y, rbPosition.z],
+        lastRotationYRef.current,
+        'idle',
+        modelPath,
+        isChangingAvatar
+      );
+    }
+  }, [isChangingAvatar, multiplayerService, userId, modelPath]);
+
   useEffect(() => {
     // 점프 중일 때는 애니메이션을 useFrame에서 처리하므로 여기서는 건너뜀
     if (isJumpingRef.current) return;

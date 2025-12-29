@@ -107,6 +107,23 @@ function MapCharacterController({
     }
   }, [forward, backward, left, right, shift, actions, currentAnimation]);
 
+  // 아바타 변경 상태가 바뀔 때 즉시 위치 업데이트 전송
+  useEffect(() => {
+    if (multiplayerService && userId && rigidBodyRef.current) {
+      const rbPosition = rigidBodyRef.current.translation();
+
+      console.log('🔄 [MapCharacterController] isChangingAvatar 변경됨:', isChangingAvatar);
+
+      multiplayerService.sendPositionUpdate(
+        [rbPosition.x, rbPosition.y, rbPosition.z],
+        lastRotationYRef.current,
+        'idle',
+        modelPath,
+        isChangingAvatar
+      );
+    }
+  }, [isChangingAvatar, multiplayerService, userId, modelPath]);
+
   useFrame((state, delta) => {
     if (!rigidBodyRef.current || !modelGroupRef.current) {
       console.warn('⚠️ MapCharacterController useFrame: rigidBodyRef 또는 modelGroupRef가 설정되지 않음');
