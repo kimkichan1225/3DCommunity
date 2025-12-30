@@ -6,10 +6,10 @@ const BOARD_SIZE = 15;
 
 const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
   const [board, setBoard] = useState(Array(BOARD_SIZE * BOARD_SIZE).fill(null));
-  const [currentTurn, setCurrentTurn] = useState(0); // 0 or 1 (플레이어 인덱스)
+  const [moveCount, setMoveCount] = useState(0); // 전체 이동 카운트 (턴의 근원)
   const [gameStatus, setGameStatus] = useState('playing'); // playing, ended
   const [winner, setWinner] = useState(null);
-  const [moves, setMoves] = useState([]);
+  const processedMovesRef = React.useRef(new Set()); // 중복 처리 방지
 
   // 플레이어 매칭 헬퍼 함수
   const getMyPlayerIndex = () => {
@@ -56,7 +56,15 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
       console.log('OmokGame received event:', evt);
 
       switch (evt.type) {
-        case 'omokMove':
+        case 'omokMove': {
+          // 중복 처리 방지 - 같은 move는 한 번만 처리
+          const moveKey = `${evt.position}_${evt.playerId}`;
+          if (processedMovesRef.current.has(moveKey)) {
+            console.log('Duplicate move ignored:', moveKey);
+            return;
+          }
+          processedMovesRef.current.add(moveKey);
+
           // 오목 움직임 처리
           setBoard(prevBoard => {
             const newBoard = [...prevBoard];
@@ -70,16 +78,15 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
             if (checkWin(newBoard, row, col, playerSymbol)) {
               setGameStatus('ended');
               setWinner(evt.playerId);
-            } else {
-              // 다음 차례로
-              setCurrentTurn(prev => (prev + 1) % players.length);
             }
 
             return newBoard;
           });
 
-          setMoves(prev => [...prev, evt.position]);
+          // moveCount 증가 (모든 클라이언트가 동기화)
+          setMoveCount(prev => prev + 1);
           break;
+        }
 
         case 'gameEnd':
           setGameStatus('ended');
@@ -92,9 +99,6 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
     };
 
     minigameService.on('gameEvent', handler);
-
-    // Mount 시 현재 게임 상태 요청 (중간 입장/새로고침 대비)
-    minigameService.requestGameState(roomId);
 
     return () => minigameService.off('gameEvent', handler);
   }, [roomId, players]);
@@ -151,6 +155,7 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
     if (gameStatus !== 'playing') return;
 
     const myPlayerIndex = getMyPlayerIndex();
+    const currentTurn = moveCount % players.length;
     if (currentTurn !== myPlayerIndex) {
       console.log('Not your turn');
       return;
@@ -172,12 +177,14 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
 
   const resetGame = () => {
     setBoard(Array(BOARD_SIZE * BOARD_SIZE).fill(null));
-    setMoves([]);
+    setMoveCount(0);
     setGameStatus('playing');
     setWinner(null);
-    setCurrentTurn(0);
+    processedMovesRef.current.clear();
   };
 
+  // 모든 클라이언트가 같은 방식으로 턴 계산
+  const currentTurn = moveCount % players.length;
   const myPlayerIndex = getMyPlayerIndex();
   const isMyTurn = currentTurn === myPlayerIndex;
   const currentPlayerName = players[currentTurn]?.username || '';
