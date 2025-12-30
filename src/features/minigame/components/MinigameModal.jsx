@@ -6,6 +6,7 @@ import friendService from '../../../services/friendService';
 import minigameService from '../../../services/minigameService';
 import AimingGame from './AimingGame';
 import ReactionRace from './ReactionRace';
+import OmokGame from './OmokGame';
 
 function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby', initialRoomId = null }) {
     const [currentView, setCurrentView] = useState(initialMode === 'create' ? 'create' : 'lobby');
@@ -172,6 +173,15 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     const renderContent = () => {
         if (currentRoom?.playing) {
+            if (currentRoom.gameName === '오목') {
+                return <OmokGame
+                    roomId={currentRoom.roomId}
+                    isHost={isHost}
+                    userProfile={userProfile}
+                    players={currentRoom.players}
+                    onGameEnd={() => setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null))}
+                />;
+            }
             if (currentRoom.gameName === '에임 맞추기' || currentRoom.gameName === 'Reaction Race') {
                 return <AimingGame
                     roomId={currentRoom.roomId}

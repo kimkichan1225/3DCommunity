@@ -241,6 +241,24 @@ public class MinigameController {
             }
         }
 
+        if ("omokMove".equals(event.getType())) {
+            // 오목 움직임 처리
+            String roomId = event.getRoomId();
+            String playerId = event.getPlayerId();
+            Integer position = event.getPosition();
+
+            log.info("오목 움직임: roomId={}, playerId={}, position={}", roomId, playerId, position);
+
+            // 모든 플레이어에게 브로드캐스트
+            GameEventDto omokEvt = new GameEventDto();
+            omokEvt.setRoomId(roomId);
+            omokEvt.setType("omokMove");
+            omokEvt.setPlayerId(playerId);
+            omokEvt.setPosition(position);
+            omokEvt.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", omokEvt);
+        }
+
         if ("reactionStart".equals(event.getType())) {
             String roomId = event.getRoomId();
             boolean immediate = false;
