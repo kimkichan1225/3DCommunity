@@ -165,13 +165,16 @@ const ShopManagement = () => {
 
   const getFilteredItems = () => {
     return items.filter(item => {
+      // image_url이 있는 아이템만 표시 (상점에 보이는 아이템들)
+      const hasImage = item.imageUrl && item.imageUrl.trim() !== '';
+
       const matchesSearch = searchTerm === '' ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      const matchesCategory = selectedCategory === 'all' || item.categoryId === selectedCategory;
+      const matchesCategory = selectedCategory === 'all' || item.categoryId === parseInt(selectedCategory);
 
-      return matchesSearch && matchesCategory;
+      return hasImage && matchesSearch && matchesCategory;
     });
   };
 
@@ -186,61 +189,81 @@ const ShopManagement = () => {
       }
     };
 
+    // 페이지 번호 생성 (최대 5개씩 표시)
+    const getPageNumbers = () => {
+      const pages = [];
+      const maxVisible = 5;
+      let startPage = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+      let endPage = Math.min(totalPages - 1, startPage + maxVisible - 1);
+
+      // 끝에서 시작할 경우 startPage 조정
+      if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(0, endPage - maxVisible + 1);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+      return pages;
+    };
+
     return (
       <>
         <div className="filters-section">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              placeholder="아이템명, 설명으로 검색... (Ctrl+K)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="search-clear">
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="filter-group">
-            <label>카테고리</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="all">전체 카테고리</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>총 아이템</label>
-            <div style={{ padding: '10px 12px', color: '#6c757d', fontSize: '14px' }}>
-              {items.length}개 중 {filteredItems.length}개 검색됨
+          <div className="filters-row">
+            <div className="search-box">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="아이템명, 설명으로 검색... (Ctrl+K)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="search-clear">
+                  ✕
+                </button>
+              )}
             </div>
-          </div>
 
-          <div className="filter-group page-size-selector">
-            <label>표시 개수</label>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
-              }}
-            >
-              <option value={5}>5개씩</option>
-              <option value={10}>10개씩</option>
-              <option value={20}>20개씩</option>
-              <option value={50}>50개씩</option>
-            </select>
+            <div className="filters-right">
+              <div className="filter-group">
+                <label>카테고리</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="all">전체</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label>표시 개수</label>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                >
+                  <option value={5}>5개</option>
+                  <option value={10}>10개</option>
+                  <option value={20}>20개</option>
+                  <option value={50}>50개</option>
+                </select>
+              </div>
+
+              <div className="items-count">
+                <span className="count-badge">{filteredItems.length}</span>
+                <span className="count-label">/ {items.length}개</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -279,7 +302,19 @@ const ShopManagement = () => {
                   <td>
                     {categories.find(c => c.id === item.categoryId)?.name || '-'}
                   </td>
-                  <td>{item.price?.toLocaleString()} 코인</td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {item.silverCoinPrice > 0 && (
+                        <span>💰 {item.silverCoinPrice?.toLocaleString()}</span>
+                      )}
+                      {item.goldCoinPrice > 0 && (
+                        <span>🪙 {item.goldCoinPrice?.toLocaleString()}</span>
+                      )}
+                      {item.silverCoinPrice === 0 && item.goldCoinPrice === 0 && (
+                        <span style={{ color: '#999' }}>가격 미설정</span>
+                      )}
+                    </div>
+                  </td>
                   <td>
                     <span className={`status-badge ${item.isActive ? 'active' : 'inactive'}`}>
                       {item.isActive ? '활성' : '비활성'}
@@ -328,21 +363,35 @@ const ShopManagement = () => {
             </button>
           </div>
         )}
-      </>
-    );
-
-    return (
-      <>
-        {/* ... existing code ... */}
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="pagination" style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
-            <button onClick={() => handlePageChange(0)} disabled={currentPage === 0}>처음</button>
-            <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 0}>이전</button>
-            <span className="page-info" style={{ lineHeight: '32px' }}>{currentPage + 1} / {totalPages} 페이지</span>
-            <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= totalPages - 1}>다음</button>
-            <button onClick={() => handlePageChange(totalPages - 1)} disabled={currentPage >= totalPages - 1}>마지막</button>
+          <div className="pagination">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 0}
+              className="pagination-btn"
+            >
+              ‹
+            </button>
+
+            {getPageNumbers().map(pageNum => (
+              <button
+                key={pageNum}
+                onClick={() => handlePageChange(pageNum)}
+                className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+              >
+                {pageNum + 1}
+              </button>
+            ))}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1}
+              className="pagination-btn"
+            >
+              ›
+            </button>
           </div>
         )}
       </>
@@ -488,6 +537,8 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
     description: item?.description || '',
     categoryId: item?.categoryId || '',
     price: item?.price || 0,
+    silverCoinPrice: item?.silverCoinPrice || 0,
+    goldCoinPrice: item?.goldCoinPrice || 0,
     imageUrl: item?.imageUrl || '',
     modelUrl: item?.modelUrl || '',
     itemType: item?.itemType || 'ACCESSORY',
@@ -496,8 +547,12 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.price) {
-      alert('아이템명과 가격은 필수 입력 사항입니다.');
+    if (!formData.name) {
+      alert('아이템명은 필수 입력 사항입니다.');
+      return;
+    }
+    if (formData.silverCoinPrice === 0 && formData.goldCoinPrice === 0) {
+      alert('은화 또는 금화 가격 중 최소 하나는 설정해야 합니다.');
       return;
     }
     onSave(formData);
@@ -540,15 +595,27 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
             </div>
 
             <div className="form-group">
-              <label>가격 (코인) *</label>
+              <label>은화 가격 💰</label>
               <input
                 type="number"
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
+                value={formData.silverCoinPrice}
+                onChange={(e) => setFormData(prev => ({ ...prev, silverCoinPrice: parseInt(e.target.value) || 0 }))}
                 placeholder="0"
                 min="0"
-                required
               />
+              <small style={{ color: '#666', fontSize: '0.85em' }}>0으로 설정하면 은화로 구매 불가</small>
+            </div>
+
+            <div className="form-group">
+              <label>금화 가격 🪙</label>
+              <input
+                type="number"
+                value={formData.goldCoinPrice}
+                onChange={(e) => setFormData(prev => ({ ...prev, goldCoinPrice: parseInt(e.target.value) || 0 }))}
+                placeholder="0"
+                min="0"
+              />
+              <small style={{ color: '#666', fontSize: '0.85em' }}>0으로 설정하면 금화로 구매 불가</small>
             </div>
 
             <div className="form-group">
@@ -560,6 +627,7 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
                 <option value="ACCESSORY">악세서리</option>
                 <option value="CLOTHING">의상</option>
                 <option value="HAIR">헤어</option>
+                <option value="OUTLINE">프로필 테두리</option>
                 <option value="OTHER">기타</option>
               </select>
             </div>
@@ -578,20 +646,20 @@ const ItemModal = ({ item, categories, onSave, onClose }) => {
             <div className="form-group">
               <label>이미지 URL</label>
               <input
-                type="url"
+                type="text"
                 value={formData.imageUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                placeholder="https://example.com/image.png"
+                placeholder="https://example.com/image.png 또는 /resources/..."
               />
             </div>
 
             <div className="form-group">
-              <label>3D 모델 URL (.glb)</label>
+              <label>3D 모델 URL (.glb / .gltf)</label>
               <input
-                type="url"
+                type="text"
                 value={formData.modelUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, modelUrl: e.target.value }))}
-                placeholder="https://example.com/model.glb"
+                placeholder="https://example.com/model.glb 또는 /resources/..."
               />
             </div>
           </div>

@@ -15,6 +15,7 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
   const [sortBy, setSortBy] = useState('latest'); // 정렬 기준
   const [searchQuery, setSearchQuery] = useState(''); // 검색어
   const [selectedItem, setSelectedItem] = useState(null); // 선택된 아이템
+  const [popup, setPopup] = useState(null); // { message, type: 'success' | 'error' }
 
   // 데이터
   const [categories, setCategories] = useState([]);
@@ -114,11 +115,11 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
   };
 
   // 아이템 구매
-  const handlePurchase = async (itemId, autoEquip = false) => {
+  const handlePurchase = async (itemId, currencyType = 'SILVER', autoEquip = false) => {
     try {
-      const response = await shopService.purchaseItem(itemId, autoEquip);
+      const response = await shopService.purchaseItem(itemId, currencyType, autoEquip);
       if (response.success) {
-        alert(response.message);
+        setPopup({ message: '구매가 완료되었습니다!', type: 'success' });
         await loadData(); // 데이터 새로고침
         if (onCoinsUpdate) {
           onCoinsUpdate(response.remainingSilverCoins, response.remainingGoldCoins);
@@ -132,11 +133,11 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
           }
         }
       } else {
-        alert(response.message);
+        setPopup({ message: response.message, type: 'error' });
       }
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert('구매에 실패했습니다.');
+      setPopup({ message: '구매에 실패했습니다.', type: 'error' });
     }
   };
 
@@ -185,7 +186,7 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
       }
     } catch (error) {
       console.error('❌ Toggle equip failed:', error);
-      alert('착용/해제에 실패했습니다.');
+      setPopup({ message: '착용/해제에 실패했습니다.', type: 'error' });
     }
   };
 
@@ -312,8 +313,21 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                     <div className="shop-item-info">
                       <h4>{item.name}</h4>
                       <div className="shop-item-price">
-                        <img src="/resources/Icon/Silver-Coin.png" alt="코인" />
-                        <span>{item.price}</span>
+                        {item.silverCoinPrice > 0 && (
+                          <div className="price-item">
+                            <img src="/resources/Icon/Silver-Coin.png" alt="실버" style={{ width: '16px', height: '16px' }} />
+                            <span>{item.silverCoinPrice?.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {item.goldCoinPrice > 0 && (
+                          <div className="price-item">
+                            <img src="/resources/Icon/Gold-Coin.png" alt="골드" style={{ width: '16px', height: '16px' }} />
+                            <span>{item.goldCoinPrice?.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {item.silverCoinPrice === 0 && item.goldCoinPrice === 0 && (
+                          <span style={{ fontSize: '12px', color: '#999' }}>가격 미설정</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -340,9 +354,22 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
 
                   <div className="detail-price-box">
                     <h4>가격</h4>
-                    <div className="price-display">
-                      <img src="/resources/Icon/Silver-Coin.png" alt="실버 코인" />
-                      <span className="price-value">{selectedItem.price}</span>
+                    <div className="price-display-horizontal">
+                      {selectedItem.silverCoinPrice > 0 && (
+                        <div className="price-item-detail">
+                          <img src="/resources/Icon/Silver-Coin.png" alt="실버 코인" style={{ width: '24px', height: '24px' }} />
+                          <span className="price-value">{selectedItem.silverCoinPrice?.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {selectedItem.goldCoinPrice > 0 && (
+                        <div className="price-item-detail">
+                          <img src="/resources/Icon/Gold-Coin.png" alt="골드 코인" style={{ width: '24px', height: '24px' }} />
+                          <span className="price-value">{selectedItem.goldCoinPrice?.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {selectedItem.silverCoinPrice === 0 && selectedItem.goldCoinPrice === 0 && (
+                        <span className="price-value" style={{ color: '#999' }}>가격 미설정</span>
+                      )}
                     </div>
                   </div>
 
@@ -360,26 +387,115 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                   <div className="detail-actions">
                     {!isOwned(selectedItem.id) ? (
                       <>
-                        <button
-                          className="btn-purchase"
-                          onClick={() => handlePurchase(selectedItem.id, false)}
-                        >
-                          구매하기
-                        </button>
-                        <button
-                          className="btn-purchase-equip"
-                          onClick={() => handlePurchase(selectedItem.id, true)}
-                        >
-                          구매 후 착용
-                        </button>
+                        {selectedItem.silverCoinPrice > 0 && selectedItem.goldCoinPrice > 0 ? (
+                          /* 은화와 금화 둘 다 가능 */
+                          <>
+                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                              <button
+                                className="btn-purchase"
+                                onClick={() => handlePurchase(selectedItem.id, 'SILVER', false)}
+                                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                              >
+                                <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
+                                {selectedItem.silverCoinPrice?.toLocaleString()}
+                              </button>
+                              <button
+                                className="btn-purchase"
+                                onClick={() => handlePurchase(selectedItem.id, 'GOLD', false)}
+                                style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                              >
+                                <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
+                                {selectedItem.goldCoinPrice?.toLocaleString()}
+                              </button>
+                            </div>
+                            {/* OUTLINE 타입이 아닐 때만 구매 후 착용 버튼 표시 */}
+                            {selectedItem.itemType !== 'OUTLINE' && (
+                              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                <button
+                                  className="btn-purchase-equip"
+                                  onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
+                                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                >
+                                  <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '18px', height: '18px' }} />
+                                  구매 후 착용
+                                </button>
+                                <button
+                                  className="btn-purchase-equip"
+                                  onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
+                                  style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', color: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                >
+                                  <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '18px', height: '18px' }} />
+                                  구매 후 착용
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        ) : selectedItem.silverCoinPrice > 0 ? (
+                          /* 은화만 가능 */
+                          <>
+                            <button
+                              className="btn-purchase"
+                              onClick={() => handlePurchase(selectedItem.id, 'SILVER', false)}
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                            >
+                              <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
+                              {selectedItem.silverCoinPrice?.toLocaleString()} 구매
+                            </button>
+                            {/* OUTLINE 타입이 아닐 때만 구매 후 착용 버튼 표시 */}
+                            {selectedItem.itemType !== 'OUTLINE' && (
+                              <button
+                                className="btn-purchase-equip"
+                                onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                              >
+                                <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
+                                구매 후 착용
+                              </button>
+                            )}
+                          </>
+                        ) : selectedItem.goldCoinPrice > 0 ? (
+                          /* 금화만 가능 */
+                          <>
+                            <button
+                              className="btn-purchase"
+                              onClick={() => handlePurchase(selectedItem.id, 'GOLD', false)}
+                              style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                            >
+                              <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
+                              {selectedItem.goldCoinPrice?.toLocaleString()} 구매
+                            </button>
+                            {/* OUTLINE 타입이 아닐 때만 구매 후 착용 버튼 표시 */}
+                            {selectedItem.itemType !== 'OUTLINE' && (
+                              <button
+                                className="btn-purchase-equip"
+                                onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
+                                style={{ background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                              >
+                                <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
+                                구매 후 착용
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <div style={{ color: '#999', textAlign: 'center', padding: '20px' }}>
+                            가격이 설정되지 않은 아이템입니다
+                          </div>
+                        )}
                       </>
                     ) : (
-                      <button
-                        className={`btn-equip ${isEquipped(selectedItem.id) ? 'equipped' : ''}`}
-                        onClick={() => handleToggleEquip(selectedItem.id)}
-                      >
-                        {isEquipped(selectedItem.id) ? '착용 해제' : '착용하기'}
-                      </button>
+                      /* 보유 중인 아이템 - OUTLINE이 아닐 때만 착용 버튼 표시 */
+                      selectedItem.itemType !== 'OUTLINE' ? (
+                        <button
+                          className={`btn-equip ${isEquipped(selectedItem.id) ? 'equipped' : ''}`}
+                          onClick={() => handleToggleEquip(selectedItem.id)}
+                        >
+                          {isEquipped(selectedItem.id) ? '착용 해제' : '착용하기'}
+                        </button>
+                      ) : (
+                        <div style={{ color: '#4CAF50', textAlign: 'center', padding: '20px', fontSize: '14px' }}>
+                          프로필 커스터마이징에서 착용하실 수 있습니다
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
@@ -392,6 +508,21 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
           </div>
         </div>
       </div>
+
+      {/* 팝업 메시지 */}
+      {popup && (
+        <div className="shop-popup-overlay" onClick={() => setPopup(null)}>
+          <div className={`shop-popup ${popup.type}`} onClick={(e) => e.stopPropagation()}>
+            <div className="shop-popup-icon">
+              {popup.type === 'success' ? '✓' : '✕'}
+            </div>
+            <div className="shop-popup-message">{popup.message}</div>
+            <button className="shop-popup-close" onClick={() => setPopup(null)}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

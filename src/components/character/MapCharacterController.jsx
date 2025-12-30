@@ -19,7 +19,8 @@ function MapCharacterController({
   multiplayerService,
   chatMessage,
   onPositionUpdate,
-  modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
+  modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf',
+  isChangingAvatar = false
 }) {
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, characterRef);
@@ -106,9 +107,37 @@ function MapCharacterController({
     }
   }, [forward, backward, left, right, shift, actions, currentAnimation]);
 
+  // 아바타 변경 상태가 바뀔 때 즉시 위치 업데이트 전송
+  useEffect(() => {
+    if (multiplayerService && userId && rigidBodyRef.current) {
+      const rbPosition = rigidBodyRef.current.translation();
+
+      console.log('🔄 [MapCharacterController] isChangingAvatar 변경됨:', isChangingAvatar);
+
+      multiplayerService.sendPositionUpdate(
+        [rbPosition.x, rbPosition.y, rbPosition.z],
+        lastRotationYRef.current,
+        'idle',
+        modelPath,
+        isChangingAvatar
+      );
+    }
+  }, [isChangingAvatar, multiplayerService, userId, modelPath]);
+
   useFrame((state, delta) => {
     if (!rigidBodyRef.current || !modelGroupRef.current) {
       console.warn('⚠️ MapCharacterController useFrame: rigidBodyRef 또는 modelGroupRef가 설정되지 않음');
+      return;
+    }
+
+    // 맵 밖으로 떨어진 경우 스폰 위치로 리스폰
+    const rbPosition = rigidBodyRef.current.translation();
+    if (rbPosition.y < -10) {
+      console.log('⚠️ 캐릭터가 맵 밖으로 떨어짐 - 리스폰 (지도 모드)');
+      rigidBodyRef.current.setTranslation({ x: 0, y: 5, z: 0 }, true);
+      rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      modelGroupRef.current.position.set(0, 5, 0);
       return;
     }
 
@@ -192,7 +221,8 @@ function MapCharacterController({
           [translation.x, translation.y, translation.z],
           targetAngleForNetwork !== null ? targetAngleForNetwork : lastRotationYRef.current,
           currentAnimation,
-          modelPath
+          modelPath,
+          isChangingAvatar
         );
       }
     }

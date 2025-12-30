@@ -30,6 +30,12 @@ public class ShopItem {
     @Column(nullable = false)
     private Integer price = 0;
 
+    @Column(name = "silver_coin_price")
+    private Integer silverCoinPrice = 0;
+
+    @Column(name = "gold_coin_price")
+    private Integer goldCoinPrice = 0;
+
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
@@ -65,6 +71,7 @@ public class ShopItem {
         CLOTHING,
         HAIR,
         AVATAR,
+        OUTLINE,
         OTHER
     }
 }

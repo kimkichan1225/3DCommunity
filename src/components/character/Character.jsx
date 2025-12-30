@@ -16,9 +16,7 @@ import ChatBubble from './ChatBubble';
  * - 멀티플레이어 위치 동기화
  * - 채팅 말풍선 표시
  */
-function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf' }) {
-  console.log('🟣 [Character.jsx] 컴포넌트 렌더링, modelPath:', modelPath);
-
+function Character({ characterRef, initialPosition, isMovementDisabled, username, userId, multiplayerService, isMapFull = false, onPositionUpdate, chatMessage, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf', isChangingAvatar = false }) {
   const { scene, animations } = useGLTF(modelPath);
 
   // Clone scene with proper shadow settings
@@ -186,6 +184,23 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     }
   }, [initialPosition, isMapFull]);
 
+  // 아바타 변경 상태가 바뀔 때 즉시 위치 업데이트 전송
+  useEffect(() => {
+    if (multiplayerService && userId && rigidBodyRef.current) {
+      const rbPosition = rigidBodyRef.current.translation();
+
+      console.log('🔄 [Character] isChangingAvatar 변경됨:', isChangingAvatar);
+
+      multiplayerService.sendPositionUpdate(
+        [rbPosition.x, rbPosition.y, rbPosition.z],
+        lastRotationYRef.current,
+        'idle',
+        modelPath,
+        isChangingAvatar
+      );
+    }
+  }, [isChangingAvatar, multiplayerService, userId, modelPath]);
+
   useEffect(() => {
     // 점프 중일 때는 애니메이션을 useFrame에서 처리하므로 여기서는 건너뜀
     if (isJumpingRef.current) return;
@@ -214,6 +229,18 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
 
   useFrame((state, delta) => {
     if (!rigidBodyRef.current || !modelGroupRef.current) return;
+
+    // 맵 밖으로 떨어진 경우 스폰 위치로 리스폰
+    const currentPos = rigidBodyRef.current.translation();
+    if (currentPos.y < -10) {
+      console.log('⚠️ 캐릭터가 맵 밖으로 떨어짐 - 리스폰');
+      const [x, y, z] = initialPosition || [0, 5, 0];
+      rigidBodyRef.current.setTranslation({ x, y, z }, true);
+      rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      modelGroupRef.current.position.set(x, y, z);
+      return;
+    }
 
     // 모달이 열려있으면 이동 비활성화
     if (isMovementDisabled) {
@@ -389,7 +416,8 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
           [rbPosition.x, rbPosition.y, rbPosition.z],
           rotationY,
           animState,
-          modelPath
+          modelPath,
+          isChangingAvatar
         );
 
         lastPositionUpdateRef.current = currentTime;

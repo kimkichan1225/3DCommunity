@@ -73,4 +73,13 @@ public class AdminProfileController {
         int grantedCount = profileItemService.grantDefaultItemsToAllUsers();
         return ResponseEntity.ok("총 " + grantedCount + "개의 아이템이 지급되었습니다.");
     }
+
+    /**
+     * 기존 아바타 보유자들에게 프로필 아이템 소급 지급
+     */
+    @PostMapping("/grant-avatar-profile-items")
+    public ResponseEntity<String> grantProfileItemsForExistingAvatars() {
+        int grantedCount = profileItemService.grantProfileItemsForExistingAvatars();
+        return ResponseEntity.ok("총 " + grantedCount + "개의 프로필 아이템이 소급 지급되었습니다.");
+    }
 }

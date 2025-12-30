@@ -39,6 +39,7 @@ import shopService from './features/shop/services/shopService';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShopModal } from './features/shop';
 import { GoldChargeModal } from './features/payment';
+import { InventoryModal } from './features/inventory';
 
 function App() {
   const navigate = useNavigate();
@@ -64,6 +65,7 @@ function App() {
   const [minigameModalMode, setMinigameModalMode] = useState('lobby'); // 'lobby' or 'create'
   const [pendingJoinRoomId, setPendingJoinRoomId] = useState(null);
   const [showShopModal, setShowShopModal] = useState(false);
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [showGoldChargeModal, setShowGoldChargeModal] = useState(false);
   const [goldChargeModalTab, setGoldChargeModalTab] = useState('charge'); // 'charge' | 'exchange'
   const [shouldAutoAttendance, setShouldAutoAttendance] = useState(false);
@@ -115,7 +117,7 @@ function App() {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiYmluc3MwMTI0IiwiYSI6ImNtaTcyM24wdjAwZDMybHEwbzEyenJ2MjEifQ.yi82NwUcsPMGP4M3Ri136g';
 
   // 모달이 열려있는지 확인 (PhoneUI는 제외 - 게임플레이에 영향 없음)
-  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showMinigameModal || showShopModal || showGoldChargeModal || showLanding || showNotificationModal;
+  const isAnyModalOpen = showBoardModal || showProfileModal || showSettingModal || showEventModal || showMinigameModal || showShopModal || showInventoryModal || showGoldChargeModal || showLanding || showNotificationModal;
 
   // 캐릭터 현재 위치 업데이트 콜백
   const handleCharacterPositionUpdate = useCallback((position) => {
@@ -291,6 +293,23 @@ function App() {
 
   const handleLoginSuccess = async (user) => {
     console.log('로그인 성공:', user);
+
+    // 착용 중인 아바타 먼저 로드 (깜빡임 방지)
+    setIsChangingModel(true);
+    try {
+      const equippedAvatar = await shopService.getEquippedAvatar();
+      if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
+        console.log('✅ 착용 중인 아바타 로드:', equippedAvatar.shopItem.modelUrl);
+        setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
+      } else {
+        console.log('착용 중인 아바타 없음 - BaseCharacter 사용');
+      }
+    } catch (error) {
+      console.error('착용 아바타 로드 실패:', error);
+      // 실패 시 BaseCharacter 사용 (기본값)
+    }
+
+    // 로그인 상태 설정
     setIsLoggedIn(true);
     setShowLanding(false);
     setUsername(user.username || 'Guest');
@@ -319,19 +338,10 @@ function App() {
       setGoldCoins(0);
     }
 
-    // 착용 중인 아바타 로드
-    try {
-      const equippedAvatar = await shopService.getEquippedAvatar();
-      if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
-        console.log('✅ 착용 중인 아바타 로드:', equippedAvatar.shopItem.modelUrl);
-        setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
-      } else {
-        console.log('착용 중인 아바타 없음 - BaseCharacter 사용');
-      }
-    } catch (error) {
-      console.error('착용 아바타 로드 실패:', error);
-      // 실패 시 BaseCharacter 사용 (기본값)
-    }
+    // 로딩 완료
+    setTimeout(() => {
+      setIsChangingModel(false);
+    }, 500);
   };
 
   // 프로필 업데이트 시 호출되는 함수
@@ -841,7 +851,8 @@ function App() {
           position: [data.x, data.y, data.z],
           rotationY: data.rotationY,
           animation: data.animation,
-          modelPath: data.modelPath || '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
+          modelPath: data.modelPath || '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf',
+          isChangingAvatar: data.isChangingAvatar || false
         }
       }));
     });
@@ -906,41 +917,57 @@ function App() {
 
     if (token && user) {
       console.log('[App] 토큰 발견 - 서버 유효성 검증 시작:', user.username);
+      setIsChangingModel(true); // 로딩 시작
 
       // 서버에서 토큰 유효성 확인
       authService.fetchCurrentUser()
         .then(validUser => {
           if (validUser) {
-            console.log('[App] ✅ 토큰 유효 - 로그인 상태 복원:', validUser.username);
-            setIsLoggedIn(true);
-            setShowLanding(false);
+            console.log('[App] ✅ 토큰 유효 - 사용자 정보 로드');
+            // 사용자 정보 저장 (아직 로그인 상태는 설정하지 않음)
             setUsername(validUser.username || 'Guest');
             setUserId(validUser.id || String(Date.now()));
             setUserProfile(validUser);
 
             // 재화 정보 로드
-            return currencyService.getCurrency();
+            return Promise.all([
+              currencyService.getCurrency(),
+              shopService.getEquippedAvatar()
+            ]);
           } else {
             console.log('[App] ❌ 토큰 무효 - 로그아웃 처리');
             authService.logout();
+            setIsChangingModel(false);
             return null;
           }
         })
-        .then(currency => {
-          if (currency) {
-            setSilverCoins(currency.silverCoins || 0);
-            setGoldCoins(currency.goldCoins || 0);
-            console.log('[App] ✅ 재화 정보 복원:', currency);
-          }
-          // 착용 중인 아바타 로드
-          return shopService.getEquippedAvatar();
-        })
-        .then(equippedAvatar => {
-          if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
-            console.log('[App] ✅ 착용 중인 아바타 복원:', equippedAvatar.shopItem.modelUrl);
-            setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
-          } else {
-            console.log('[App] 착용 중인 아바타 없음 - BaseCharacter 사용');
+        .then(results => {
+          if (results) {
+            const [currency, equippedAvatar] = results;
+
+            // 재화 정보 설정
+            if (currency) {
+              setSilverCoins(currency.silverCoins || 0);
+              setGoldCoins(currency.goldCoins || 0);
+              console.log('[App] ✅ 재화 정보 복원:', currency);
+            }
+
+            // 착용 중인 아바타 설정
+            if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
+              console.log('[App] ✅ 착용 중인 아바타 복원:', equippedAvatar.shopItem.modelUrl);
+              setCharacterModelPathState(equippedAvatar.shopItem.modelUrl);
+            } else {
+              console.log('[App] 착용 중인 아바타 없음 - BaseCharacter 사용');
+            }
+
+            // 모든 데이터 로드 완료 후 로그인 상태 설정
+            setIsLoggedIn(true);
+            setShowLanding(false);
+
+            // 로딩 완료
+            setTimeout(() => {
+              setIsChangingModel(false);
+            }, 500);
           }
         })
         .catch(error => {
@@ -1041,6 +1068,9 @@ function App() {
             <button className="icon-button" onClick={() => setShowShopModal(true)} title="상점">
               <img src="/resources/Icon/Shop-icon.png" alt="Shop" />
             </button>
+            <button className="icon-button" onClick={() => setShowInventoryModal(true)} title="인벤토리">
+              <img src="/resources/Icon/Inventory-icon.png" alt="Inventory" />
+            </button>
           </div>
 
           {/* 게시판 아이콘 */}
@@ -1111,6 +1141,7 @@ function App() {
                       chatMessage={myChatMessage}
                       onPositionUpdate={handleMapCharacterPositionUpdate}
                       modelPath={characterModelPath}
+                      isChangingAvatar={isChangingModel}
                     />
                   ) : (
                     /* Level1 모드: 기존 Character 사용 */
@@ -1125,6 +1156,7 @@ function App() {
                       onPositionUpdate={handleCharacterPositionUpdate}
                       chatMessage={myChatMessage}
                       modelPath={characterModelPath}
+                      isChangingAvatar={isChangingModel}
                     />
                   )}
                   <CameraLogger />
@@ -1145,6 +1177,7 @@ function App() {
                     chatMessage={playerChatMessages[player.userId]?.message}
                     onRightClick={handlePlayerRightClick}
                     modelPath={player.modelPath}
+                    isChangingAvatar={player.isChangingAvatar}
                   />
                 ))}
 
@@ -1330,6 +1363,25 @@ function App() {
           }}
           setCharacterModelPath={(newModelPath) => {
             console.log('🟡 [App.js] setCharacterModelPath 호출됨!');
+            console.log('🟡 [App.js] 새 모델 경로:', newModelPath);
+
+            setIsChangingModel(true);
+            setCharacterModelPathState(newModelPath);
+
+            console.log('🟡 [App.js] 로딩 화면 시작 (1.5초)');
+            setTimeout(() => {
+              setIsChangingModel(false);
+              console.log('🟡 [App.js] 로딩 화면 종료');
+            }, 1500);
+          }}
+        />
+      )}
+
+      {showInventoryModal && (
+        <InventoryModal
+          onClose={() => setShowInventoryModal(false)}
+          setCharacterModelPath={(newModelPath) => {
+            console.log('🟡 [App.js] setCharacterModelPath 호출됨 (from Inventory)!');
             console.log('🟡 [App.js] 새 모델 경로:', newModelPath);
 
             setIsChangingModel(true);
