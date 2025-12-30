@@ -1,116 +1,324 @@
 .aim-game-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .aim-game-container {
-  background-color: #282c34;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   color: white;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 스코어보드 스타일 */
+.aim-game-scoreboard {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.scoreboard-title {
+  font-size: 1.2em;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 12px;
+  color: #ffd700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.scoreboard-players {
+  display: flex;
+  gap: 10px;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.scoreboard-player {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  min-width: 180px;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.scoreboard-player.current-player {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  border-color: #ffd700;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+  transform: scale(1.05);
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-rank {
+  background: #ffd700;
+  color: #1e3c72;
+  font-weight: 700;
+  font-size: 0.85em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 28px;
   text-align: center;
 }
 
-.aim-game-header {
-  margin-bottom: 15px;
+.player-name {
+  font-weight: 600;
+  font-size: 1em;
 }
 
-.aim-game-score {
-  font-size: 1.5em;
-  font-weight: bold;
+.you-badge {
+  background: #4CAF50;
+  color: white;
+  font-size: 0.7em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
 }
 
+.player-score-display {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.score-number {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+.score-label {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+/* 게임 영역 */
 .aim-game-area {
   position: relative;
-  background-color: #4a4e57;
-  border-radius: 5px;
+  background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+  border-radius: 12px;
   cursor: crosshair;
   overflow: hidden;
+  flex: 1;
+  min-height: 400px;
+  width: 100%;
+  border: 3px solid rgba(255, 215, 0, 0.3);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .aim-game-target {
   position: absolute;
-  background-color: #ff4757;
-  border: 2px solid #ff6b81;
+  background: radial-gradient(circle, #ff4757 0%, #ee5a6f 70%, #ff6b81 100%);
+  border: 3px solid #ffd700;
   border-radius: 50%;
   cursor: pointer;
-  transition: all 0.1s ease-out;
-  box-shadow: 0 0 15px #ff4757;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 0 20px rgba(255, 71, 87, 0.8),
+    0 0 40px rgba(255, 71, 87, 0.4),
+    inset 0 0 10px rgba(255, 255, 255, 0.3);
+  animation: targetPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes targetPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(255, 71, 87, 0.8),
+      0 0 40px rgba(255, 71, 87, 0.4),
+      inset 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(255, 71, 87, 1),
+      0 0 60px rgba(255, 71, 87, 0.6),
+      inset 0 0 15px rgba(255, 255, 255, 0.5);
+  }
 }
 
 .aim-game-target:hover {
-  transform: scale(1.1);
-  background-color: #ff6b81;
+  transform: scale(1.15);
+  background: radial-gradient(circle, #ff6b81 0%, #ff4757 70%, #ee5a6f 100%);
+  border-color: #fff;
 }
 
+.aim-game-target:active {
+  transform: scale(0.9);
+  animation: hitEffect 0.3s ease-out;
+}
+
+@keyframes hitEffect {
+  0% { transform: scale(1.2); }
+  50% { transform: scale(0.8); }
+  100% { transform: scale(0); }
+}
+
+/* 게임 오버 화면 */
 .aim-game-over-screen {
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100%;
+  background: linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.95) 100%);
+  animation: fadeIn 0.5s ease-in;
 }
 
-.aim-game-over-screen h2 {
-  font-size: 2.5em;
-  color: #ff4757;
-  margin: 0;
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-.aim-game-over-screen p {
+.game-over-content {
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+  padding: 30px;
+}
+
+.trophy-icon {
+  font-size: 5em;
+  margin-bottom: 15px;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.game-over-title {
+  font-size: 3em;
+  font-weight: 800;
+  margin: 0 0 10px 0;
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.game-over-subtitle {
+  font-size: 1.3em;
+  color: #e0e0e0;
+  margin: 0 0 30px 0;
+  font-weight: 300;
+}
+
+.final-rankings {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.final-rank-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.final-rank-item:last-child {
+  margin-bottom: 0;
+}
+
+.final-rank-item.highlight {
+  background: linear-gradient(135deg, rgba(255, 107, 129, 0.3) 0%, rgba(238, 90, 111, 0.3) 100%);
+  border-color: #ffd700;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  transform: scale(1.03);
+}
+
+.rank-medal {
+  font-size: 1.8em;
+  min-width: 50px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.rank-player-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 0 15px;
+}
+
+.rank-player-name {
   font-size: 1.2em;
-  margin: 15px 0;
+  font-weight: 600;
 }
 
-.aim-game-over-screen button {
-  background-color: #ff4757;
+.rank-you-badge {
+  background: #4CAF50;
+  color: white;
+  font-size: 0.75em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.rank-score {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: #ffd700;
+  min-width: 80px;
+  text-align: right;
+}
+
+.back-to-lobby-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 10px 20px;
-  font-size: 1em;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.aim-game-over-screen button:hover {
-  background-color: #ff6b81;
-}
-
-.aim-game-players {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 15px;
-  padding: 10px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 5px;
-}
-
-.player-score {
+  padding: 15px 40px;
   font-size: 1.1em;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.player-score.self {
-  font-weight: bold;
-  color: #ffda79;
+.back-to-lobby-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
-.player-name {
-  margin-right: 10px;
+.back-to-lobby-btn:active {
+  transform: translateY(0);
 }
 
-.player-points {
-  padding: 3px 8px;
-  background-color: #ff4757;
-  border-radius: 4px;
+.btn-icon {
+  font-size: 1.2em;
 }

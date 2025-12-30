@@ -8,16 +8,27 @@ const GAME_CONFIG = {
 };
 
 const SimplePlayerList = ({ scores, players, userProfile }) => (
-  <div className="aim-game-players">
-    {players.map(p => {
-      const isSelf = p.userId === userProfile?.id;
-      return (
-        <div key={p.userId} className={`player-score ${isSelf ? 'self' : ''}`}>
-          <span className="player-name">{isSelf ? `${p.username} (You)` : p.username}</span>
-          <span className="player-points">{scores[p.userId] || 0}</span>
-        </div>
-      );
-    })}
+  <div className="aim-game-scoreboard">
+    <div className="scoreboard-title">🎯 실시간 스코어</div>
+    <div className="scoreboard-players">
+      {players.map(p => {
+        const isSelf = p.userId === userProfile?.id;
+        const score = scores[p.userId] || 0;
+        return (
+          <div key={p.userId} className={`scoreboard-player ${isSelf ? 'current-player' : ''}`}>
+            <div className="player-info">
+              <span className="player-rank">#{players.map(pl => scores[pl.userId] || 0).sort((a, b) => b - a).indexOf(score) + 1}</span>
+              <span className="player-name">{p.username}</span>
+              {isSelf && <span className="you-badge">YOU</span>}
+            </div>
+            <div className="player-score-display">
+              <span className="score-number">{score}</span>
+              <span className="score-label">점</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   </div>
 );
 
@@ -116,31 +127,68 @@ export default function AimingGame({ roomId, isHost, userProfile, players = [], 
         </div>
         <div
           className="aim-game-area"
-          style={{
-            width: `${GAME_CONFIG.GAME_AREA_WIDTH}px`,
-            height: `${GAME_CONFIG.GAME_AREA_HEIGHT}px`,
+          ref={(el) => {
+            if (el && Object.values(targets).length > 0) {
+              const rect = el.getBoundingClientRect();
+              // Target positions will be calculated dynamically
+            }
           }}
         >
-          {gameStatus === 'playing' && Object.values(targets).map(target => (
-            <div
-              key={target.id}
-              className="aim-game-target"
-              style={{
-                left: `${target.x * (GAME_CONFIG.GAME_AREA_WIDTH - (target.size * 400))}px`,
-                top: `${target.y * (GAME_CONFIG.GAME_AREA_HEIGHT - (target.size * 400))}px`,
-                width: `${target.size * 400}px`,
-                height: `${target.size * 400}px`,
-              }}
-              onClick={() => handleTargetClick(target.id)}
-            />
-          ))}
+          {gameStatus === 'playing' && Object.values(targets).map(target => {
+            const areaEl = document.querySelector('.aim-game-area');
+            const areaWidth = areaEl?.clientWidth || 500;
+            const areaHeight = areaEl?.clientHeight || 400;
+            const targetSize = Math.min(areaWidth, areaHeight) * 0.08; // 동적 크기
+            
+            return (
+              <div
+                key={target.id}
+                className="aim-game-target"
+                style={{
+                  left: `${target.x * (areaWidth - targetSize)}px`,
+                  top: `${target.y * (areaHeight - targetSize)}px`,
+                  width: `${targetSize}px`,
+                  height: `${targetSize}px`,
+                }}
+                onClick={() => handleTargetClick(target.id)}
+              />
+            );
+          })}
 
           {gameStatus === 'ended' && (
             <div className="aim-game-over-screen">
-              <h2>Game Over</h2>
-              <p>The round has finished!</p>
-              {/* The finalScores payload could be displayed here if parsed */}
-              <button onClick={onGameEnd} style={{ marginTop: '10px' }}>Back to Lobby</button>
+              <div className="game-over-content">
+                <div className="trophy-icon">🏆</div>
+                <h2 className="game-over-title">게임 종료!</h2>
+                <p className="game-over-subtitle">최종 결과</p>
+                
+                <div className="final-rankings">
+                  {players
+                    .map(p => ({ ...p, score: scores[p.userId] || 0 }))
+                    .sort((a, b) => b.score - a.score)
+                    .map((p, index) => {
+                      const isSelf = p.userId === userProfile?.id;
+                      const medals = ['🥇', '🥈', '🥉'];
+                      return (
+                        <div key={p.userId} className={`final-rank-item ${isSelf ? 'highlight' : ''}`}>
+                          <div className="rank-medal">
+                            {index < 3 ? medals[index] : `${index + 1}위`}
+                          </div>
+                          <div className="rank-player-info">
+                            <span className="rank-player-name">{p.username}</span>
+                            {isSelf && <span className="rank-you-badge">YOU</span>}
+                          </div>
+                          <div className="rank-score">{p.score}점</div>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                <button className="back-to-lobby-btn" onClick={onGameEnd}>
+                  <span className="btn-icon">🚪</span>
+                  로비로 돌아가기
+                </button>
+              </div>
             </div>
           )}
         </div>
