@@ -123,7 +123,6 @@ function ItemFormModal({ item, onClose, onSuccess }) {
             >
               <option value="PROFILE">프로필 이미지</option>
               <option value="OUTLINE">테두리</option>
-              <option value="NICKNAME_TICKET">닉네임 변경권 (소비 아이템)</option>
             </select>
           </div>
 

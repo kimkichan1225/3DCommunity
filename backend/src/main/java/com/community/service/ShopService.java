@@ -333,6 +333,17 @@ public class ShopService {
             }
         }
 
+        // 닉네임 변경권 구매 시 자동으로 nicknameChangesRemaining 증가
+        if (shopItem.getItemType() == ShopItem.ItemType.NICKNAME_TICKET) {
+            Integer currentChanges = user.getNicknameChangesRemaining();
+            if (currentChanges == null) {
+                currentChanges = 0;
+            }
+            user.setNicknameChangesRemaining(currentChanges + 1);
+            userRepository.save(user);
+            System.out.println("✅ 닉네임 변경권 구매 완료 - 사용자: " + userId + ", 남은 횟수: " + user.getNicknameChangesRemaining());
+        }
+
         return PurchaseResponse.builder()
                 .success(true)
                 .message("Purchase successful")

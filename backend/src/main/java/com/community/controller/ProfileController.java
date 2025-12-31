@@ -5,7 +5,6 @@ import com.community.model.Profile;
 import com.community.model.User;
 import com.community.repository.ProfileRepository;
 import com.community.repository.UserRepository;
-import com.community.service.ProfileItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +20,6 @@ public class ProfileController {
 
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
-    private final ProfileItemService profileItemService;
 
     /**
      * 특정 사용자의 프로필 조회 (다른 사용자 프로필 보기)
@@ -153,37 +151,6 @@ public class ProfileController {
             e.printStackTrace(); // 에러 로그 출력
             Map<String, String> error = new HashMap<>();
             error.put("message", "프로필 업데이트 실패: " + e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
-    }
-
-    /**
-     * 닉네임 변경권 구매
-     */
-    @PostMapping("/purchase-nickname-ticket/{profileItemId}")
-    public ResponseEntity<?> purchaseNicknameTicket(
-            @AuthenticationPrincipal User currentUser,
-            @PathVariable Long profileItemId
-    ) {
-        try {
-            profileItemService.purchaseNicknameTicket(currentUser.getId(), profileItemId);
-
-            // 업데이트된 사용자 정보 조회
-            User updatedUser = userRepository.findById(currentUser.getId())
-                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "닉네임 변경권을 구매했습니다.");
-            response.put("nicknameChangesRemaining", updatedUser.getNicknameChangesRemaining());
-            response.put("silverCoins", updatedUser.getSilverCoins());
-            response.put("goldCoins", updatedUser.getGoldCoins());
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("success", "false");
-            error.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
     }

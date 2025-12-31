@@ -11,13 +11,11 @@ import com.community.repository.ProfileItemRepository;
 import com.community.repository.UserProfileItemRepository;
 import com.community.repository.UserRepository;
 import com.community.repository.UserInventoryRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,7 +26,6 @@ public class ProfileItemService {
     private final UserProfileItemRepository userProfileItemRepository;
     private final UserRepository userRepository;
     private final UserInventoryRepository userInventoryRepository;
-    private final ObjectMapper objectMapper;
 
     /**
      * 사용자의 보유 아이템 목록 조회 (잠금 상태 포함)
@@ -545,74 +542,6 @@ public class ProfileItemService {
             e.printStackTrace();
             return false;
         }
-    }
-
-    /**
-     * 닉네임 변경권 구매 (SHOP_PURCHASE 타입 ProfileItem)
-     */
-    @Transactional
-    public void purchaseNicknameTicket(Long userId, Long profileItemId) {
-        // 사용자 조회
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
-        // ProfileItem 조회
-        ProfileItem item = profileItemRepository.findById(profileItemId)
-                .orElseThrow(() -> new RuntimeException("아이템을 찾을 수 없습니다."));
-
-        // NICKNAME_TICKET 타입인지 확인
-        if (item.getItemType() != ItemType.NICKNAME_TICKET) {
-            throw new RuntimeException("닉네임 변경권이 아닙니다.");
-        }
-
-        // SHOP_PURCHASE 조건인지 확인
-        if (item.getUnlockConditionType() != UnlockConditionType.SHOP_PURCHASE) {
-            throw new RuntimeException("구매할 수 없는 아이템입니다.");
-        }
-
-        // 가격 정보 추출 (unlockConditionValue에서 가격 정보를 가져옴)
-        // JSON 형식: {"value": "100", "description": "은화 100개로 구매"}
-        int price = 100; // 기본 가격
-        String currencyType = "SILVER"; // 기본 화폐
-
-        try {
-            if (item.getUnlockConditionValue() != null && !item.getUnlockConditionValue().isEmpty()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> json = objectMapper.readValue(item.getUnlockConditionValue(), Map.class);
-                if (json.containsKey("value")) {
-                    price = Integer.parseInt(json.get("value").toString());
-                }
-                if (json.containsKey("currencyType")) {
-                    currencyType = json.get("currencyType").toString();
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("가격 정보 파싱 실패, 기본값 사용: " + e.getMessage());
-        }
-
-        // 재화 확인 및 차감
-        if ("GOLD".equalsIgnoreCase(currencyType)) {
-            if (user.getGoldCoins() == null || user.getGoldCoins() < price) {
-                throw new RuntimeException("금화가 부족합니다.");
-            }
-            user.setGoldCoins(user.getGoldCoins() - price);
-        } else {
-            if (user.getSilverCoins() == null || user.getSilverCoins() < price) {
-                throw new RuntimeException("은화가 부족합니다.");
-            }
-            user.setSilverCoins(user.getSilverCoins() - price);
-        }
-
-        // 닉네임 변경 횟수 증가
-        Integer currentChanges = user.getNicknameChangesRemaining();
-        if (currentChanges == null) {
-            currentChanges = 0;
-        }
-        user.setNicknameChangesRemaining(currentChanges + 1);
-
-        userRepository.save(user);
-
-        System.out.println("✅ 닉네임 변경권 구매 완료 - 사용자: " + userId + ", 남은 횟수: " + user.getNicknameChangesRemaining());
     }
 
     /**

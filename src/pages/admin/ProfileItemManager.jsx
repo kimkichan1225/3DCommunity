@@ -9,7 +9,7 @@ function ProfileItemManager() {
   const [loading, setLoading] = useState(true);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [filterType, setFilterType] = useState('ALL'); // 'ALL', 'PROFILE', 'OUTLINE', 'NICKNAME_TICKET'
+  const [filterType, setFilterType] = useState('ALL'); // 'ALL', 'PROFILE', 'OUTLINE'
 
   useEffect(() => {
     loadItems();
@@ -83,7 +83,6 @@ function ProfileItemManager() {
 
   const profileCount = items.filter(i => i.itemType === 'PROFILE').length;
   const outlineCount = items.filter(i => i.itemType === 'OUTLINE').length;
-  const nicknameTicketCount = items.filter(i => i.itemType === 'NICKNAME_TICKET').length;
   const defaultCount = items.filter(i => i.isDefault).length;
 
   if (loading) {
@@ -123,10 +122,6 @@ function ProfileItemManager() {
           <div className="stat-value">{outlineCount}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">닉네임 변경권</div>
-          <div className="stat-value">{nicknameTicketCount}</div>
-        </div>
-        <div className="stat-card">
           <div className="stat-label">기본 제공</div>
           <div className="stat-value">{defaultCount}</div>
         </div>
@@ -151,12 +146,6 @@ function ProfileItemManager() {
           onClick={() => setFilterType('OUTLINE')}
         >
           테두리
-        </button>
-        <button
-          className={`filter-btn ${filterType === 'NICKNAME_TICKET' ? 'active' : ''}`}
-          onClick={() => setFilterType('NICKNAME_TICKET')}
-        >
-          닉네임 변경권
         </button>
       </div>
 
@@ -191,9 +180,7 @@ function ProfileItemManager() {
                 <td>{item.itemName}</td>
                 <td>
                   <span className={`type-badge ${item.itemType.toLowerCase()}`}>
-                    {item.itemType === 'PROFILE' ? '프로필' :
-                     item.itemType === 'OUTLINE' ? '테두리' :
-                     item.itemType === 'NICKNAME_TICKET' ? '닉네임 변경권' : item.itemType}
+                    {item.itemType === 'PROFILE' ? '프로필' : '테두리'}
                   </span>
                 </td>
                 <td>
