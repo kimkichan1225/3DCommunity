@@ -158,21 +158,37 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     // WebSocket 재연결 감지 및 복구
     useEffect(() => {
+        let hideTimer = null;
+
         const onConnectionStatus = (status) => {
             if (!status.connected) {
-                // WebSocket 연결 끊김 - 로딩 화면 표시
+                // WebSocket 연결 끊김 - 즉시 로딩 화면 표시
                 setIsReconnecting(true);
+                // 기존 타이머가 있으면 취소
+                if (hideTimer) {
+                    clearTimeout(hideTimer);
+                    hideTimer = null;
+                }
             } else {
                 // WebSocket 재연결 성공 - 현재 방이 있으면 다시 구독
                 if (currentRoom?.roomId) {
                     minigameService.subscribeToRoom(currentRoom.roomId);
                     minigameService.requestRoomsList(); // 방 목록도 다시 요청
                 }
-                setIsReconnecting(false);
+
+                // 5초 후에 로딩 화면 숨김
+                hideTimer = setTimeout(() => {
+                    setIsReconnecting(false);
+                }, 5000);
             }
         };
+
         minigameService.on('connectionStatus', onConnectionStatus);
-        return () => minigameService.off('connectionStatus', onConnectionStatus);
+
+        return () => {
+            minigameService.off('connectionStatus', onConnectionStatus);
+            if (hideTimer) clearTimeout(hideTimer);
+        };
     }, [currentRoom]);
 
     const handleRoomClick = (room) => {
@@ -422,7 +438,16 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             )}
             {inviteNotification && (<div className={`invite-notification ${inviteNotification.type}`}>{inviteNotification.message}</div>)}
             {isReconnecting && (
-                <div className="reconnecting-overlay">
+                <div
+                    className="reconnecting-overlay"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.preventDefault()}
+                    onKeyUp={(e) => e.preventDefault()}
+                    onKeyPress={(e) => e.preventDefault()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                    tabIndex={-1}
+                >
                     <div className="reconnecting-spinner"></div>
                     <div className="reconnecting-message">재연결 중...</div>
                 </div>
