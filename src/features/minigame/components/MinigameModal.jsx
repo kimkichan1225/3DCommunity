@@ -92,21 +92,34 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     useEffect(() => {
         const onRoomUpdate = (roomData) => {
+            console.log('onRoomUpdate received:', roomData);
+
+            // 방 목록 업데이트
             setRooms(prev => {
                 const exists = prev.some(r => r.roomId === roomData.roomId);
-                if (exists) {
-                    // 기존 방 업데이트 또는 삭제
-                    return prev.map(r => r.roomId === roomData.roomId ? roomData : r).filter(r => !r.isDeleted);
+
+                if (roomData.action === 'delete' || roomData.isDeleted) {
+                    // 방 삭제
+                    return prev.filter(r => r.roomId !== roomData.roomId);
+                } else if (exists) {
+                    // 기존 방 업데이트
+                    return prev.map(r => r.roomId === roomData.roomId ? roomData : r);
                 } else if (roomData.action === 'create') {
                     // 새로운 방 추가
                     return [...prev, roomData];
                 } else {
-                    return prev;
+                    // 알 수 없는 방 (create action 없이 들어온 경우) - 추가
+                    return [...prev, roomData];
                 }
             });
+
+            // 현재 있는 방이 업데이트된 경우
             if (currentRoom && roomData.roomId === currentRoom.roomId) {
-                setCurrentRoom(prev => ({ ...prev, ...roomData }));
+                console.log('Current room updated:', roomData);
+                setCurrentRoom(roomData);
             }
+
+            // 방을 생성한 본인인 경우 대기방으로 이동
             if (roomData.action === 'create' && String(roomData.hostId) === String(userProfile?.id)) {
                 minigameService.subscribeToRoom(roomData.roomId);
                 setCurrentRoom(roomData);

@@ -216,18 +216,24 @@ public class MinigameRoomService {
 
         if (player != null) {
             // 참가자 -> 관전자
-            // 방장은 역할 전환 불가
-            if (player.isHost()) {
-                log.warn("방장은 관전자로 전환할 수 없음: userId={}", userId);
-                return null;
-            }
+            boolean wasHost = player.isHost();
 
             room.getPlayers().remove(player);
             room.setCurrentPlayers(room.getPlayers().size());
 
-            // 관전자 리스트에 추가 (ready 상태 초기화)
+            // 관전자 리스트에 추가 (ready 상태 및 방장 상태 초기화)
             player.setReady(false);
+            player.setHost(false);
             room.getSpectators().add(player);
+
+            // 방장이 관전자로 전환한 경우, 다음 참가자를 방장으로 승계
+            if (wasHost && !room.getPlayers().isEmpty()) {
+                MinigamePlayerDto newHost = room.getPlayers().get(0);
+                newHost.setHost(true);
+                room.setHostId(newHost.getUserId());
+                room.setHostName(newHost.getUsername());
+                log.info("방장 승계: 이전={}, 새로운={}, roomId={}", userId, newHost.getUsername(), roomId);
+            }
 
             log.info("참가자 -> 관전자: userId={}, roomId={}", userId, roomId);
         } else {
