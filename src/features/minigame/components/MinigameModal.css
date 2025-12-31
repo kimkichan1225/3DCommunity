@@ -1367,7 +1367,7 @@
 /* 게임 관전자 정보 - 모던 디자인 */
 .game-spectator-info {
   position: absolute;
-  top: 90px;
+  top: 120px;
   left: 20px;
   background: white;
   color: #2d3748;
