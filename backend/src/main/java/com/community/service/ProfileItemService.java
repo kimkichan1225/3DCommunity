@@ -11,11 +11,13 @@ import com.community.repository.ProfileItemRepository;
 import com.community.repository.UserProfileItemRepository;
 import com.community.repository.UserRepository;
 import com.community.repository.UserInventoryRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +28,7 @@ public class ProfileItemService {
     private final UserProfileItemRepository userProfileItemRepository;
     private final UserRepository userRepository;
     private final UserInventoryRepository userInventoryRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * 사용자의 보유 아이템 목록 조회 (잠금 상태 포함)
@@ -574,12 +577,13 @@ public class ProfileItemService {
 
         try {
             if (item.getUnlockConditionValue() != null && !item.getUnlockConditionValue().isEmpty()) {
-                org.json.JSONObject json = new org.json.JSONObject(item.getUnlockConditionValue());
-                if (json.has("value")) {
-                    price = Integer.parseInt(json.getString("value"));
+                @SuppressWarnings("unchecked")
+                Map<String, Object> json = objectMapper.readValue(item.getUnlockConditionValue(), Map.class);
+                if (json.containsKey("value")) {
+                    price = Integer.parseInt(json.get("value").toString());
                 }
-                if (json.has("currencyType")) {
-                    currencyType = json.getString("currencyType");
+                if (json.containsKey("currencyType")) {
+                    currencyType = json.get("currencyType").toString();
                 }
             }
         } catch (Exception e) {
