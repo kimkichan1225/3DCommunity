@@ -23,8 +23,14 @@ class MultiplayerService {
   connect(userId, username, isObserver = false) {
     // 이미 연결되어 있으면 재연결하지 않음
     if (this.connected && this.client && this.client.active) {
-      console.log('⚠️ Already connected, skipping reconnect');
-      return;
+      // observer에서 player로 전환되는 경우는 재연결 필요
+      if (this.isObserver && !isObserver) {
+        console.log('🔄 Switching from observer to player, reconnecting...');
+        this.disconnect();
+      } else {
+        console.log('⚠️ Already connected, skipping reconnect');
+        return;
+      }
     }
 
     // 기존 연결이 있으면 먼저 정리
