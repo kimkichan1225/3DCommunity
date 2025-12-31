@@ -225,13 +225,11 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     onGameEnd={() => setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null))}
                 />;
             }
-            console.log(`[MinigameModal renderContent] Returning fallback: Unknown Game (${currentRoom.gameName})`);
             return <div>선택된 게임({currentRoom.gameName})을 찾을 수 없습니다.</div>;
         }
 
         switch (currentView) {
             case 'create':
-                console.log('[MinigameModal renderContent] Returning Create Room Form');
                 return (
                     <div className="create-room-form">
                         <div className="form-group"><label>방 이름</label><input type="text" placeholder="방 이름을 입력하세요" value={roomForm.roomName} onChange={(e) => handleFormChange('roomName', e.target.value)} maxLength={30} /></div>
