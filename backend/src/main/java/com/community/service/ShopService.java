@@ -334,7 +334,11 @@ public class ShopService {
         }
 
         // 닉네임 변경권 구매 시 자동으로 nicknameChangesRemaining 증가
-        if (shopItem.getItemType() == ShopItem.ItemType.NICKNAME_TICKET) {
+        // 아이템 타입이 NICKNAME_TICKET이거나, 이름에 "닉네임 변경권"이 포함된 경우
+        boolean isNicknameTicket = shopItem.getItemType() == ShopItem.ItemType.NICKNAME_TICKET ||
+                                   (shopItem.getName() != null && shopItem.getName().contains("닉네임 변경권"));
+
+        if (isNicknameTicket) {
             Integer currentChanges = user.getNicknameChangesRemaining();
             if (currentChanges == null) {
                 currentChanges = 0;
