@@ -445,8 +445,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                                 ) : (
                                     roomChatMessages.map((msg, idx) => (
                                         <div key={idx} className={`chat-message ${String(msg.userId) === String(userProfile?.id) ? 'my-message' : ''}`}>
-                                            <div className="message-author">{msg.username}</div>
-                                            <div className="message-content">{msg.message}</div>
+                                            <span className="message-author">{msg.username}</span>
+                                            <span className="message-separator"> : </span>
+                                            <span className="message-content">{msg.message}</span>
                                         </div>
                                     ))
                                 )}

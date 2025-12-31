@@ -1260,34 +1260,34 @@
 
 .chat-message {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-wrap: wrap;
+  align-items: baseline;
   padding: 10px 12px;
   background: #f8f9fa;
   border-radius: 8px;
   border-left: 3px solid #667eea;
   animation: slideInMessage 0.2s ease-out;
+  font-size: 14px;
+  color: #000;
 }
 
 .chat-message.my-message {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-left: 3px solid #764ba2;
-}
-
-.chat-message.my-message .message-author,
-.chat-message.my-message .message-content {
-  color: white;
+  color: #000;
 }
 
 .message-author {
-  font-size: 12px;
-  font-weight: 600;
-  color: #667eea;
+  font-weight: 700;
+  color: #000;
+}
+
+.message-separator {
+  color: #000;
 }
 
 .message-content {
-  font-size: 14px;
-  color: #333;
+  color: #000;
   word-wrap: break-word;
   white-space: pre-wrap;
 }
