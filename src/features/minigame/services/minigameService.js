@@ -4,9 +4,57 @@ import authService from '../../auth/services/authService';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 class MinigameService {
+  constructor() {
+    this.eventListeners = {};
+    this.broadcastChannel = null;
+    this.gameStates = new Map(); // 로컬 게임 상태 캐시
+    this.initBroadcastChannel();
+  }
+
+  initBroadcastChannel() {
+    try {
+      this.broadcastChannel = new BroadcastChannel('minigame_channel');
+      this.broadcastChannel.onmessage = (event) => {
+        const { type, data } = event.data;
+        console.log('BroadcastChannel received:', type, data);
+        this.emit(type, data);
+      };
+      console.log('BroadcastChannel initialized');
+    } catch (e) {
+      console.warn('BroadcastChannel not supported:', e);
+    }
+  }
+
   getAuthHeader() {
     const token = authService.getToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  // ===== 이벤트 리스너 =====
+  on(eventName, callback) {
+    if (!this.eventListeners[eventName]) {
+      this.eventListeners[eventName] = [];
+    }
+    this.eventListeners[eventName].push(callback);
+  }
+
+  off(eventName, callback) {
+    if (!this.eventListeners[eventName]) return;
+    const index = this.eventListeners[eventName].indexOf(callback);
+    if (index > -1) {
+      this.eventListeners[eventName].splice(index, 1);
+    }
+  }
+
+  emit(eventName, data) {
+    if (!this.eventListeners[eventName]) return;
+    this.eventListeners[eventName].forEach(callback => {
+      try {
+        callback(data);
+      } catch (e) {
+        console.error(`Error in event listener for ${eventName}:`, e);
+      }
+    });
   }
 
   // ===== 게임 로비 API =====
@@ -130,6 +178,64 @@ class MinigameService {
       }
     );
     return response.data;
+  }
+
+  // ===== 오목 게임 메서드 =====
+
+  // 오목 움직임 전송 (BroadcastChannel + 로컬 이벤트)
+  sendOmokMove(roomId, position, playerId) {
+    const data = {
+      type: 'omokMove',
+      roomId,
+      position,
+      playerId,
+      timestamp: Date.now()
+    };
+    
+    console.log('Sending omokMove:', data);
+    
+    // 로컬 이벤트 발생
+    this.emit('omokMove', data);
+    
+    // BroadcastChannel로 다른 탭에 전송
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage({ type: 'omokMove', data });
+    }
+    
+    // 게임 상태 업데이트
+    this.updateGameState(roomId, { lastMove: { position, playerId } });
+  }
+
+  // 오목 게임 종료 (BroadcastChannel + 로컬 이벤트)
+  sendGameEnd(roomId, winnerId, winnerName) {
+    const data = {
+      type: 'gameEnd',
+      roomId,
+      winnerId,
+      winnerName,
+      timestamp: Date.now()
+    };
+    
+    console.log('Sending gameEnd:', data);
+    
+    // 로컬 이벤트 발생
+    this.emit('gameEnd', data);
+    
+    // BroadcastChannel로 다른 탭에 전송
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage({ type: 'gameEnd', data });
+    }
+  }
+
+  // 게임 상태 업데이트
+  updateGameState(roomId, state) {
+    const currentState = this.gameStates.get(roomId) || {};
+    this.gameStates.set(roomId, { ...currentState, ...state, updatedAt: Date.now() });
+  }
+
+  // 게임 상태 조회
+  getGameState(roomId) {
+    return this.gameStates.get(roomId);
   }
 
   // ===== 게임 기록 API =====

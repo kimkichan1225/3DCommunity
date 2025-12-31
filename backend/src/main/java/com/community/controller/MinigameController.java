@@ -30,16 +30,15 @@ public class MinigameController {
         log.info("방 생성 요청: {}", request);
 
         MinigameRoomDto room = roomService.createRoom(
-            request.getRoomName(),
-            request.getGameName(),
-            request.getHostId(),
-            request.getHostName(),
-            request.getMaxPlayers(),
-            request.isLocked(),
-            request.getHostLevel(),
-            request.getSelectedProfile(),
-            request.getSelectedOutline()
-        );
+                request.getRoomName(),
+                request.getGameName(),
+                request.getHostId(),
+                request.getHostName(),
+                request.getMaxPlayers(),
+                request.isLocked(),
+                request.getHostLevel(),
+                request.getSelectedProfile(),
+                request.getSelectedOutline());
         room.setAction("create");
         room.setTimestamp(System.currentTimeMillis());
 
@@ -85,6 +84,35 @@ public class MinigameController {
 
             // 방 목록 업데이트 브로드캐스트
             messagingTemplate.convertAndSend("/topic/minigame/rooms", room);
+
+            // 개인에게도 성공 ACK 전송 (so joining client gets explicit confirmation)
+            GameEventDto ack = new GameEventDto();
+            ack.setRoomId(request.getRoomId());
+            ack.setType("joinResult");
+            ack.setPlayerId(request.getUserId());
+            ack.setPayload("ok");
+            ack.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/joinResult/" + request.getUserId(), ack);
+            log.info("joinResult(ok) sent to user {} for room {}", request.getUserId(), request.getRoomId());
+        } else {
+            // failure reason checking
+            MinigameRoomDto maybeRoom = roomService.getRoom(request.getRoomId());
+            String reason = "not found or full";
+            if (maybeRoom == null)
+                reason = "room not found";
+            else if (maybeRoom.getCurrentPlayers() >= maybeRoom.getMaxPlayers())
+                reason = "room full";
+
+            // 실패(방 없음 또는 가득 참)일 때 개인에게 오류 ACK 전송
+            GameEventDto ack = new GameEventDto();
+            ack.setRoomId(request.getRoomId());
+            ack.setType("joinResult");
+            ack.setPlayerId(request.getUserId());
+            ack.setPayload("error: " + reason);
+            ack.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/joinResult/" + request.getUserId(), ack);
+            log.warn("joinResult(error: {}) sent to user {} for room {}", reason, request.getUserId(),
+                    request.getRoomId());
         }
     }
 
@@ -129,10 +157,9 @@ public class MinigameController {
         log.info("방 설정 변경 요청: {}", request);
 
         MinigameRoomDto room = roomService.updateRoomSettings(
-            request.getRoomId(),
-            request.getGameName(),
-            request.getMaxPlayers()
-        );
+                request.getRoomId(),
+                request.getGameName(),
+                request.getMaxPlayers());
         if (room != null) {
             room.setAction("update");
             room.setTimestamp(System.currentTimeMillis());
@@ -179,6 +206,87 @@ public class MinigameController {
 
             messagingTemplate.convertAndSend("/topic/minigame/room/" + request.getRoomId(), room);
         }
+    }
+
+    /**
+     * 게임 이벤트 (spawn, hit 등)
+     * Client -> /app/minigame.room.game
+     * Server -> /topic/minigame/room/{roomId}/game (to room)
+     */
+    @MessageMapping("/minigame.room.game")
+    public void handleGameEvent(GameEventDto event) {
+        log.info("게임 이벤트 수신: {}", event);
+        if (event == null || event.getRoomId() == null)
+            return;
+
+        if ("hit".equals(event.getType())) {
+            // validate and update score
+            String roomId = event.getRoomId();
+            String playerId = event.getPlayerId();
+            String playerName = event.getPlayerName();
+            String targetId = event.getTarget() != null ? event.getTarget().getId() : event.getTargetId();
+
+            GameScoreDto result = roomService.handleHit(roomId, playerId, playerName, targetId,
+                    event.getTimestamp() == null ? System.currentTimeMillis() : event.getTimestamp());
+
+            // send back an acknowledgement (scoreUpdate already broadcast by service)
+            if (result != null) {
+                GameEventDto scoreEvt = new GameEventDto();
+                scoreEvt.setRoomId(roomId);
+                scoreEvt.setType("hitAck");
+                scoreEvt.setPlayerId(playerId);
+                scoreEvt.setPayload(String.valueOf(result.getScore()));
+                scoreEvt.setTimestamp(System.currentTimeMillis());
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", scoreEvt);
+            }
+        }
+
+        if ("omokMove".equals(event.getType())) {
+            // 오목 움직임 처리
+            String roomId = event.getRoomId();
+            String playerId = event.getPlayerId();
+            Integer position = event.getPosition();
+
+            log.info("오목 움직임: roomId={}, playerId={}, position={}", roomId, playerId, position);
+
+            // 모든 플레이어에게 브로드캐스트
+            GameEventDto omokEvt = new GameEventDto();
+            omokEvt.setRoomId(roomId);
+            omokEvt.setType("omokMove");
+            omokEvt.setPlayerId(playerId);
+            omokEvt.setPosition(position);
+            omokEvt.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", omokEvt);
+        }
+
+        if ("reactionStart".equals(event.getType())) {
+            String roomId = event.getRoomId();
+            boolean immediate = false;
+            if (event.getPayload() != null && event.getPayload().contains("immediate")) {
+                immediate = true;
+            }
+            log.info("reactionStart received for room {} (immediate={})", roomId, immediate);
+            roomService.startReactionRound(roomId, immediate);
+        }
+
+        if ("reactionHit".equals(event.getType())) {
+            String roomId = event.getRoomId();
+            String playerId = event.getPlayerId();
+            String playerName = event.getPlayerName();
+            roomService.handleReactionHit(roomId, playerId, playerName,
+                    event.getTimestamp() == null ? System.currentTimeMillis() : event.getTimestamp());
+        }
+    }
+
+    /**
+     * 게임 상태 요청 (재접속/새로고침 시 동기화)
+     */
+    @MessageMapping("/minigame.room.state")
+    public void requestGameState(GameEventDto event) {
+        if (event == null || event.getRoomId() == null)
+            return;
+        log.info("게임 상태 요청: roomId={}, userId={}", event.getRoomId(), event.getPlayerId());
+        roomService.sendGameState(event.getRoomId(), event.getPlayerId());
     }
 
     /**

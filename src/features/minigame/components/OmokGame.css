@@ -1,0 +1,285 @@
+.omok-game-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 12px;
+}
+
+/* 헤더 스타일 */
+.omok-game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.omok-player-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.omok-player-1,
+.omok-player-2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 1.1em;
+  color: white;
+}
+
+.omok-player-symbol {
+  font-size: 1.8em;
+}
+
+.omok-player-symbol.black {
+  color: #000;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.omok-player-symbol.white {
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+.omok-vs {
+  color: #ffd700;
+  font-weight: 700;
+  font-size: 1.2em;
+}
+
+.omok-turn-indicator {
+  background: rgba(100, 100, 100, 0.5);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.omok-turn-indicator.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #ffd700;
+  box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+}
+
+/* 보드 컨테이너 */
+.omok-board-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  min-height: 500px;
+}
+
+.omok-board {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  gap: 0;
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #d4a574 0%, #c19a6b 100%);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 
+    inset 0 0 20px rgba(0, 0, 0, 0.3),
+    0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 3px solid #8b6f47;
+}
+
+/* 셀 스타일 */
+.omok-cell {
+  position: relative;
+  background: linear-gradient(135deg, #daa977 0%, #c9956d 100%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
+
+.omok-cell:hover:not(.black):not(.white) {
+  background: linear-gradient(135deg, #e6b88a 0%, #d4a574 100%);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.omok-cell.edge {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* 돌 스타일 */
+.omok-stone {
+  width: 85%;
+  height: 85%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8em;
+  transition: all 0.3s ease;
+  animation: placeStone 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes placeStone {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.omok-stone.black-stone {
+  background: radial-gradient(circle at 30% 30%, #444, #000);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.6),
+    inset -1px -1px 3px rgba(255, 255, 255, 0.1);
+}
+
+.omok-stone.white-stone {
+  background: radial-gradient(circle at 30% 30%, #fff, #e0e0e0);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    inset -1px -1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* 결과 모달 */
+.omok-result-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
+  border-radius: 12px;
+  z-index: 10;
+}
+
+.omok-result-content {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.omok-result-content h2 {
+  font-size: 2.5em;
+  margin: 0 0 20px 0;
+  color: #ffd700;
+}
+
+.omok-winner {
+  font-size: 1.8em;
+  font-weight: 600;
+  margin: 15px 0 30px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.winner-icon {
+  font-size: 1.2em;
+  animation: spin 2s infinite;
+}
+
+@keyframes spin {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(20deg); }
+}
+
+.omok-result-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+.btn-reset,
+.btn-back {
+  padding: 12px 30px;
+  font-size: 1em;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-reset {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-reset:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.btn-back {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 107, 129, 0.4);
+}
+
+.btn-back:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 129, 0.6);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .omok-board {
+    max-width: 400px;
+  }
+
+  .omok-game-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .omok-result-content {
+    padding: 30px;
+    width: 90%;
+  }
+}
