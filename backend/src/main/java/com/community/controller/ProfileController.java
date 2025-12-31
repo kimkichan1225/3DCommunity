@@ -85,14 +85,15 @@ public class ProfileController {
             }
 
             // Profile 조회 또는 생성
-            Profile profile = profileRepository.findByUserId(userId)
-                    .orElseGet(() -> {
-                        Profile newProfile = new Profile();
-                        newProfile.setUserId(userId);
-                        newProfile.setUser(managedUser);
-                        newProfile.setLevel(1);
-                        return newProfile;
-                    });
+            Profile profile = profileRepository.findByUserId(userId).orElse(null);
+
+            if (profile == null) {
+                // 새 프로필 생성
+                profile = new Profile();
+                profile.setUser(managedUser); // @MapsId로 userId 자동 설정됨
+                profile.setLevel(1);
+                profile = profileRepository.save(profile); // 먼저 저장하여 ID 생성
+            }
 
             // 상태 메시지 업데이트
             if (updates.containsKey("statusMessage")) {
