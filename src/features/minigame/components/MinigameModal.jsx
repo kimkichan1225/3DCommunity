@@ -426,7 +426,14 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             default:
                 return (
                     <div className="minigame-room-list">
-                        {rooms.map((room) => (
+                        {rooms.length === 0 ? (
+                            <div className="no-rooms-message">
+                                <div className="no-rooms-icon">🎮</div>
+                                <h3>현재 생성된 방이 없습니다</h3>
+                                <p>새로운 방을 만들어 게임을 시작해보세요!</p>
+                            </div>
+                        ) : (
+                            rooms.map((room) => (
                             <div key={room.roomId} className={`room-item ${room.isPlaying ? 'playing' : ''} ${room.currentPlayers >= room.maxPlayers ? 'full' : ''}`} onClick={() => handleRoomClick(room)}>
                                 <div className="room-header">
                                     <div className="room-title">
@@ -451,7 +458,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 );
         }
