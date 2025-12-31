@@ -25,7 +25,10 @@ class MinigameService {
 
   connect(userId, username, timeoutMs = 10000) {
     // If already connected, resolve immediately
-    if (this.connected) return Promise.resolve();
+    if (this.connected && this.client && this.client.active) {
+      console.log('⚠️ Minigame already connected, skipping reconnect');
+      return Promise.resolve();
+    }
 
     this.userId = userId;
     this.username = username;

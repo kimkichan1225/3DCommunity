@@ -21,6 +21,17 @@ class MultiplayerService {
   }
 
   connect(userId, username, isObserver = false) {
+    // 이미 연결되어 있으면 재연결하지 않음
+    if (this.connected && this.client && this.client.active) {
+      console.log('⚠️ Already connected, skipping reconnect');
+      return;
+    }
+
+    // 기존 연결이 있으면 먼저 정리
+    if (this.client) {
+      this.disconnect();
+    }
+
     this.userId = userId;
     this.username = username;
     this.isObserver = isObserver;
