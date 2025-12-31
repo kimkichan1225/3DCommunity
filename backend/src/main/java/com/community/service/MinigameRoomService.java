@@ -198,6 +198,67 @@ public class MinigameRoomService {
         return room;
     }
 
+    /**
+     * 참가자 <-> 관전자 역할 전환
+     */
+    public MinigameRoomDto switchRole(String roomId, String userId) {
+        MinigameRoomDto room = rooms.get(roomId);
+        if (room == null) {
+            log.warn("방을 찾을 수 없음: {}", roomId);
+            return null;
+        }
+
+        // 현재 참가자인지 확인
+        MinigamePlayerDto player = room.getPlayers().stream()
+                .filter(p -> p.getUserId().equals(userId))
+                .findFirst()
+                .orElse(null);
+
+        if (player != null) {
+            // 참가자 -> 관전자
+            // 방장은 역할 전환 불가
+            if (player.isHost()) {
+                log.warn("방장은 관전자로 전환할 수 없음: userId={}", userId);
+                return null;
+            }
+
+            room.getPlayers().remove(player);
+            room.setCurrentPlayers(room.getPlayers().size());
+
+            // 관전자 리스트에 추가 (ready 상태 초기화)
+            player.setReady(false);
+            room.getSpectators().add(player);
+
+            log.info("참가자 -> 관전자: userId={}, roomId={}", userId, roomId);
+        } else {
+            // 관전자인지 확인
+            MinigamePlayerDto spectator = room.getSpectators().stream()
+                    .filter(s -> s.getUserId().equals(userId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (spectator != null) {
+                // 관전자 -> 참가자
+                // 방이 가득 찬 경우 전환 불가
+                if (room.getCurrentPlayers() >= room.getMaxPlayers()) {
+                    log.warn("방이 가득 참. 참가자로 전환 불가: userId={}, roomId={}", userId, roomId);
+                    return null;
+                }
+
+                room.getSpectators().remove(spectator);
+                room.getPlayers().add(spectator);
+                room.setCurrentPlayers(room.getPlayers().size());
+
+                log.info("관전자 -> 참가자: userId={}, roomId={}", userId, roomId);
+            } else {
+                log.warn("유저를 찾을 수 없음: userId={}, roomId={}", userId, roomId);
+                return null;
+            }
+        }
+
+        return room;
+    }
+
     // Inner class to hold session state
     private static class GameSession {
         private final String roomId;
