@@ -69,6 +69,12 @@ public class ProfileController {
             User managedUser = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
+            // 기존 사용자의 nicknameChangesRemaining이 null인 경우 기본값 1로 초기화
+            if (managedUser.getNicknameChangesRemaining() == null) {
+                managedUser.setNicknameChangesRemaining(1);
+                userRepository.save(managedUser);
+            }
+
             // 사용자명 업데이트
             if (updates.containsKey("username")) {
                 String newUsername = (String) updates.get("username");

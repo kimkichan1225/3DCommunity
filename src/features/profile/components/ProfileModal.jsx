@@ -243,16 +243,14 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
             <div className="profile-field">
               <label className="profile-label">
                 사용자명
-                {!isEditing && (
-                  <span style={{
-                    marginLeft: '8px',
-                    fontSize: '11px',
-                    color: userData.nicknameChangesRemaining > 0 ? '#888' : '#ff4444',
-                    fontWeight: 'normal'
-                  }}>
-                    (변경 가능 횟수: {userData.nicknameChangesRemaining || 0}회)
-                  </span>
-                )}
+                <span style={{
+                  marginLeft: '8px',
+                  fontSize: '11px',
+                  color: (userData.nicknameChangesRemaining || 0) > 0 ? '#888' : '#ff4444',
+                  fontWeight: 'normal'
+                }}>
+                  (변경 가능 횟수: {userData.nicknameChangesRemaining || 0}회)
+                </span>
               </label>
               {isEditing ? (
                 <div>
