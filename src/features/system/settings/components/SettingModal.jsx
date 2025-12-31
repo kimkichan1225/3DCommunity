@@ -50,15 +50,10 @@ function SettingModal({ onClose, onSettingsChange }) {
   };
 
   const handleApply = () => {
-    try {
-      localStorage.setItem('appSettings', JSON.stringify(settings));
-      if (onSettingsChange) {
-        onSettingsChange(settings);
-      }
-      onClose();
-    } catch (error) {
-      console.error('Failed to save settings:', error);
+    if (onSettingsChange) {
+      onSettingsChange(settings);
     }
+    onClose();
   };
 
   return (

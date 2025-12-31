@@ -106,6 +106,15 @@ function App() {
       console.error('Failed to load app settings:', error);
     }
     return {
+      graphics: {
+        quality: 'basic',
+        shadows: 'on'
+      },
+      sound: {
+        master: 70,
+        effects: 80,
+        music: 60
+      },
       other: {
         showToastNotifications: true,
         chatNotifications: true,
@@ -371,6 +380,15 @@ function App() {
   const handleSettingsChange = (newSettings) => {
     setAppSettings(newSettings);
   };
+
+  // 설정이 변경될 때 localStorage에 저장
+  useEffect(() => {
+    try {
+      localStorage.setItem('appSettings', JSON.stringify(appSettings));
+    } catch (error) {
+      console.error('Failed to save app settings:', error);
+    }
+  }, [appSettings]);
 
   // 알림 서비스 구독
   useEffect(() => {
@@ -1104,11 +1122,12 @@ function App() {
         <Canvas
           className="three-canvas"
           camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
-          shadows
+          shadows={appSettings.graphics?.shadows !== 'off'}
           gl={{
             alpha: true, // 투명 배경 활성화
             antialias: true,
-            preserveDrawingBuffer: true
+            preserveDrawingBuffer: true,
+            pixelRatio: appSettings.graphics?.quality === 'advanced' ? window.devicePixelRatio : 1
           }}
           style={{ width: '100%', height: '100%' }}
         >
