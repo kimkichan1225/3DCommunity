@@ -438,7 +438,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     )}
                     {currentView === 'waiting' ? (
                         <div className="sidebar-room-chat">
-                            <h3 className="chat-title"><FaComments /> 대기방 채팅</h3>
+                            <h3 className="room-chat-title"><FaComments /> 대기방 채팅</h3>
                             <div className="chat-messages">
                                 {roomChatMessages.length === 0 ? (
                                     <div className="no-messages">채팅 메시지가 없습니다</div>

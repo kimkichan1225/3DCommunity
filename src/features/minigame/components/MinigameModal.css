@@ -1230,16 +1230,20 @@
   margin-top: 16px;
 }
 
-.chat-title {
+.room-chat-title {
   margin: 0 0 12px 0;
   font-size: 16px;
   font-weight: 700;
-  color: #000;
+  color: #000 !important;
   display: flex;
   align-items: center;
   gap: 8px;
   padding-bottom: 12px;
   border-bottom: 2px solid #e9ecef;
+}
+
+.room-chat-title svg {
+  color: #000 !important;
 }
 
 .chat-messages {
