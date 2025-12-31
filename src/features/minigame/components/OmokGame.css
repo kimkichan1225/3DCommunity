@@ -60,7 +60,12 @@
 }
 
 .omok-player-symbol.white {
-  color: #fff;
+  color: #ffffff;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 

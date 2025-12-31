@@ -200,7 +200,7 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
           </div>
           <span className="omok-vs">vs</span>
           <div className="omok-player-2">
-            <span className="omok-player-symbol white">○</span>
+            <span className="omok-player-symbol white">●</span>
             <span className="omok-player-name">{players[1]?.username}</span>
           </div>
         </div>
