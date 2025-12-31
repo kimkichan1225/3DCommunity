@@ -60,7 +60,9 @@ public class ProfileController {
             @RequestBody Map<String, Object> updates
     ) {
         try {
-            Profile profile = profileRepository.findByUserId(currentUser.getId())
+            Long userId = currentUser.getId();
+
+            Profile profile = profileRepository.findByUserId(userId)
                     .orElseGet(() -> {
                         Profile newProfile = new Profile();
                         newProfile.setUser(currentUser);
@@ -103,16 +105,24 @@ public class ProfileController {
 
             profileRepository.save(profile);
 
+            // 업데이트된 User 엔티티 다시 로드
+            User updatedUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
             Map<String, Object> response = new HashMap<>();
-            response.put("id", currentUser.getId());
-            response.put("username", currentUser.getUsername());
+            response.put("id", updatedUser.getId());
+            response.put("username", updatedUser.getUsername());
+            response.put("email", updatedUser.getEmail());
             response.put("level", profile.getLevel());
             response.put("statusMessage", profile.getStatusMessage());
-            response.put("selectedProfile", profile.getSelectedProfile());
-            response.put("selectedOutline", profile.getSelectedOutline());
+            response.put("selectedProfile", updatedUser.getSelectedProfile() != null ? updatedUser.getSelectedProfile().getImagePath() : null);
+            response.put("selectedOutline", updatedUser.getSelectedOutline() != null ? updatedUser.getSelectedOutline().getImagePath() : null);
+            response.put("silverCoins", updatedUser.getSilverCoins());
+            response.put("goldCoins", updatedUser.getGoldCoins());
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace(); // 에러 로그 출력
             Map<String, String> error = new HashMap<>();
             error.put("message", "프로필 업데이트 실패: " + e.getMessage());
             return ResponseEntity.badRequest().body(error);
