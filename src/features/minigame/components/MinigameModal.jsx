@@ -92,7 +92,18 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     useEffect(() => {
         const onRoomUpdate = (roomData) => {
-            setRooms(prev => prev.map(r => r.roomId === roomData.roomId ? roomData : r).filter(r => !r.isDeleted));
+            setRooms(prev => {
+                const exists = prev.some(r => r.roomId === roomData.roomId);
+                if (exists) {
+                    // 기존 방 업데이트 또는 삭제
+                    return prev.map(r => r.roomId === roomData.roomId ? roomData : r).filter(r => !r.isDeleted);
+                } else if (roomData.action === 'create') {
+                    // 새로운 방 추가
+                    return [...prev, roomData];
+                } else {
+                    return prev;
+                }
+            });
             if (currentRoom && roomData.roomId === currentRoom.roomId) {
                 setCurrentRoom(prev => ({ ...prev, ...roomData }));
             }
@@ -103,7 +114,10 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             }
         };
         const onRoomJoin = (roomPayload) => {
-            if ((roomPayload?.players || []).some(p => String(p.userId) === String(userProfile?.id))) {
+            const isInPlayers = (roomPayload?.players || []).some(p => String(p.userId) === String(userProfile?.id));
+            const isInSpectators = (roomPayload?.spectators || []).some(s => String(s.userId) === String(userProfile?.id));
+
+            if (isInPlayers || isInSpectators) {
                 minigameService.subscribeToRoom(roomPayload.roomId);
                 setCurrentRoom(roomPayload);
                 setCurrentView('waiting');
@@ -166,8 +180,14 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const handleReady = () => {
         if (currentRoom?.roomId) minigameService.toggleReady(currentRoom.roomId);
     };
+    const handleSwitchRole = () => {
+        if (currentRoom?.roomId) minigameService.switchRole(currentRoom.roomId);
+    };
 
     const isHost = String(currentRoom?.hostId) === String(userProfile?.id);
+    const isPlayer = currentRoom?.players?.some(p => String(p.userId) === String(userProfile?.id));
+    const isSpectator = currentRoom?.spectators?.some(s => String(s.userId) === String(userProfile?.id));
+    const isRoomFull = currentRoom?.currentPlayers >= currentRoom?.maxPlayers;
 
     const renderContent = () => {
         if (currentRoom?.playing) {
@@ -244,7 +264,6 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                                                 <div className="player-name">{s.username}</div>
                                                 <div className="player-level">Lv. {s.level}</div>
                                             </div>
-                                            <div className="spectator-badge">관전</div>
                                         </div>
                                     ))}
                                 </div>
@@ -254,11 +273,20 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                             <button className="invite-friend-btn" onClick={handleInviteFriend}><FaPlus /> 친구 초대</button>
                             {isHost ? (
                                 <button className="game-start-btn" onClick={handleGameStart}><FaGamepad /> 게임 시작</button>
-                            ) : (
-                                <button className={`ready-btn ${currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? 'ready' : ''}`} onClick={handleReady}>
-                                    <FaUsers />{currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? '준비 완료' : '준비'}
+                            ) : isPlayer ? (
+                                <>
+                                    <button className={`ready-btn ${currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? 'ready' : ''}`} onClick={handleReady}>
+                                        <FaUsers />{currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? '준비 완료' : '준비'}
+                                    </button>
+                                    <button className="switch-role-btn" onClick={handleSwitchRole}>
+                                        관전자로 전환
+                                    </button>
+                                </>
+                            ) : isSpectator ? (
+                                <button className="switch-role-btn" onClick={handleSwitchRole} disabled={isRoomFull}>
+                                    {isRoomFull ? '방이 가득 참' : '참가자로 전환'}
                                 </button>
-                            )}
+                            ) : null}
                         </div>
                     </div>
                 );

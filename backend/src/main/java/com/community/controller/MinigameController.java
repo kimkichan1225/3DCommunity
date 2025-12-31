@@ -191,6 +191,30 @@ public class MinigameController {
     }
 
     /**
+     * 역할 전환 (참가자 <-> 관전자)
+     * Client -> /app/minigame.room.switchRole
+     * Server -> /topic/minigame/room/{roomId} (to room)
+     */
+    @MessageMapping("/minigame.room.switchRole")
+    public void switchRole(RoomActionRequest request) {
+        log.info("역할 전환 요청: roomId={}, userId={}", request.getRoomId(), request.getUserId());
+
+        MinigameRoomDto room = roomService.switchRole(request.getRoomId(), request.getUserId());
+        if (room != null) {
+            room.setAction("switchRole");
+            room.setTimestamp(System.currentTimeMillis());
+
+            // 방에 있는 모든 사람에게 브로드캐스트
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + request.getRoomId(), room);
+
+            // 방 목록 업데이트 브로드캐스트
+            messagingTemplate.convertAndSend("/topic/minigame/rooms", room);
+        } else {
+            log.warn("역할 전환 실패: roomId={}, userId={}", request.getRoomId(), request.getUserId());
+        }
+    }
+
+    /**
      * 게임 시작
      * Client -> /app/minigame.room.start
      * Server -> /topic/minigame/room/{roomId} (to room)

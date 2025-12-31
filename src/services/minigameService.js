@@ -293,6 +293,28 @@ class MinigameService {
   }
 
   /**
+   * 역할 전환 (참가자 <-> 관전자)
+   */
+  switchRole(roomId) {
+    if (!this.connected || !this.client) {
+      console.error('WebSocket not connected');
+      return;
+    }
+
+    const payload = {
+      roomId,
+      userId: this.userId
+    };
+
+    this.client.publish({
+      destination: '/app/minigame.room.switchRole',
+      body: JSON.stringify(payload)
+    });
+
+    console.log('역할 전환 요청:', payload);
+  }
+
+  /**
    * 게임 시작
    */
   startGame(roomId) {
