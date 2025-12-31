@@ -349,6 +349,7 @@ function App() {
       // ProfileModal에서 전달받은 업데이트된 프로필 사용
       if (updatedProfile) {
         setUserProfile(updatedProfile);
+        setUsername(updatedProfile.username); // 캐릭터 위 닉네임 즉시 업데이트
         console.log('✅ 프로필 업데이트 완료:', updatedProfile);
 
         // 멀티플레이어 서비스에 닉네임 변경 알림
