@@ -1354,3 +1354,144 @@
     transform: translateY(0);
   }
 }
+
+/* 게임 컨테이너 */
+.game-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 게임 관전자 정보 */
+.game-spectator-info {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+
+.game-spectator-info:hover {
+  background: rgba(102, 126, 234, 0.9);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 관전자 목록 모달 */
+.spectator-list-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10002;
+}
+
+.spectator-list-modal {
+  background: white;
+  border-radius: 16px;
+  width: 400px;
+  max-width: 90%;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+.spectator-list-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.spectator-list-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.spectator-list-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.no-spectators {
+  text-align: center;
+  color: #999;
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+.spectator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spectator-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.spectator-item:hover {
+  background: #e9ecef;
+  transform: translateX(4px);
+}
+
+.spectator-info {
+  flex: 1;
+}
+
+.spectator-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.spectator-level {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

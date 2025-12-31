@@ -22,6 +22,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [roomChatMessages, setRoomChatMessages] = useState([]);
     const [isSwitchingRole, setIsSwitchingRole] = useState(false);
     const [isReconnecting, setIsReconnecting] = useState(false); // 재연결 중 상태
+    const [showSpectatorList, setShowSpectatorList] = useState(false); // 관전자 목록 모달
 
     const gameTypes = [
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
@@ -272,25 +273,37 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     const renderContent = () => {
         if (currentRoom?.playing) {
+            const spectatorCount = currentRoom.spectators?.length || 0;
+            let gameComponent;
+
             if (currentRoom.gameName === '오목') {
-                return <OmokGame
+                gameComponent = <OmokGame
                     roomId={currentRoom.roomId}
                     isHost={isHost}
                     userProfile={userProfile}
                     players={currentRoom.players}
                     onGameEnd={() => setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null))}
                 />;
-            }
-            if (currentRoom.gameName === '에임 맞추기') {
-                return <AimingGame
+            } else if (currentRoom.gameName === '에임 맞추기') {
+                gameComponent = <AimingGame
                     roomId={currentRoom.roomId}
                     isHost={isHost}
                     userProfile={userProfile}
                     players={currentRoom.players}
                     onGameEnd={() => setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null))}
                 />;
+            } else {
+                return <div>선택된 게임({currentRoom.gameName})을 찾을 수 없습니다.</div>;
             }
-            return <div>선택된 게임({currentRoom.gameName})을 찾을 수 없습니다.</div>;
+
+            return (
+                <div className="game-container">
+                    <div className="game-spectator-info" onClick={() => setShowSpectatorList(true)}>
+                        <FaUsers /> 관전자 {spectatorCount}명
+                    </div>
+                    {gameComponent}
+                </div>
+            );
         }
 
         switch (currentView) {
@@ -491,6 +504,40 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                                             </div>
                                         );
                                     })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showSpectatorList && (
+                <div className="spectator-list-modal-overlay" onClick={(e) => { e.stopPropagation(); setShowSpectatorList(false); }}>
+                    <div className="spectator-list-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="spectator-list-header">
+                            <h3>관전자 목록</h3>
+                            <button className="close-btn" onClick={() => setShowSpectatorList(false)}>×</button>
+                        </div>
+                        <div className="spectator-list-body">
+                            {currentRoom?.spectators?.length === 0 ? (
+                                <div className="no-spectators">관전자가 없습니다.</div>
+                            ) : (
+                                <div className="spectator-list">
+                                    {currentRoom?.spectators?.map((spectator) => (
+                                        <div key={spectator.userId} className="spectator-item">
+                                            <ProfileAvatar
+                                                profileImage={formatProfileImage(spectator.selectedProfile)}
+                                                outlineImage={formatOutlineImage(spectator.selectedOutline)}
+                                                size={50}
+                                            />
+                                            <div className="spectator-info">
+                                                <div className="spectator-name">
+                                                    {spectator.host && <FaCrown className="host-icon" />}
+                                                    {spectator.username}
+                                                </div>
+                                                <div className="spectator-level">Lv. {spectator.level}</div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
