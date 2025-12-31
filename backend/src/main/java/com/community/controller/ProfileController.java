@@ -43,6 +43,9 @@ public class ProfileController {
             response.put("selectedProfile", user.getSelectedProfile() != null ? user.getSelectedProfile().getImagePath() : null);
             response.put("selectedOutline", user.getSelectedOutline() != null ? user.getSelectedOutline().getImagePath() : null);
 
+            // 닉네임 변경 횟수 추가
+            response.put("nicknameChangesRemaining", user.getNicknameChangesRemaining() != null ? user.getNicknameChangesRemaining() : 1);
+
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
@@ -70,17 +73,29 @@ public class ProfileController {
             if (updates.containsKey("username")) {
                 String newUsername = (String) updates.get("username");
 
-                // 사용자명 중복 확인 (현재 사용자 제외)
+                // 사용자명이 실제로 변경되는 경우에만 검증
                 if (!newUsername.equals(managedUser.getUsername())) {
+                    // 닉네임 변경 횟수 확인
+                    Integer remainingChanges = managedUser.getNicknameChangesRemaining();
+                    if (remainingChanges == null || remainingChanges <= 0) {
+                        Map<String, String> error = new HashMap<>();
+                        error.put("message", "닉네임 변경 횟수를 모두 사용했습니다.");
+                        return ResponseEntity.badRequest().body(error);
+                    }
+
+                    // 사용자명 중복 확인
                     boolean exists = userRepository.findByUsername(newUsername).isPresent();
                     if (exists) {
                         Map<String, String> error = new HashMap<>();
                         error.put("message", "이미 사용 중인 닉네임입니다.");
                         return ResponseEntity.badRequest().body(error);
                     }
+
+                    // 닉네임 변경 및 횟수 차감
+                    managedUser.setUsername(newUsername);
+                    managedUser.setNicknameChangesRemaining(remainingChanges - 1);
                 }
 
-                managedUser.setUsername(newUsername);
                 userRepository.save(managedUser);
             }
 
@@ -123,6 +138,7 @@ public class ProfileController {
             response.put("selectedOutline", managedUser.getSelectedOutline() != null ? managedUser.getSelectedOutline().getImagePath() : null);
             response.put("silverCoins", managedUser.getSilverCoins());
             response.put("goldCoins", managedUser.getGoldCoins());
+            response.put("nicknameChangesRemaining", managedUser.getNicknameChangesRemaining() != null ? managedUser.getNicknameChangesRemaining() : 1);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

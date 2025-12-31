@@ -96,6 +96,12 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
       return;
     }
 
+    // 닉네임이 변경되었는데 변경 횟수가 없으면 저장 불가
+    if (editedData.username !== userData.username && (userData.nicknameChangesRemaining || 0) <= 0) {
+      setPopup({ message: '닉네임 변경 횟수를 모두 사용했습니다.', type: 'error' });
+      return;
+    }
+
     try {
       setIsLoading(true);
 
@@ -235,7 +241,19 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
           <div className="profile-info">
             {/* 사용자명 */}
             <div className="profile-field">
-              <label className="profile-label">사용자명</label>
+              <label className="profile-label">
+                사용자명
+                {!isEditing && (
+                  <span style={{
+                    marginLeft: '8px',
+                    fontSize: '11px',
+                    color: userData.nicknameChangesRemaining > 0 ? '#888' : '#ff4444',
+                    fontWeight: 'normal'
+                  }}>
+                    (변경 가능 횟수: {userData.nicknameChangesRemaining || 0}회)
+                  </span>
+                )}
+              </label>
               {isEditing ? (
                 <div>
                   <input
@@ -258,6 +276,11 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
                   {!usernameError && editedData.username && editedData.username !== userData.username && !isCheckingUsername && (
                     <p style={{ fontSize: '12px', color: '#4CAF50', marginTop: '4px' }}>
                       사용 가능한 닉네임입니다.
+                    </p>
+                  )}
+                  {editedData.username !== userData.username && (
+                    <p style={{ fontSize: '12px', color: '#ffa500', marginTop: '4px' }}>
+                      ⚠️ 닉네임 변경 시 남은 횟수가 차감됩니다. (현재: {userData.nicknameChangesRemaining || 0}회)
                     </p>
                   )}
                 </div>
