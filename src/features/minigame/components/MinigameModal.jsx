@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MinigameModal.css';
 import ProfileAvatar from '../../../components/ProfileAvatar';
-import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen, FaComments, FaPaperPlane } from 'react-icons/fa';
 import friendService from '../../../services/friendService';
 import minigameService from '../../../services/minigameService';
 import AimingGame from './AimingGame';
@@ -140,13 +140,20 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 setCurrentRoom(prev => ({ ...(prev || {}), playing: true }));
             }
         };
+        const onRoomChat = (chatData) => {
+            if (chatData?.roomId === currentRoom?.roomId) {
+                setRoomChatMessages(prev => [...prev, chatData]);
+            }
+        };
         minigameService.on('roomUpdate', onRoomUpdate);
         minigameService.on('roomJoin', onRoomJoin);
         minigameService.on('gameEvent', onGameEvent);
+        minigameService.on('roomChat', onRoomChat);
         return () => {
             minigameService.off('roomUpdate', onRoomUpdate);
             minigameService.off('roomJoin', onRoomJoin);
             minigameService.off('gameEvent', onGameEvent);
+            minigameService.off('roomChat', onRoomChat);
         };
     }, [currentRoom, userProfile]);
 
@@ -155,6 +162,14 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             minigameService.joinRoom(initialRoomId, userProfile.level || 1, userProfile.selectedProfile?.imagePath || null, userProfile.selectedOutline?.imagePath || null);
         }
     }, [initialRoomId]); // userProfile 제거하여 중복 입장 방지
+
+    // 채팅 메시지 자동 스크롤
+    useEffect(() => {
+        const chatMessages = document.querySelector('.chat-messages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }, [roomChatMessages]);
 
     // WebSocket 재연결 감지 및 복구
     useEffect(() => {
@@ -209,6 +224,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         if (currentRoom?.roomId) minigameService.leaveRoom(currentRoom.roomId);
         setCurrentRoom(null);
         setCurrentView('lobby');
+        setRoomChatMessages([]); // 채팅 메시지 초기화
+        setRoomChatInput(''); // 입력창 초기화
     };
     const handleInviteFriend = () => setShowFriendInviteModal(true);
     const handleInviteFriendToRoom = (friend) => {
@@ -233,6 +250,18 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             minigameService.switchRole(currentRoom.roomId);
             // 1초 후 다시 클릭 가능하도록 설정
             setTimeout(() => setIsSwitchingRole(false), 1000);
+        }
+    };
+    const handleSendRoomChat = () => {
+        if (roomChatInput.trim() && currentRoom?.roomId) {
+            minigameService.sendRoomChat(currentRoom.roomId, roomChatInput.trim());
+            setRoomChatInput('');
+        }
+    };
+    const handleRoomChatKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendRoomChat();
         }
     };
 
@@ -407,7 +436,38 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     ) : (
                         <div className="sidebar-nav-buttons"><button className="leave-room-btn" onClick={handleLeaveRoom}><FaTimes /><span>방 나가기</span></button></div>
                     )}
-                    <div className="sidebar-friends"><h3 className="friends-title">친구 목록 ({friends.length})</h3><div className="friends-list">{isLoadingFriends ? <div>로딩 중...</div> : friends.length === 0 ? <div>친구가 없습니다</div> : friends.map((friend) => { const isOnline = isFriendOnline(friend); return (<div key={friend.friendshipId} className={`friend-item ${isOnline ? 'online' : 'offline'}`}><ProfileAvatar profileImage={{ imagePath: friend.profileImagePath }} outlineImage={{ imagePath: friend.outlineImagePath }} size={40} className="friend-avatar" /><div className="friend-info"><div className="friend-name">{friend.username}</div><div className="friend-level">Lv. {friend.level || 1}</div></div>{isOnline && <div className="friend-status-online">온라인</div>}<div className="friend-status-dot"></div></div>); })}</div></div>
+                    {currentView === 'waiting' ? (
+                        <div className="sidebar-room-chat">
+                            <h3 className="chat-title"><FaComments /> 대기방 채팅</h3>
+                            <div className="chat-messages">
+                                {roomChatMessages.length === 0 ? (
+                                    <div className="no-messages">채팅 메시지가 없습니다</div>
+                                ) : (
+                                    roomChatMessages.map((msg, idx) => (
+                                        <div key={idx} className={`chat-message ${String(msg.userId) === String(userProfile?.id) ? 'my-message' : ''}`}>
+                                            <div className="message-author">{msg.username}</div>
+                                            <div className="message-content">{msg.message}</div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            <div className="chat-input-container">
+                                <input
+                                    type="text"
+                                    className="chat-input"
+                                    placeholder="메시지를 입력하세요..."
+                                    value={roomChatInput}
+                                    onChange={(e) => setRoomChatInput(e.target.value)}
+                                    onKeyPress={handleRoomChatKeyPress}
+                                />
+                                <button className="chat-send-btn" onClick={handleSendRoomChat}>
+                                    <FaPaperPlane />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="sidebar-friends"><h3 className="friends-title">친구 목록 ({friends.length})</h3><div className="friends-list">{isLoadingFriends ? <div>로딩 중...</div> : friends.length === 0 ? <div>친구가 없습니다</div> : friends.map((friend) => { const isOnline = isFriendOnline(friend); return (<div key={friend.friendshipId} className={`friend-item ${isOnline ? 'online' : 'offline'}`}><ProfileAvatar profileImage={{ imagePath: friend.profileImagePath }} outlineImage={{ imagePath: friend.outlineImagePath }} size={40} className="friend-avatar" /><div className="friend-info"><div className="friend-name">{friend.username}</div><div className="friend-level">Lv. {friend.level || 1}</div></div>{isOnline && <div className="friend-status-online">온라인</div>}<div className="friend-status-dot"></div></div>); })}</div></div>
+                    )}
                 </div>
             </div>
             {showFriendInviteModal && (
