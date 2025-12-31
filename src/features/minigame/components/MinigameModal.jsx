@@ -28,9 +28,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
         { id: 'word', name: '끝말잇기', image: '/resources/GameIllust/Word.png', maxPlayers: [2, 4, 6, 8] },
         { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png', maxPlayers: [2, 4, 6] },
-        { id: 'aim', name: '에임 맞추기', image: '/resources/GameIllust/Aim.png', maxPlayers: [2, 4] },
-        { id: 'reaction', name: '반응속도', image: '/resources/GameIllust/Reactiontest.png', maxPlayers: [2, 4] },
         { id: 'liar', name: '라이어 게임', image: '/resources/GameIllust/Liar.png', maxPlayers: [4, 6] },
+        { id: 'reaction', name: '반응속도', image: '/resources/GameIllust/Reactiontest.png', maxPlayers: [2, 4] },
+        { id: 'aim', name: '에임 맞추기', image: '/resources/GameIllust/Aim.png', maxPlayers: [2, 4] },
         { id: 'collection', name: '미니게임 모음', image: '/resources/GameIllust/Collection.png', maxPlayers: [4] }
     ];
 
