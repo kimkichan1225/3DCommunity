@@ -157,6 +157,18 @@ class MultiplayerService {
     }
   }
 
+  // 플레이어 정보 업데이트 (닉네임 변경 등)
+  updatePlayerInfo({ username }) {
+    if (username) {
+      this.username = username;
+      console.log('✅ MultiplayerService username updated:', username);
+    }
+  }
+
+  isConnected() {
+    return this.connected;
+  }
+
   // Callback setters (여러 리스너 지원)
   onPlayerJoin(callback) {
     if (callback) {
