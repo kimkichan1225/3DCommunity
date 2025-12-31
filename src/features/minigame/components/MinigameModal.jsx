@@ -28,7 +28,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
         { id: 'word', name: '끝말잇기', image: '/resources/GameIllust/Word.png', maxPlayers: [2, 4, 6, 8] },
         { id: 'aim', name: '에임 맞추기', image: '/resources/GameIllust/Aim.png', maxPlayers: [2, 4] },
-        { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png', maxPlayers: [2, 4, 6] }
+        { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png', maxPlayers: [2, 4, 6] },
+        { id: 'reaction', name: '반응속도', image: '/resources/GameIllust/Reactiontest.png', maxPlayers: [2, 4] }
     ];
 
     const formatProfileImage = (item) => {
