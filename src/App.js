@@ -488,7 +488,6 @@ function App() {
 
     // join result (ACK) 수신 핸들러
     minigameService.on('joinResult', (data) => {
-      console.log('🎮 joinResult 수신:', data);
       if (!data || data.payload == null) return;
       if (String(data.payload).startsWith('error')) {
         alert('게임 방 입장에 실패했습니다: ' + data.payload);
@@ -498,7 +497,6 @@ function App() {
         minigameService.requestRoomsList();
         setShowMinigameModal(false);
       } else if (data.payload === 'ok') {
-        console.log('✅ 방 입장 성공 ACK 받음');
         // 성공 시 모달을 대기방 모드로 열고 pending room을 설정하여 모달에서 자동으로 대기방으로 전환하도록 함
         setPendingJoinRoomId(data.roomId);
         setMinigameModalMode('waiting');
