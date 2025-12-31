@@ -1135,7 +1135,7 @@ function App() {
           <directionalLight
             position={[50, 50, 25]}
             intensity={6}
-            castShadow
+            castShadow={appSettings.graphics?.shadows !== 'off'}
             shadow-mapSize-width={8192}
             shadow-mapSize-height={8192}
             shadow-camera-far={1000}
