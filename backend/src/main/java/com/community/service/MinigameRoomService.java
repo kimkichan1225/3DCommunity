@@ -216,26 +216,17 @@ public class MinigameRoomService {
 
         if (player != null) {
             // 참가자 -> 관전자
-            boolean wasHost = player.isHost();
+            boolean isHost = player.isHost();
 
             room.getPlayers().remove(player);
             room.setCurrentPlayers(room.getPlayers().size());
 
-            // 관전자 리스트에 추가 (ready 상태 및 방장 상태 초기화)
+            // 관전자 리스트에 추가 (ready 상태 초기화, 방장 상태는 유지)
             player.setReady(false);
-            player.setHost(false);
+            // 방장인 경우 방장 상태 유지 (host 필드 그대로 유지)
             room.getSpectators().add(player);
 
-            // 방장이 관전자로 전환한 경우, 다음 참가자를 방장으로 승계
-            if (wasHost && !room.getPlayers().isEmpty()) {
-                MinigamePlayerDto newHost = room.getPlayers().get(0);
-                newHost.setHost(true);
-                room.setHostId(newHost.getUserId());
-                room.setHostName(newHost.getUsername());
-                log.info("방장 승계: 이전={}, 새로운={}, roomId={}", userId, newHost.getUsername(), roomId);
-            }
-
-            log.info("참가자 -> 관전자: userId={}, roomId={}", userId, roomId);
+            log.info("참가자 -> 관전자: userId={}, roomId={}, isHost={}", userId, roomId, isHost);
         } else {
             // 관전자인지 확인
             MinigamePlayerDto spectator = room.getSpectators().stream()

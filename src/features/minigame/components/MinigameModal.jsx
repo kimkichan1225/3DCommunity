@@ -20,6 +20,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [isEditingRoomSettings, setIsEditingRoomSettings] = useState(false);
     const [roomChatInput, setRoomChatInput] = useState('');
     const [roomChatMessages, setRoomChatMessages] = useState([]);
+    const [isSwitchingRole, setIsSwitchingRole] = useState(false);
 
     const gameTypes = [
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
@@ -92,8 +93,6 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     useEffect(() => {
         const onRoomUpdate = (roomData) => {
-            console.log('onRoomUpdate received:', roomData);
-
             // 방 목록 업데이트
             setRooms(prev => {
                 const exists = prev.some(r => r.roomId === roomData.roomId);
@@ -115,7 +114,6 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
             // 현재 있는 방이 업데이트된 경우
             if (currentRoom && roomData.roomId === currentRoom.roomId) {
-                console.log('Current room updated:', roomData);
                 setCurrentRoom(roomData);
             }
 
@@ -194,7 +192,12 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         if (currentRoom?.roomId) minigameService.toggleReady(currentRoom.roomId);
     };
     const handleSwitchRole = () => {
-        if (currentRoom?.roomId) minigameService.switchRole(currentRoom.roomId);
+        if (currentRoom?.roomId && !isSwitchingRole) {
+            setIsSwitchingRole(true);
+            minigameService.switchRole(currentRoom.roomId);
+            // 1초 후 다시 클릭 가능하도록 설정
+            setTimeout(() => setIsSwitchingRole(false), 1000);
+        }
     };
 
     const isHost = String(currentRoom?.hostId) === String(userProfile?.id);
@@ -274,7 +277,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                                         <div key={s.userId} className="player-card spectator">
                                             <ProfileAvatar profileImage={formatProfileImage(s.selectedProfile)} outlineImage={formatOutlineImage(s.selectedOutline)} size={50} />
                                             <div className="player-info">
-                                                <div className="player-name">{s.username}</div>
+                                                <div className="player-name">{s.host && <FaCrown className="host-icon" />}{s.username}</div>
                                                 <div className="player-level">Lv. {s.level}</div>
                                             </div>
                                         </div>
@@ -285,19 +288,30 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                         <div className="waiting-room-actions">
                             <button className="invite-friend-btn" onClick={handleInviteFriend}><FaPlus /> 친구 초대</button>
                             {isHost ? (
-                                <button className="game-start-btn" onClick={handleGameStart}><FaGamepad /> 게임 시작</button>
+                                <>
+                                    <button className="game-start-btn" onClick={handleGameStart}><FaGamepad /> 게임 시작</button>
+                                    {isPlayer ? (
+                                        <button className="switch-role-btn" onClick={handleSwitchRole} disabled={isSwitchingRole}>
+                                            {isSwitchingRole ? '전환 중...' : '관전자로 전환'}
+                                        </button>
+                                    ) : (
+                                        <button className="switch-role-btn" onClick={handleSwitchRole} disabled={isRoomFull || isSwitchingRole}>
+                                            {isSwitchingRole ? '전환 중...' : isRoomFull ? '방이 가득 참' : '참가자로 전환'}
+                                        </button>
+                                    )}
+                                </>
                             ) : isPlayer ? (
                                 <>
                                     <button className={`ready-btn ${currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? 'ready' : ''}`} onClick={handleReady}>
                                         <FaUsers />{currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? '준비 완료' : '준비'}
                                     </button>
-                                    <button className="switch-role-btn" onClick={handleSwitchRole}>
-                                        관전자로 전환
+                                    <button className="switch-role-btn" onClick={handleSwitchRole} disabled={isSwitchingRole}>
+                                        {isSwitchingRole ? '전환 중...' : '관전자로 전환'}
                                     </button>
                                 </>
                             ) : isSpectator ? (
-                                <button className="switch-role-btn" onClick={handleSwitchRole} disabled={isRoomFull}>
-                                    {isRoomFull ? '방이 가득 참' : '참가자로 전환'}
+                                <button className="switch-role-btn" onClick={handleSwitchRole} disabled={isRoomFull || isSwitchingRole}>
+                                    {isSwitchingRole ? '전환 중...' : isRoomFull ? '방이 가득 참' : '참가자로 전환'}
                                 </button>
                             ) : null}
                         </div>
