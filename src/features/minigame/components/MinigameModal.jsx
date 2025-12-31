@@ -162,16 +162,22 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             }
         };
         const onJoinResult = (result) => {
-            if (result.success) {
-                console.log('방 입장 성공:', result);
-            } else {
-                console.error('방 입장 실패:', result.error);
-                alert(`게임 방 입장에 실패했습니다: ${result.error}`);
+            console.log('joinResult received:', result);
+
+            // success가 명시적으로 false인 경우에만 에러 처리
+            if (result.success === false) {
+                const errorMsg = result.error || result.message || '알 수 없는 오류';
+                console.error('방 입장 실패:', errorMsg);
+                alert(`게임 방 입장에 실패했습니다: ${errorMsg}`);
+
                 // 방 목록에서 해당 방 제거 (서버에 존재하지 않는 방)
-                if (result.error && result.error.includes('not found')) {
+                if (errorMsg.includes('not found')) {
                     setRooms(prev => prev.filter(r => r.roomId !== result.roomId));
                 }
+            } else if (result.success === true) {
+                console.log('방 입장 성공:', result);
             }
+            // success가 undefined인 경우는 무시 (다른 타입의 이벤트일 수 있음)
         };
         minigameService.on('roomUpdate', onRoomUpdate);
         minigameService.on('roomJoin', onRoomJoin);
