@@ -85,7 +85,7 @@ public class MinigameRoomService {
     }
 
     /**
-     * 방 입장
+     * 방 입장 (참가자 또는 관전자로)
      */
     public MinigameRoomDto joinRoom(String roomId, MinigamePlayerDto player) {
         MinigameRoomDto room = rooms.get(roomId);
@@ -94,9 +94,12 @@ public class MinigameRoomService {
             return null;
         }
 
-        // If already in room, return existing room without changing counts
-        boolean alreadyIn = room.getPlayers().stream().anyMatch(p -> p.getUserId().equals(player.getUserId()));
-        if (alreadyIn) {
+        // 이미 플레이어로 있는지 확인
+        boolean alreadyPlayer = room.getPlayers().stream().anyMatch(p -> p.getUserId().equals(player.getUserId()));
+        // 이미 관전자로 있는지 확인
+        boolean alreadySpectator = room.getSpectators().stream().anyMatch(p -> p.getUserId().equals(player.getUserId()));
+
+        if (alreadyPlayer || alreadySpectator) {
             log.info("플레이어 {}는 이미 방에 있습니다: {}", player.getUsername(), roomId);
             return room;
         }
@@ -105,16 +108,19 @@ public class MinigameRoomService {
                 roomId, room.getCurrentPlayers(), room.getMaxPlayers(),
                 room.getPlayers().stream().map(p -> p.getUserId()).toList());
 
+        // 참가 인원이 가득 찬 경우 관전자로 입장
         if (room.getCurrentPlayers() >= room.getMaxPlayers()) {
-            log.warn("방이 가득 찼습니다: {} (현재 {}/{})", roomId, room.getCurrentPlayers(), room.getMaxPlayers());
-            return null;
+            room.getSpectators().add(player);
+            log.info("플레이어 {} 관전자로 입장: {} (관전자 수: {})",
+                    player.getUsername(), roomId, room.getSpectators().size());
+        } else {
+            // 참가자로 입장
+            room.getPlayers().add(player);
+            room.setCurrentPlayers(room.getCurrentPlayers() + 1);
+            log.info("플레이어 {} 참가자로 입장: {} (현재 {}/{})",
+                    player.getUsername(), roomId, room.getCurrentPlayers(), room.getMaxPlayers());
         }
 
-        room.getPlayers().add(player);
-        room.setCurrentPlayers(room.getCurrentPlayers() + 1);
-
-        log.info("플레이어 {} 방 입장: {} (현재 {}/{})", player.getUsername(), roomId, room.getCurrentPlayers(),
-                room.getMaxPlayers());
         return room;
     }
 
@@ -127,8 +133,17 @@ public class MinigameRoomService {
             return null;
         }
 
-        room.getPlayers().removeIf(p -> p.getUserId().equals(userId));
-        room.setCurrentPlayers(room.getPlayers().size());
+        // 참가자 목록에서 제거
+        boolean wasPlayer = room.getPlayers().removeIf(p -> p.getUserId().equals(userId));
+        // 관전자 목록에서 제거
+        boolean wasSpectator = room.getSpectators().removeIf(p -> p.getUserId().equals(userId));
+
+        if (wasPlayer) {
+            room.setCurrentPlayers(room.getPlayers().size());
+            log.info("참가자 {} 방 나가기: {} (현재 {}/{})", userId, roomId, room.getCurrentPlayers(), room.getMaxPlayers());
+        } else if (wasSpectator) {
+            log.info("관전자 {} 방 나가기: {} (관전자 수: {})", userId, roomId, room.getSpectators().size());
+        }
 
         // 방장이 나갔을 때
         if (room.getHostId().equals(userId)) {
@@ -147,7 +162,6 @@ public class MinigameRoomService {
             }
         }
 
-        log.info("플레이어 {} 방 나가기: {}", userId, roomId);
         return room;
     }
 
