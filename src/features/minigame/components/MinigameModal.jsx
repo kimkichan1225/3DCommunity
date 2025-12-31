@@ -5,7 +5,6 @@ import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen } from
 import friendService from '../../../services/friendService';
 import minigameService from '../../../services/minigameService';
 import AimingGame from './AimingGame';
-import ReactionRace from './ReactionRace';
 import OmokGame from './OmokGame';
 
 function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby', initialRoomId = null }) {
@@ -16,7 +15,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [isLoadingFriends, setIsLoadingFriends] = useState(true);
     const [showFriendInviteModal, setShowFriendInviteModal] = useState(false);
     const [inviteNotification, setInviteNotification] = useState(null);
-    const [roomForm, setRoomForm] = useState({ roomName: '', gameType: '오목', maxPlayers: 4, isPrivate: false });
+    const [roomForm, setRoomForm] = useState({ roomName: '', gameType: '오목', maxPlayers: 2, isPrivate: false });
     const [pendingRoomId, setPendingRoomId] = useState(initialRoomId);
     const [isEditingRoomSettings, setIsEditingRoomSettings] = useState(false);
     const [roomChatInput, setRoomChatInput] = useState('');
@@ -26,7 +25,6 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
         { id: 'word', name: '끝말잇기', image: '/resources/GameIllust/Word.png', maxPlayers: [2, 4, 6, 8] },
         { id: 'aim', name: '에임 맞추기', image: '/resources/GameIllust/Aim.png', maxPlayers: [2, 4] },
-        { id: 'reaction', name: 'Reaction Race', image: '/resources/GameIllust/Reaction.png', maxPlayers: [2, 4, 6, 8] },
         { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png', maxPlayers: [2, 4, 6] }
     ];
 
@@ -134,7 +132,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     const handleRoomClick = (room) => {
         if (room.isLocked) return alert('비공개 방입니다.');
-        if (room.currentPlayers >= room.maxPlayers) return alert('방이 가득 찼습니다.');
+        // 방이 가득 차도 관전자로 입장 가능
         minigameService.joinRoom(room.roomId, userProfile?.level || 1, userProfile.selectedProfile?.imagePath || null, userProfile.selectedOutline?.imagePath || null);
     };
     const handleCreateRoom = () => setCurrentView('create');
@@ -182,7 +180,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     onGameEnd={() => setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null))}
                 />;
             }
-            if (currentRoom.gameName === '에임 맞추기' || currentRoom.gameName === 'Reaction Race') {
+            if (currentRoom.gameName === '에임 맞추기') {
                 return <AimingGame
                     roomId={currentRoom.roomId}
                     isHost={isHost}
@@ -210,9 +208,58 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             case 'waiting':
                 return (
                     <div className="waiting-room">
-                        <div className="waiting-room-info"><div className="waiting-room-info-left"><div className="info-item"><FaGamepad /><span>게임: {currentRoom?.gameName}</span></div><div className="info-item"><FaCrown /><span>방장: {currentRoom?.hostName}</span></div></div></div>
-                        <div className="waiting-room-section"><h3>참가 인원 ({currentRoom?.players?.length || 0}/{currentRoom?.maxPlayers})</h3><div className="players-grid">{currentRoom?.players?.map((p) => (<div key={p.userId} className={`player-card ${p.ready ? 'ready' : ''}`}><ProfileAvatar profileImage={formatProfileImage(p.selectedProfile)} outlineImage={formatOutlineImage(p.selectedOutline)} size={50} /><div className="player-info"><div className="player-name">{p.host && <FaCrown className="host-icon" />}{p.username}</div><div className="player-level">Lv. {p.level}</div></div>{!p.host && (<div className={`player-ready-badge ${p.ready ? 'ready' : 'waiting'}`}>{p.ready ? '✓ 준비' : '대기'}</div>)}</div>))}</div></div>
-                        <div className="waiting-room-actions"><button className="invite-friend-btn" onClick={handleInviteFriend}><FaPlus /> 친구 초대</button>{isHost ? (<button className="game-start-btn" onClick={handleGameStart}><FaGamepad /> 게임 시작</button>) : (<button className={`ready-btn ${currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? 'ready' : ''}`} onClick={handleReady}><FaUsers />{currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? '준비 완료' : '준비'}</button>)}</div>
+                        <div className="waiting-room-info">
+                            <div className="waiting-room-info-left">
+                                <div className="info-item"><FaGamepad /><span>게임: {currentRoom?.gameName}</span></div>
+                                <div className="info-item"><FaCrown /><span>방장: {currentRoom?.hostName}</span></div>
+                            </div>
+                        </div>
+                        <div className="waiting-room-section">
+                            <h3>참가 인원 ({currentRoom?.players?.length || 0}/{currentRoom?.maxPlayers})</h3>
+                            <div className="players-grid">
+                                {currentRoom?.players?.map((p) => (
+                                    <div key={p.userId} className={`player-card ${p.ready ? 'ready' : ''}`}>
+                                        <ProfileAvatar profileImage={formatProfileImage(p.selectedProfile)} outlineImage={formatOutlineImage(p.selectedOutline)} size={50} />
+                                        <div className="player-info">
+                                            <div className="player-name">{p.host && <FaCrown className="host-icon" />}{p.username}</div>
+                                            <div className="player-level">Lv. {p.level}</div>
+                                        </div>
+                                        {!p.host && (
+                                            <div className={`player-ready-badge ${p.ready ? 'ready' : 'waiting'}`}>
+                                                {p.ready ? '✓ 준비' : '대기'}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        {currentRoom?.spectators && currentRoom.spectators.length > 0 && (
+                            <div className="waiting-room-section">
+                                <h3>관전자 ({currentRoom.spectators.length}명)</h3>
+                                <div className="players-grid">
+                                    {currentRoom.spectators.map((s) => (
+                                        <div key={s.userId} className="player-card spectator">
+                                            <ProfileAvatar profileImage={formatProfileImage(s.selectedProfile)} outlineImage={formatOutlineImage(s.selectedOutline)} size={50} />
+                                            <div className="player-info">
+                                                <div className="player-name">{s.username}</div>
+                                                <div className="player-level">Lv. {s.level}</div>
+                                            </div>
+                                            <div className="spectator-badge">관전</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div className="waiting-room-actions">
+                            <button className="invite-friend-btn" onClick={handleInviteFriend}><FaPlus /> 친구 초대</button>
+                            {isHost ? (
+                                <button className="game-start-btn" onClick={handleGameStart}><FaGamepad /> 게임 시작</button>
+                            ) : (
+                                <button className={`ready-btn ${currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? 'ready' : ''}`} onClick={handleReady}>
+                                    <FaUsers />{currentRoom?.players?.find(p => p.userId === userProfile.id)?.ready ? '준비 완료' : '준비'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 );
             case 'lobby':
@@ -221,8 +268,28 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     <div className="minigame-room-list">
                         {rooms.map((room) => (
                             <div key={room.roomId} className={`room-item ${room.isPlaying ? 'playing' : ''} ${room.currentPlayers >= room.maxPlayers ? 'full' : ''}`} onClick={() => handleRoomClick(room)}>
-                                <div className="room-header"><div className="room-title">{room.isLocked && <FaLock className="room-lock-icon" />}<h3>{room.roomName}</h3></div><div className="room-status">{room.isPlaying ? <span className="status-badge playing">게임 중</span> : <span className="status-badge waiting">대기 중</span>}</div></div>
-                                <div className="room-info"><div className="room-game"><FaGamepad /><span>{room.gameName}</span></div><div className="room-host"><FaCrown /><span>{room.hostName}</span></div><div className="room-players"><FaUsers /><span>{room.currentPlayers}/{room.maxPlayers}</span></div></div>
+                                <div className="room-header">
+                                    <div className="room-title">
+                                        {room.isLocked && <FaLock className="room-lock-icon" />}
+                                        <h3>{room.roomName}</h3>
+                                    </div>
+                                    <div className="room-status">
+                                        {room.isPlaying ? <span className="status-badge playing">게임 중</span> : <span className="status-badge waiting">대기 중</span>}
+                                    </div>
+                                </div>
+                                <div className="room-info">
+                                    <div className="room-game"><FaGamepad /><span>{room.gameName}</span></div>
+                                    <div className="room-host"><FaCrown /><span>{room.hostName}</span></div>
+                                    <div className="room-players">
+                                        <FaUsers />
+                                        <span>{room.currentPlayers}/{room.maxPlayers}</span>
+                                        {room.spectators && room.spectators.length > 0 && (
+                                            <span style={{ marginLeft: '8px', color: '#888', fontSize: '12px' }}>
+                                                (관전 {room.spectators.length})
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>

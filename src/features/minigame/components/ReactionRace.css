@@ -1,5 +1,0 @@
-.reaction-overlay { position: fixed; left:0; top:0; right:0; bottom:0; z-index: 10000; display:flex; align-items:center; justify-content:center; pointer-events:auto; }
-.reaction-box { background: rgba(0,0,0,0.6); color: white; padding: 20px 30px; border-radius: 8px; text-align:center; }
-.reaction-message { font-size: 24px; margin-bottom: 12px; }
-.reaction-start { padding: 8px 12px; font-size: 16px; }
-.reaction-winner { margin-top: 8px; font-weight:bold; }
