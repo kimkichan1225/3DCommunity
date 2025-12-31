@@ -1368,7 +1368,7 @@
 .game-spectator-info {
   position: absolute;
   top: 20px;
-  right: 20px;
+  left: 20px;
   background: white;
   color: #2d3748;
   padding: 12px 18px;

@@ -4,8 +4,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 30px;
+  gap: 15px;
+  padding: 20px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
@@ -16,29 +16,29 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 30px;
+  padding: 15px 20px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(0, 0, 0, 0.05);
+  gap: 20px;
 }
 
 .omok-player-info {
   display: flex;
   align-items: center;
-  gap: 30px;
-  flex: 1;
+  gap: 20px;
 }
 
 .omok-player-1,
 .omok-player-2 {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   font-weight: 600;
-  font-size: 1.1em;
+  font-size: 1em;
   color: #2d3748;
-  padding: 10px 16px;
+  padding: 8px 12px;
   background: #f7fafc;
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -51,7 +51,7 @@
 }
 
 .omok-player-symbol {
-  font-size: 2em;
+  font-size: 1.6em;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
@@ -74,12 +74,13 @@
 .omok-turn-indicator {
   background: #e2e8f0;
   color: #4a5568;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 50px;
   font-weight: 600;
-  font-size: 0.95em;
+  font-size: 0.9em;
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  white-space: nowrap;
 }
 
 .omok-turn-indicator.active {
@@ -96,8 +97,8 @@
   justify-content: center;
   align-items: center;
   flex: 1;
-  min-height: 500px;
-  padding: 20px;
+  padding: 10px;
+  overflow: hidden;
 }
 
 .omok-board {
@@ -106,10 +107,11 @@
   grid-template-rows: repeat(15, 1fr);
   gap: 0;
   width: 100%;
-  max-width: 650px;
+  max-width: 550px;
+  max-height: 550px;
   aspect-ratio: 1;
   background: linear-gradient(135deg, #f9e4b7 0%, #f5d9a0 100%);
-  padding: 15px;
+  padding: 12px;
   border-radius: 12px;
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.15),
@@ -293,23 +295,31 @@
 /* 반응형 */
 @media (max-width: 768px) {
   .omok-game-wrapper {
-    padding: 20px;
-    gap: 15px;
+    padding: 15px;
+    gap: 10px;
   }
 
   .omok-board {
-    max-width: 450px;
+    max-width: 400px;
+    max-height: 400px;
   }
 
   .omok-game-header {
     flex-direction: column;
-    gap: 15px;
-    padding: 15px;
+    gap: 12px;
+    padding: 12px;
   }
 
   .omok-player-info {
     flex-direction: column;
     width: 100%;
+    gap: 10px;
+  }
+
+  .omok-player-1,
+  .omok-player-2 {
+    width: 100%;
+    justify-content: center;
   }
 
   .omok-result-content {
