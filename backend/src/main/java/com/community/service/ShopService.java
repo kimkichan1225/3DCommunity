@@ -242,8 +242,16 @@ public class ShopService {
                     .build();
         }
 
-        // 중복 구매 확인
-        if (userInventoryRepository.existsByUserIdAndShopItemId(userId, request.getShopItemId())) {
+        // 닉네임 변경권 여부 확인 (중복 구매 체크 전에)
+        boolean isNicknameTicket = shopItem.getItemType() == ShopItem.ItemType.NICKNAME_TICKET ||
+                                   (shopItem.getName() != null && shopItem.getName().contains("닉네임 변경권"));
+
+        System.out.println("🔍 구매 아이템: " + shopItem.getName() +
+                           " | ItemType: " + shopItem.getItemType() +
+                           " | isNicknameTicket: " + isNicknameTicket);
+
+        // 중복 구매 확인 (닉네임 변경권은 제외 - 여러 번 구매 가능)
+        if (!isNicknameTicket && userInventoryRepository.existsByUserIdAndShopItemId(userId, request.getShopItemId())) {
             return PurchaseResponse.builder()
                     .success(false)
                     .message("You already own this item")
@@ -298,60 +306,59 @@ public class ShopService {
             user.setSilverCoins(user.getSilverCoins() - price);
         }
 
-        userRepository.save(user);
-
-        // 인벤토리에 추가
-        UserInventory inventory = new UserInventory();
-        inventory.setUser(user);
-        inventory.setShopItem(shopItem);
-        inventory.setPurchasedAt(LocalDateTime.now());
-        inventory.setIsEquipped(request.getAutoEquip());
-        inventory.setIsNew(true);
-        inventory.setViewedAt(null);
-
-        UserInventory savedInventory = userInventoryRepository.save(inventory);
-
-        // 아바타 구매 시 자동으로 해당 프로필 이미지 해금
-        if (shopItem.getCategory() != null && "AVATAR".equals(shopItem.getCategory().getName())) {
-            // modelUrl에서 아바타 이름 추출 (예: "/resources/.../Soldier_Male.gltf" -> "Soldier_Male")
-            String avatarName = extractAvatarNameFromModelUrl(shopItem.getModelUrl());
-            if (avatarName != null) {
-                profileItemService.unlockProfileItemByAvatarName(userId, avatarName);
-            } else {
-                System.err.println("⚠️ modelUrl에서 아바타 이름 추출 실패: " + shopItem.getModelUrl());
-            }
-        }
-
-        // 테두리 구매 시 자동으로 해당 프로필 테두리 해금
-        if (shopItem.getItemType() == ShopItem.ItemType.OUTLINE) {
-            // imageUrl에서 테두리 이름 추출 (예: "/resources/ProfileOutline/rainbow-outline.png" -> "rainbow-outline")
-            String outlineName = extractOutlineNameFromImageUrl(shopItem.getImageUrl());
-            if (outlineName != null) {
-                profileItemService.unlockProfileItemByOutlineName(userId, outlineName);
-            } else {
-                System.err.println("⚠️ imageUrl에서 테두리 이름 추출 실패: " + shopItem.getImageUrl());
-            }
-        }
-
         // 닉네임 변경권 구매 시 자동으로 nicknameChangesRemaining 증가
-        // 아이템 타입이 NICKNAME_TICKET이거나, 이름에 "닉네임 변경권"이 포함된 경우
-        boolean isNicknameTicket = shopItem.getItemType() == ShopItem.ItemType.NICKNAME_TICKET ||
-                                   (shopItem.getName() != null && shopItem.getName().contains("닉네임 변경권"));
-
         if (isNicknameTicket) {
             Integer currentChanges = user.getNicknameChangesRemaining();
             if (currentChanges == null) {
                 currentChanges = 0;
             }
             user.setNicknameChangesRemaining(currentChanges + 1);
-            userRepository.save(user);
             System.out.println("✅ 닉네임 변경권 구매 완료 - 사용자: " + userId + ", 남은 횟수: " + user.getNicknameChangesRemaining());
+        }
+
+        userRepository.save(user);
+
+        // 닉네임 변경권은 인벤토리에 추가하지 않음 (소비 아이템)
+        UserInventory savedInventory = null;
+        if (!isNicknameTicket) {
+            // 인벤토리에 추가
+            UserInventory inventory = new UserInventory();
+            inventory.setUser(user);
+            inventory.setShopItem(shopItem);
+            inventory.setPurchasedAt(LocalDateTime.now());
+            inventory.setIsEquipped(request.getAutoEquip());
+            inventory.setIsNew(true);
+            inventory.setViewedAt(null);
+
+            savedInventory = userInventoryRepository.save(inventory);
+
+            // 아바타 구매 시 자동으로 해당 프로필 이미지 해금
+            if (shopItem.getCategory() != null && "AVATAR".equals(shopItem.getCategory().getName())) {
+                // modelUrl에서 아바타 이름 추출 (예: "/resources/.../Soldier_Male.gltf" -> "Soldier_Male")
+                String avatarName = extractAvatarNameFromModelUrl(shopItem.getModelUrl());
+                if (avatarName != null) {
+                    profileItemService.unlockProfileItemByAvatarName(userId, avatarName);
+                } else {
+                    System.err.println("⚠️ modelUrl에서 아바타 이름 추출 실패: " + shopItem.getModelUrl());
+                }
+            }
+
+            // 테두리 구매 시 자동으로 해당 프로필 테두리 해금
+            if (shopItem.getItemType() == ShopItem.ItemType.OUTLINE) {
+                // imageUrl에서 테두리 이름 추출 (예: "/resources/ProfileOutline/rainbow-outline.png" -> "rainbow-outline")
+                String outlineName = extractOutlineNameFromImageUrl(shopItem.getImageUrl());
+                if (outlineName != null) {
+                    profileItemService.unlockProfileItemByOutlineName(userId, outlineName);
+                } else {
+                    System.err.println("⚠️ imageUrl에서 테두리 이름 추출 실패: " + shopItem.getImageUrl());
+                }
+            }
         }
 
         return PurchaseResponse.builder()
                 .success(true)
                 .message("Purchase successful")
-                .purchasedItem(convertToInventoryDTO(savedInventory))
+                .purchasedItem(savedInventory != null ? convertToInventoryDTO(savedInventory) : null)
                 .remainingSilverCoins(user.getSilverCoins())
                 .remainingGoldCoins(user.getGoldCoins())
                 .build();
