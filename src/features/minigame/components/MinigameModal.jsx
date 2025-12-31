@@ -79,8 +79,21 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         if (!minigameService.connected) {
             minigameService.connect(userProfile?.id || 'guest', userProfile?.username || '게스트');
         }
-        const onRoomsList = (roomsList) => setRooms(roomsList || []);
+        const onRoomsList = (roomsList) => {
+            console.log('Received rooms list:', roomsList);
+            setRooms(roomsList || []);
+        };
+        const onRoomDelete = (deleteData) => {
+            console.log('Room deleted:', deleteData);
+            setRooms(prev => prev.filter(r => r.roomId !== deleteData.roomId));
+            // 현재 방이 삭제된 경우
+            if (currentRoom?.roomId === deleteData.roomId) {
+                setCurrentRoom(null);
+                setCurrentView('lobby');
+            }
+        };
         minigameService.on('roomsList', onRoomsList);
+        minigameService.on('roomDelete', onRoomDelete);
         const handleBeforeUnload = () => {
             if (minigameService.currentRoomId) {
                 minigameService.leaveRoom(minigameService.currentRoomId);
@@ -89,9 +102,10 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => {
             minigameService.off('roomsList', onRoomsList);
+            minigameService.off('roomDelete', onRoomDelete);
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
-    }, [userProfile]);
+    }, [userProfile, currentRoom]);
 
     useEffect(() => {
         const onRoomUpdate = (roomData) => {
@@ -109,8 +123,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     // 새로운 방 추가
                     return [...prev, roomData];
                 } else {
-                    // 알 수 없는 방 (create action 없이 들어온 경우) - 추가
-                    return [...prev, roomData];
+                    // action이 'create'가 아니고 방이 존재하지 않으면 추가하지 않음
+                    console.warn('Unknown room update without create action:', roomData);
+                    return prev;
                 }
             });
 
@@ -146,15 +161,29 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 setRoomChatMessages(prev => [...prev, chatData]);
             }
         };
+        const onJoinResult = (result) => {
+            if (result.success) {
+                console.log('방 입장 성공:', result);
+            } else {
+                console.error('방 입장 실패:', result.error);
+                alert(`게임 방 입장에 실패했습니다: ${result.error}`);
+                // 방 목록에서 해당 방 제거 (서버에 존재하지 않는 방)
+                if (result.error && result.error.includes('not found')) {
+                    setRooms(prev => prev.filter(r => r.roomId !== result.roomId));
+                }
+            }
+        };
         minigameService.on('roomUpdate', onRoomUpdate);
         minigameService.on('roomJoin', onRoomJoin);
         minigameService.on('gameEvent', onGameEvent);
         minigameService.on('roomChat', onRoomChat);
+        minigameService.on('joinResult', onJoinResult);
         return () => {
             minigameService.off('roomUpdate', onRoomUpdate);
             minigameService.off('roomJoin', onRoomJoin);
             minigameService.off('gameEvent', onGameEvent);
             minigameService.off('roomChat', onRoomChat);
+            minigameService.off('joinResult', onJoinResult);
         };
     }, [currentRoom, userProfile]);
 
