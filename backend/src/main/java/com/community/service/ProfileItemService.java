@@ -545,6 +545,73 @@ public class ProfileItemService {
     }
 
     /**
+     * 닉네임 변경권 구매 (SHOP_PURCHASE 타입 ProfileItem)
+     */
+    @Transactional
+    public void purchaseNicknameTicket(Long userId, Long profileItemId) {
+        // 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        // ProfileItem 조회
+        ProfileItem item = profileItemRepository.findById(profileItemId)
+                .orElseThrow(() -> new RuntimeException("아이템을 찾을 수 없습니다."));
+
+        // NICKNAME_TICKET 타입인지 확인
+        if (item.getItemType() != ItemType.NICKNAME_TICKET) {
+            throw new RuntimeException("닉네임 변경권이 아닙니다.");
+        }
+
+        // SHOP_PURCHASE 조건인지 확인
+        if (item.getUnlockConditionType() != UnlockConditionType.SHOP_PURCHASE) {
+            throw new RuntimeException("구매할 수 없는 아이템입니다.");
+        }
+
+        // 가격 정보 추출 (unlockConditionValue에서 가격 정보를 가져옴)
+        // JSON 형식: {"value": "100", "description": "은화 100개로 구매"}
+        int price = 100; // 기본 가격
+        String currencyType = "SILVER"; // 기본 화폐
+
+        try {
+            if (item.getUnlockConditionValue() != null && !item.getUnlockConditionValue().isEmpty()) {
+                org.json.JSONObject json = new org.json.JSONObject(item.getUnlockConditionValue());
+                if (json.has("value")) {
+                    price = Integer.parseInt(json.getString("value"));
+                }
+                if (json.has("currencyType")) {
+                    currencyType = json.getString("currencyType");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("가격 정보 파싱 실패, 기본값 사용: " + e.getMessage());
+        }
+
+        // 재화 확인 및 차감
+        if ("GOLD".equalsIgnoreCase(currencyType)) {
+            if (user.getGoldCoins() == null || user.getGoldCoins() < price) {
+                throw new RuntimeException("금화가 부족합니다.");
+            }
+            user.setGoldCoins(user.getGoldCoins() - price);
+        } else {
+            if (user.getSilverCoins() == null || user.getSilverCoins() < price) {
+                throw new RuntimeException("은화가 부족합니다.");
+            }
+            user.setSilverCoins(user.getSilverCoins() - price);
+        }
+
+        // 닉네임 변경 횟수 증가
+        Integer currentChanges = user.getNicknameChangesRemaining();
+        if (currentChanges == null) {
+            currentChanges = 0;
+        }
+        user.setNicknameChangesRemaining(currentChanges + 1);
+
+        userRepository.save(user);
+
+        System.out.println("✅ 닉네임 변경권 구매 완료 - 사용자: " + userId + ", 남은 횟수: " + user.getNicknameChangesRemaining());
+    }
+
+    /**
      * modelUrl에서 아바타 이름 추출
      * 예: "/resources/Ultimate Animated Character Pack - Nov 2019/glTF/Soldier_Male.gltf" -> "Soldier Male"
      */
