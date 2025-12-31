@@ -68,6 +68,24 @@ public class ProfileController {
                         return newProfile;
                     });
 
+            // 사용자명 업데이트
+            if (updates.containsKey("username")) {
+                String newUsername = (String) updates.get("username");
+
+                // 사용자명 중복 확인 (현재 사용자 제외)
+                if (!newUsername.equals(currentUser.getUsername())) {
+                    boolean exists = userRepository.findByUsername(newUsername).isPresent();
+                    if (exists) {
+                        Map<String, String> error = new HashMap<>();
+                        error.put("message", "이미 사용 중인 닉네임입니다.");
+                        return ResponseEntity.badRequest().body(error);
+                    }
+                }
+
+                currentUser.setUsername(newUsername);
+                userRepository.save(currentUser);
+            }
+
             // 상태 메시지 업데이트
             if (updates.containsKey("statusMessage")) {
                 profile.setStatusMessage((String) updates.get("statusMessage"));
@@ -87,7 +105,7 @@ public class ProfileController {
 
             Map<String, Object> response = new HashMap<>();
             response.put("id", currentUser.getId());
-            response.put("nickname", currentUser.getNickname());
+            response.put("username", currentUser.getUsername());
             response.put("level", profile.getLevel());
             response.put("statusMessage", profile.getStatusMessage());
             response.put("selectedProfile", profile.getSelectedProfile());

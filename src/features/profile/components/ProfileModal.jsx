@@ -13,9 +13,10 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [editedData, setEditedData] = useState({
     username: '',
-    statusMessage: '',
-    profileImage: ''
+    statusMessage: ''
   });
+  const [usernameError, setUsernameError] = useState('');
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
   useEffect(() => {
     // Supabase에서 유저 프로필 데이터 가져오기
@@ -26,8 +27,7 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
         setUserData(profile);
         setEditedData({
           username: profile.username || '',
-          statusMessage: profile.statusMessage || '',
-          profileImage: profile.profileImage || ''
+          statusMessage: profile.statusMessage || ''
         });
       } catch (error) {
         console.error('프로필 로드 실패:', error);
@@ -37,8 +37,7 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
           setUserData(user);
           setEditedData({
             username: user.username || '',
-            statusMessage: user.statusMessage || '',
-            profileImage: user.profileImage || ''
+            statusMessage: user.statusMessage || ''
           });
         }
       } finally {
@@ -51,27 +50,72 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
 
   const handleEdit = () => {
     setIsEditing(true);
+    setUsernameError('');
+  };
+
+  // 사용자명 변경 핸들러 (중복 확인 포함)
+  const handleUsernameChange = async (newUsername) => {
+    setEditedData({ ...editedData, username: newUsername });
+    setUsernameError('');
+
+    // 원래 사용자명과 같으면 중복 확인 안함
+    if (newUsername === userData.username) {
+      return;
+    }
+
+    // 빈 값이면 중복 확인 안함
+    if (!newUsername.trim()) {
+      return;
+    }
+
+    // 중복 확인
+    try {
+      setIsCheckingUsername(true);
+      const result = await authService.checkUsername(newUsername);
+      if (!result.available) {
+        setUsernameError('이미 사용 중인 닉네임입니다.');
+      }
+    } catch (error) {
+      console.error('닉네임 중복 확인 실패:', error);
+    } finally {
+      setIsCheckingUsername(false);
+    }
   };
 
   const handleSave = async () => {
+    // 닉네임 중복 확인 에러가 있으면 저장 불가
+    if (usernameError) {
+      alert('닉네임 중복을 확인해주세요.');
+      return;
+    }
+
+    // 닉네임이 비어있으면 저장 불가
+    if (!editedData.username.trim()) {
+      alert('닉네임을 입력해주세요.');
+      return;
+    }
+
     try {
       setIsLoading(true);
 
-      // Supabase를 통해 프로필 업데이트
+      // 프로필 업데이트 (username, statusMessage 전송)
       const updatedProfile = await profileService.updateProfile(userData.id, {
         username: editedData.username,
-        statusMessage: editedData.statusMessage,
-        profileImage: editedData.profileImage
+        statusMessage: editedData.statusMessage
       });
 
+      // 전체 프로필 데이터 새로고침
+      const fullProfile = await profileService.getCurrentUserProfile();
+
       // 상태 및 로컬 스토리지 업데이트
-      setUserData(updatedProfile);
-      localStorage.setItem('user', JSON.stringify(updatedProfile));
+      setUserData(fullProfile);
+      localStorage.setItem('user', JSON.stringify(fullProfile));
       setIsEditing(false);
       alert('프로필이 업데이트되었습니다.');
     } catch (error) {
       console.error('프로필 업데이트 실패:', error);
-      alert('프로필 업데이트에 실패했습니다: ' + error.message);
+      const errorMessage = error.response?.data?.message || error.message;
+      alert('프로필 업데이트에 실패했습니다: ' + errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -80,9 +124,9 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
   const handleCancel = () => {
     setEditedData({
       username: userData.username || '',
-      statusMessage: userData.statusMessage || '',
-      profileImage: userData.profileImage || ''
+      statusMessage: userData.statusMessage || ''
     });
+    setUsernameError('');
     setIsEditing(false);
   };
 
@@ -93,33 +137,6 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
     }
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      try {
-        setIsLoading(true);
-
-        // Supabase Storage에 이미지 업로드
-        const imageUrl = await profileService.uploadProfileImage(userData.id, file);
-        setEditedData({ ...editedData, profileImage: imageUrl });
-
-        alert('이미지가 업로드되었습니다.');
-      } catch (error) {
-        console.error('이미지 업로드 실패:', error);
-
-        // 업로드 실패 시 임시로 FileReader 사용
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setEditedData({ ...editedData, profileImage: reader.result });
-        };
-        reader.readAsDataURL(file);
-
-        alert('이미지 업로드에 실패했습니다. 임시로 미리보기만 표시됩니다.');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
 
   if (isLoading && !userData) {
     return (
@@ -213,12 +230,30 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
             <div className="profile-field">
               <label className="profile-label">사용자명</label>
               {isEditing ? (
-                <input
-                  type="text"
-                  className="profile-input"
-                  value={editedData.username}
-                  onChange={(e) => setEditedData({ ...editedData, username: e.target.value })}
-                />
+                <div>
+                  <input
+                    type="text"
+                    className="profile-input"
+                    value={editedData.username}
+                    onChange={(e) => handleUsernameChange(e.target.value)}
+                    placeholder="사용자명을 입력하세요"
+                  />
+                  {isCheckingUsername && (
+                    <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                      중복 확인 중...
+                    </p>
+                  )}
+                  {usernameError && (
+                    <p style={{ fontSize: '12px', color: '#ff4444', marginTop: '4px' }}>
+                      {usernameError}
+                    </p>
+                  )}
+                  {!usernameError && editedData.username && editedData.username !== userData.username && !isCheckingUsername && (
+                    <p style={{ fontSize: '12px', color: '#4CAF50', marginTop: '4px' }}>
+                      사용 가능한 닉네임입니다.
+                    </p>
+                  )}
+                </div>
               ) : (
                 <p className="profile-value">{userData.username}</p>
               )}
