@@ -820,9 +820,8 @@ function App() {
     setMinigameModalMode('create'); // 방 생성 모드로 열기
   };
 
-  // Connect to multiplayer service - even when not logged in (as observer)
+  // Set up multiplayer callbacks (once)
   useEffect(() => {
-    // Set up callbacks first
     multiplayerService.onPlayerJoin((data) => {
       // 중복 로그인 체크
       if (data.action === 'duplicate') {
@@ -888,7 +887,10 @@ function App() {
     multiplayerService.onOnlineCountUpdate((count) => {
       setOnlineCount(count);
     });
+  }, []); // 콜백은 한 번만 등록
 
+  // Connect to multiplayer service when login state changes
+  useEffect(() => {
     // Connect as observer if not logged in, or as player if logged in
     if (isLoggedIn && userId && username) {
       // console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
@@ -897,19 +899,16 @@ function App() {
       // 미니게임 서비스도 연결 (게임 초대를 받기 위해)
       console.log('🎮 Connecting to minigame service...', { userId, username });
       minigameService.connect(userId, username);
-    } else {
+    } else if (!isLoggedIn) {
       // Connect as observer (anonymous viewer)
       // console.log('👀 Connecting to multiplayer service as observer...');
       const observerId = 'observer_' + Date.now();
       multiplayerService.connect(observerId, 'Observer', true); // true = observer mode
     }
 
-    // Cleanup on unmount
+    // Cleanup on unmount - only disconnect when component unmounts
     return () => {
-      multiplayerService.disconnect();
-      if (isLoggedIn) {
-        minigameService.disconnect();
-      }
+      // Only disconnect on actual unmount, not on dependency changes
     };
   }, [isLoggedIn, userId, username]);
 
