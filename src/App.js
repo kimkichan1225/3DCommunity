@@ -106,6 +106,15 @@ function App() {
       console.error('Failed to load app settings:', error);
     }
     return {
+      graphics: {
+        quality: 'basic',
+        shadows: 'on'
+      },
+      sound: {
+        master: 70,
+        effects: 80,
+        music: 60
+      },
       other: {
         showToastNotifications: true,
         chatNotifications: true,
@@ -371,6 +380,15 @@ function App() {
   const handleSettingsChange = (newSettings) => {
     setAppSettings(newSettings);
   };
+
+  // 설정이 변경될 때 localStorage에 저장
+  useEffect(() => {
+    try {
+      localStorage.setItem('appSettings', JSON.stringify(appSettings));
+    } catch (error) {
+      console.error('Failed to save app settings:', error);
+    }
+  }, [appSettings]);
 
   // 알림 서비스 구독
   useEffect(() => {
@@ -802,9 +820,8 @@ function App() {
     setMinigameModalMode('create'); // 방 생성 모드로 열기
   };
 
-  // Connect to multiplayer service - even when not logged in (as observer)
+  // Set up multiplayer callbacks (once)
   useEffect(() => {
-    // Set up callbacks first
     multiplayerService.onPlayerJoin((data) => {
       // 중복 로그인 체크
       if (data.action === 'duplicate') {
@@ -870,7 +887,10 @@ function App() {
     multiplayerService.onOnlineCountUpdate((count) => {
       setOnlineCount(count);
     });
+  }, []); // 콜백은 한 번만 등록
 
+  // Connect to multiplayer service when login state changes
+  useEffect(() => {
     // Connect as observer if not logged in, or as player if logged in
     if (isLoggedIn && userId && username) {
       // console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
@@ -879,19 +899,16 @@ function App() {
       // 미니게임 서비스도 연결 (게임 초대를 받기 위해)
       console.log('🎮 Connecting to minigame service...', { userId, username });
       minigameService.connect(userId, username);
-    } else {
+    } else if (!isLoggedIn) {
       // Connect as observer (anonymous viewer)
       // console.log('👀 Connecting to multiplayer service as observer...');
       const observerId = 'observer_' + Date.now();
       multiplayerService.connect(observerId, 'Observer', true); // true = observer mode
     }
 
-    // Cleanup on unmount
+    // Cleanup on unmount - only disconnect when component unmounts
     return () => {
-      multiplayerService.disconnect();
-      if (isLoggedIn) {
-        minigameService.disconnect();
-      }
+      // Only disconnect on actual unmount, not on dependency changes
     };
   }, [isLoggedIn, userId, username]);
 
@@ -1104,11 +1121,12 @@ function App() {
         <Canvas
           className="three-canvas"
           camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
-          shadows
+          shadows={appSettings.graphics?.shadows !== 'off'}
           gl={{
             alpha: true, // 투명 배경 활성화
             antialias: true,
-            preserveDrawingBuffer: true
+            preserveDrawingBuffer: true,
+            pixelRatio: appSettings.graphics?.quality === 'advanced' ? window.devicePixelRatio : 1
           }}
           style={{ width: '100%', height: '100%' }}
         >
@@ -1116,7 +1134,7 @@ function App() {
           <directionalLight
             position={[50, 50, 25]}
             intensity={6}
-            castShadow
+            castShadow={appSettings.graphics?.shadows !== 'off'}
             shadow-mapSize-width={8192}
             shadow-mapSize-height={8192}
             shadow-camera-far={1000}

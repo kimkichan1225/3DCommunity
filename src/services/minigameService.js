@@ -25,7 +25,10 @@ class MinigameService {
 
   connect(userId, username, timeoutMs = 10000) {
     // If already connected, resolve immediately
-    if (this.connected) return Promise.resolve();
+    if (this.connected && this.client && this.client.active) {
+      console.log('⚠️ Minigame already connected, skipping reconnect');
+      return Promise.resolve();
+    }
 
     this.userId = userId;
     this.username = username;
@@ -59,7 +62,6 @@ class MinigameService {
           // 방 목록 업데이트 구독
           this.client.subscribe('/topic/minigame/rooms', (message) => {
             const data = JSON.parse(message.body);
-            console.log('Room update:', data);
 
             if (data.action === 'create' || data.action === 'update' || data.action === 'join' || data.action === 'leave') {
               this.emit('roomUpdate', data);
@@ -71,21 +73,18 @@ class MinigameService {
           // 방 목록 전체 구독
           this.client.subscribe('/topic/minigame/rooms-list', (message) => {
             const data = JSON.parse(message.body);
-            console.log('Rooms list:', data);
             this.emit('roomsList', data);
           });
 
           // 개인 게임 초대 구독
           this.client.subscribe('/topic/minigame/invite/' + this.userId, (message) => {
             const data = JSON.parse(message.body);
-            console.log('Game invite received:', data);
             this.emit('gameInvite', data);
           });
 
           // 개인 입장 결과(ACK) 구독
           this.client.subscribe('/topic/minigame/joinResult/' + this.userId, (message) => {
             const data = JSON.parse(message.body);
-            console.log('Join result received:', data);
             this.emit('joinResult', data);
           });
 
@@ -161,7 +160,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('방 생성 요청:', payload);
   }
 
   /**
@@ -191,7 +189,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('방 입장 요청:', payload);
   }
 
   /**
@@ -205,21 +202,18 @@ class MinigameService {
     // 방 업데이트 구독
     this.client.subscribe('/topic/minigame/room/' + roomId, (message) => {
       const data = JSON.parse(message.body);
-      console.log('Room event:', data);
       this.emit('roomJoin', data); // Reuse roomJoin or add roomUpdate specific listener
     });
 
     // 방 채팅 구독
     this.client.subscribe('/topic/minigame/room/' + roomId + '/chat', (message) => {
       const data = JSON.parse(message.body);
-      console.log('Room chat:', data);
       this.emit('roomChat', data);
     });
 
     // 게임 이벤트(타겟 스폰, 점수 업데이트 등) 구독
     this.client.subscribe('/topic/minigame/room/' + roomId + '/game', (message) => {
       const data = JSON.parse(message.body);
-      console.log('Game event:', data);
       this.emit('gameEvent', data);
     });
   }
@@ -244,7 +238,6 @@ class MinigameService {
     });
 
     this.currentRoomId = null;
-    console.log('방 나가기 요청:', payload);
   }
 
   /**
@@ -267,7 +260,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('방 설정 변경 요청:', payload);
   }
 
   /**
@@ -289,7 +281,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('준비 상태 변경 요청:', payload);
   }
 
   /**
@@ -311,7 +302,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('역할 전환 요청:', payload);
   }
 
   /**
@@ -332,7 +322,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('게임 시작 요청:', payload);
   }
 
   /**
@@ -356,7 +345,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('채팅 메시지 전송:', payload);
   }
 
   /**
@@ -381,7 +369,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('게임 이벤트 전송:', payload);
   }
 
   /**
@@ -413,7 +400,6 @@ class MinigameService {
       destination: '/app/minigame.room.state',
       body: JSON.stringify(payload)
     });
-    console.log('게임 상태 요청 전송:', payload);
   }
 
   /**
@@ -439,7 +425,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('게임 초대 전송:', payload);
   }
 
   /**
