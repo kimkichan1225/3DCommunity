@@ -87,21 +87,18 @@ class MultiplayerService {
         // Subscribe to chat messages
         this.client.subscribe('/topic/chat', (message) => {
           const data = JSON.parse(message.body);
-          console.log('Chat message:', data);
           this.onChatMessageCallbacks.forEach(cb => cb?.(data));
         });
 
         // Subscribe to friend updates (친구 요청, 수락 등)
         this.client.subscribe('/topic/friend-updates/' + this.userId, (message) => {
           const data = JSON.parse(message.body);
-          console.log('Friend update:', data);
           this.onFriendUpdateCallbacks.forEach(cb => cb?.(data));
         });
 
         // Subscribe to DM messages
         this.client.subscribe('/topic/dm/' + this.userId, (message) => {
           const data = JSON.parse(message.body);
-          console.log('DM message received:', data);
           this.onDMMessageCallbacks.forEach(cb => cb?.(data));
         });
 

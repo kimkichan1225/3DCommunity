@@ -233,7 +233,6 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
     // 맵 밖으로 떨어진 경우 스폰 위치로 리스폰
     const currentPos = rigidBodyRef.current.translation();
     if (currentPos.y < -10) {
-      console.log('⚠️ 캐릭터가 맵 밖으로 떨어짐 - 리스폰');
       const [x, y, z] = initialPosition || [0, 5, 0];
       rigidBodyRef.current.setTranslation({ x, y, z }, true);
       rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -263,8 +262,6 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
 
       // Y velocity 설정 (점프!)
       rigidBodyRef.current.setLinvel({ x: currentVel.x, y: jumpPowerRef.current, z: currentVel.z }, true);
-
-      console.log('🚀 점프 시작! Y:', currentY.toFixed(2), 'jumpPower:', jumpPowerRef.current);
 
       // Jump 애니메이션 재생
       if (actions['Jump']) {
@@ -300,8 +297,6 @@ function Character({ characterRef, initialPosition, isMovementDisabled, username
 
       if (returnedToStart || touchedGround) {
         isJumpingRef.current = false;
-
-        console.log('🎯 착지! Y:', currentY.toFixed(2), returnedToStart ? '(원래 위치)' : '(바닥 감지)');
 
         // 착지 애니메이션 전환
         let landingAnim = 'Idle';
