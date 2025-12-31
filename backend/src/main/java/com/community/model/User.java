@@ -74,6 +74,10 @@ public class User implements UserDetails {
     @Column(name = "gold_coins")
     private Integer goldCoins = 0; // 유료 재화 (기본값: 0)
 
+    // 닉네임 변경 횟수
+    @Column(name = "nickname_changes_remaining")
+    private Integer nicknameChangesRemaining = 1; // 남은 닉네임 변경 횟수 (기본값: 1)
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

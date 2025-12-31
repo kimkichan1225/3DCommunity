@@ -17,6 +17,7 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
   });
   const [usernameError, setUsernameError] = useState('');
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [popup, setPopup] = useState(null); // { message, type: 'success' | 'error' }
 
   useEffect(() => {
     // Supabase에서 유저 프로필 데이터 가져오기
@@ -85,13 +86,19 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
   const handleSave = async () => {
     // 닉네임 중복 확인 에러가 있으면 저장 불가
     if (usernameError) {
-      alert('닉네임 중복을 확인해주세요.');
+      setPopup({ message: '닉네임 중복을 확인해주세요.', type: 'error' });
       return;
     }
 
     // 닉네임이 비어있으면 저장 불가
     if (!editedData.username.trim()) {
-      alert('닉네임을 입력해주세요.');
+      setPopup({ message: '닉네임을 입력해주세요.', type: 'error' });
+      return;
+    }
+
+    // 닉네임이 변경되었는데 변경 횟수가 없으면 저장 불가
+    if (editedData.username !== userData.username && (userData.nicknameChangesRemaining || 0) <= 0) {
+      setPopup({ message: '닉네임 변경 횟수를 모두 사용했습니다.', type: 'error' });
       return;
     }
 
@@ -111,11 +118,17 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
       setUserData(fullProfile);
       localStorage.setItem('user', JSON.stringify(fullProfile));
       setIsEditing(false);
-      alert('프로필이 업데이트되었습니다.');
+
+      // 부모 컴포넌트(App.js)에 프로필 업데이트 알림
+      if (onProfileUpdate) {
+        onProfileUpdate(fullProfile);
+      }
+
+      setPopup({ message: '프로필이 업데이트되었습니다.', type: 'success' });
     } catch (error) {
       console.error('프로필 업데이트 실패:', error);
       const errorMessage = error.response?.data?.message || error.message;
-      alert('프로필 업데이트에 실패했습니다: ' + errorMessage);
+      setPopup({ message: '프로필 업데이트에 실패했습니다: ' + errorMessage, type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -228,7 +241,17 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
           <div className="profile-info">
             {/* 사용자명 */}
             <div className="profile-field">
-              <label className="profile-label">사용자명</label>
+              <label className="profile-label">
+                사용자명
+                <span style={{
+                  marginLeft: '8px',
+                  fontSize: '11px',
+                  color: (userData.nicknameChangesRemaining || 0) > 0 ? '#888' : '#ff4444',
+                  fontWeight: 'normal'
+                }}>
+                  (변경 가능 횟수: {userData.nicknameChangesRemaining || 0}회)
+                </span>
+              </label>
               {isEditing ? (
                 <div>
                   <input
@@ -251,6 +274,11 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
                   {!usernameError && editedData.username && editedData.username !== userData.username && !isCheckingUsername && (
                     <p style={{ fontSize: '12px', color: '#4CAF50', marginTop: '4px' }}>
                       사용 가능한 닉네임입니다.
+                    </p>
+                  )}
+                  {editedData.username !== userData.username && (
+                    <p style={{ fontSize: '12px', color: '#ffa500', marginTop: '4px' }}>
+                      ⚠️ 닉네임 변경 시 남은 횟수가 차감됩니다. (현재: {userData.nicknameChangesRemaining || 0}회)
                     </p>
                   )}
                 </div>
@@ -314,6 +342,21 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
         </>
         )}
       </div>
+
+      {/* 팝업 메시지 */}
+      {popup && (
+        <div className="profile-popup-overlay" onClick={() => setPopup(null)}>
+          <div className={`profile-popup ${popup.type}`} onClick={(e) => e.stopPropagation()}>
+            <div className="profile-popup-icon">
+              {popup.type === 'success' ? '✓' : '✕'}
+            </div>
+            <div className="profile-popup-message">{popup.message}</div>
+            <button className="profile-popup-close" onClick={() => setPopup(null)}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

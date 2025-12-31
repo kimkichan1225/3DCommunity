@@ -43,6 +43,9 @@ public class ProfileController {
             response.put("selectedProfile", user.getSelectedProfile() != null ? user.getSelectedProfile().getImagePath() : null);
             response.put("selectedOutline", user.getSelectedOutline() != null ? user.getSelectedOutline().getImagePath() : null);
 
+            // 닉네임 변경 횟수 추가
+            response.put("nicknameChangesRemaining", user.getNicknameChangesRemaining() != null ? user.getNicknameChangesRemaining() : 1);
+
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
@@ -62,30 +65,55 @@ public class ProfileController {
         try {
             Long userId = currentUser.getId();
 
-            Profile profile = profileRepository.findByUserId(userId)
-                    .orElseGet(() -> {
-                        Profile newProfile = new Profile();
-                        newProfile.setUser(currentUser);
-                        newProfile.setLevel(1);
-                        return newProfile;
-                    });
+            // User 엔티티 다시 로드 (managed 상태로)
+            User managedUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+            // 기존 사용자의 nicknameChangesRemaining이 null인 경우 기본값 1로 초기화
+            if (managedUser.getNicknameChangesRemaining() == null) {
+                managedUser.setNicknameChangesRemaining(1);
+                userRepository.save(managedUser);
+            }
 
             // 사용자명 업데이트
             if (updates.containsKey("username")) {
                 String newUsername = (String) updates.get("username");
 
-                // 사용자명 중복 확인 (현재 사용자 제외)
-                if (!newUsername.equals(currentUser.getUsername())) {
+                // 사용자명이 실제로 변경되는 경우에만 검증
+                if (!newUsername.equals(managedUser.getUsername())) {
+                    // 닉네임 변경 횟수 확인
+                    Integer remainingChanges = managedUser.getNicknameChangesRemaining();
+                    if (remainingChanges == null || remainingChanges <= 0) {
+                        Map<String, String> error = new HashMap<>();
+                        error.put("message", "닉네임 변경 횟수를 모두 사용했습니다.");
+                        return ResponseEntity.badRequest().body(error);
+                    }
+
+                    // 사용자명 중복 확인
                     boolean exists = userRepository.findByUsername(newUsername).isPresent();
                     if (exists) {
                         Map<String, String> error = new HashMap<>();
                         error.put("message", "이미 사용 중인 닉네임입니다.");
                         return ResponseEntity.badRequest().body(error);
                     }
+
+                    // 닉네임 변경 및 횟수 차감
+                    managedUser.setUsername(newUsername);
+                    managedUser.setNicknameChangesRemaining(remainingChanges - 1);
                 }
 
-                currentUser.setUsername(newUsername);
-                userRepository.save(currentUser);
+                userRepository.save(managedUser);
+            }
+
+            // Profile 조회 또는 생성
+            Profile profile = profileRepository.findByUserId(userId).orElse(null);
+
+            if (profile == null) {
+                // 새 프로필 생성
+                profile = new Profile();
+                profile.setUser(managedUser); // @MapsId로 userId 자동 설정됨
+                profile.setLevel(1);
+                profile = profileRepository.save(profile); // 먼저 저장하여 ID 생성
             }
 
             // 상태 메시지 업데이트
@@ -105,20 +133,18 @@ public class ProfileController {
 
             profileRepository.save(profile);
 
-            // 업데이트된 User 엔티티 다시 로드
-            User updatedUser = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
+            // 최종 응답 데이터 구성
             Map<String, Object> response = new HashMap<>();
-            response.put("id", updatedUser.getId());
-            response.put("username", updatedUser.getUsername());
-            response.put("email", updatedUser.getEmail());
+            response.put("id", managedUser.getId());
+            response.put("username", managedUser.getUsername());
+            response.put("email", managedUser.getEmail());
             response.put("level", profile.getLevel());
             response.put("statusMessage", profile.getStatusMessage());
-            response.put("selectedProfile", updatedUser.getSelectedProfile() != null ? updatedUser.getSelectedProfile().getImagePath() : null);
-            response.put("selectedOutline", updatedUser.getSelectedOutline() != null ? updatedUser.getSelectedOutline().getImagePath() : null);
-            response.put("silverCoins", updatedUser.getSilverCoins());
-            response.put("goldCoins", updatedUser.getGoldCoins());
+            response.put("selectedProfile", managedUser.getSelectedProfile() != null ? managedUser.getSelectedProfile().getImagePath() : null);
+            response.put("selectedOutline", managedUser.getSelectedOutline() != null ? managedUser.getSelectedOutline().getImagePath() : null);
+            response.put("silverCoins", managedUser.getSilverCoins());
+            response.put("goldCoins", managedUser.getGoldCoins());
+            response.put("nicknameChangesRemaining", managedUser.getNicknameChangesRemaining() != null ? managedUser.getNicknameChangesRemaining() : 1);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

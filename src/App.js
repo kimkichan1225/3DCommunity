@@ -345,13 +345,22 @@ function App() {
   };
 
   // 프로필 업데이트 시 호출되는 함수
-  const handleProfileUpdate = async () => {
+  const handleProfileUpdate = async (updatedProfile) => {
     try {
-      // 서버에서 최신 사용자 정보 가져오기
-      const updatedUser = await authService.fetchCurrentUser();
-      if (updatedUser) {
-        setUserProfile(updatedUser);
-        console.log('✅ 프로필 업데이트 완료:', updatedUser);
+      // ProfileModal에서 전달받은 업데이트된 프로필 사용
+      if (updatedProfile) {
+        setUserProfile(updatedProfile);
+        setUsername(updatedProfile.username); // 캐릭터 위 닉네임 즉시 업데이트
+        console.log('✅ 프로필 업데이트 완료:', updatedProfile);
+
+        // 멀티플레이어 서비스에 닉네임 변경 알림
+        if (multiplayerService.isConnected()) {
+          multiplayerService.updatePlayerInfo({
+            username: updatedProfile.username,
+            selectedProfile: updatedProfile.selectedProfile,
+            selectedOutline: updatedProfile.selectedOutline
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to update user profile:', error);

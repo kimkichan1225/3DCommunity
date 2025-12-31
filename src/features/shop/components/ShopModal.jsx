@@ -114,6 +114,12 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
     return myInventory.some(inv => inv.shopItemId === itemId && inv.isNew);
   };
 
+  // 닉네임 변경권인지 확인 (타입 또는 이름으로 감지)
+  const isNicknameTicket = (item) => {
+    return item.itemType === 'NICKNAME_TICKET' ||
+           (item.name && item.name.includes('닉네임 변경권'));
+  };
+
   // 아이템 구매
   const handlePurchase = async (itemId, currencyType = 'SILVER', autoEquip = false) => {
     try {
@@ -306,7 +312,7 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                       />
                       {isNew(item.id) && <div className="item-badge new-badge">NEW</div>}
                       {isEquipped(item.id) && <div className="item-badge equipped-badge">착용중</div>}
-                      {isOwned(item.id) && !isEquipped(item.id) && (
+                      {isOwned(item.id) && !isEquipped(item.id) && !isNicknameTicket(item) && (
                         <div className="item-badge owned-badge">보유중</div>
                       )}
                     </div>
@@ -375,7 +381,7 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
 
                   {/* 상태 표시 */}
                   <div className="detail-status">
-                    {isOwned(selectedItem.id) && (
+                    {isOwned(selectedItem.id) && !isNicknameTicket(selectedItem) && (
                       <div className="status-badge owned">✓ 보유 중</div>
                     )}
                     {isEquipped(selectedItem.id) && (
@@ -385,7 +391,7 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
 
                   {/* 버튼 */}
                   <div className="detail-actions">
-                    {!isOwned(selectedItem.id) ? (
+                    {(!isOwned(selectedItem.id) || isNicknameTicket(selectedItem)) ? (
                       <>
                         {selectedItem.silverCoinPrice > 0 && selectedItem.goldCoinPrice > 0 ? (
                           /* 은화와 금화 둘 다 가능 */
@@ -408,8 +414,8 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                                 {selectedItem.goldCoinPrice?.toLocaleString()}
                               </button>
                             </div>
-                            {/* OUTLINE 타입이 아닐 때만 구매 후 착용 버튼 표시 */}
-                            {selectedItem.itemType !== 'OUTLINE' && (
+                            {/* OUTLINE, NICKNAME_TICKET이 아닐 때만 구매 후 착용 버튼 표시 */}
+                            {selectedItem.itemType !== 'OUTLINE' && !isNicknameTicket(selectedItem) && (
                               <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
                                 <button
                                   className="btn-purchase-equip"
@@ -441,8 +447,8 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                               <img src="/resources/Icon/Silver-Coin.png" alt="Silver" style={{ width: '20px', height: '20px' }} />
                               {selectedItem.silverCoinPrice?.toLocaleString()} 구매
                             </button>
-                            {/* OUTLINE 타입이 아닐 때만 구매 후 착용 버튼 표시 */}
-                            {selectedItem.itemType !== 'OUTLINE' && (
+                            {/* OUTLINE, NICKNAME_TICKET이 아닐 때만 구매 후 착용 버튼 표시 */}
+                            {selectedItem.itemType !== 'OUTLINE' && !isNicknameTicket(selectedItem) && (
                               <button
                                 className="btn-purchase-equip"
                                 onClick={() => handlePurchase(selectedItem.id, 'SILVER', true)}
@@ -464,8 +470,8 @@ function ShopModal({ onClose, userCoins, onCoinsUpdate, setCharacterModelPath })
                               <img src="/resources/Icon/Gold-Coin.png" alt="Gold" style={{ width: '20px', height: '20px' }} />
                               {selectedItem.goldCoinPrice?.toLocaleString()} 구매
                             </button>
-                            {/* OUTLINE 타입이 아닐 때만 구매 후 착용 버튼 표시 */}
-                            {selectedItem.itemType !== 'OUTLINE' && (
+                            {/* OUTLINE, NICKNAME_TICKET이 아닐 때만 구매 후 착용 버튼 표시 */}
+                            {selectedItem.itemType !== 'OUTLINE' && !isNicknameTicket(selectedItem) && (
                               <button
                                 className="btn-purchase-equip"
                                 onClick={() => handlePurchase(selectedItem.id, 'GOLD', true)}
