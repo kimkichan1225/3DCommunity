@@ -63,6 +63,7 @@ function App() {
   const [showEventModal, setShowEventModal] = useState(false);
   const [showMinigameModal, setShowMinigameModal] = useState(false);
   const [minigameModalMode, setMinigameModalMode] = useState('lobby'); // 'lobby' or 'create'
+  const [pendingJoinRoomId, setPendingJoinRoomId] = useState(null);
   const [showShopModal, setShowShopModal] = useState(false);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [showGoldChargeModal, setShowGoldChargeModal] = useState(false);
@@ -467,9 +468,44 @@ function App() {
       }
     });
 
+    // join result (ACK) 수신 핸들러
+    minigameService.on('joinResult', (data) => {
+      console.log('🎮 joinResult 수신:', data);
+      if (!data || data.payload == null) return;
+      if (String(data.payload).startsWith('error')) {
+        alert('게임 방 입장에 실패했습니다: ' + data.payload);
+        // 실패일 경우 pending room reset
+        setPendingJoinRoomId(null);
+        // 방 목록 갱신 시도
+        minigameService.requestRoomsList();
+        setShowMinigameModal(false);
+      } else if (data.payload === 'ok') {
+        console.log('✅ 방 입장 성공 ACK 받음');
+        // 성공 시 모달을 대기방 모드로 열고 pending room을 설정하여 모달에서 자동으로 대기방으로 전환하도록 함
+        setPendingJoinRoomId(data.roomId);
+        setMinigameModalMode('waiting');
+        setShowMinigameModal(true);
+      }
+    });
+
+    // 전역 게임 이벤트 구독: 게임 시작/스폰 이벤트를 받으면 모달 열기
+    minigameService.on('gameEvent', (evt) => {
+      if (!evt) return;
+      if (evt.type === 'gameStart' || evt.type === 'spawnTarget' || evt.type === 'reactionGo') {
+        console.log('전역 gameEvent 수신, 모달 열기:', evt);
+        // 모달이 닫혀 있다면 연다
+        if (!showMinigameModal) {
+          setPendingJoinRoomId(evt.roomId || null);
+          setMinigameModalMode('waiting');
+          setShowMinigameModal(true);
+        }
+      }
+    });
+
     return () => {
       console.log('🎮 게임 초대 이벤트 구독 해제');
       minigameService.on('gameInvite', null);
+      minigameService.on('joinResult', null);
     };
   }, [isLoggedIn, userId]);
 
@@ -493,6 +529,7 @@ function App() {
         console.error('친구 요청 수락 실패:', error);
         alert('친구 요청 수락에 실패했습니다.');
       }
+
     } else if (notification.type === 'game_invite') {
       // 게임 초대 수락 - 게임 방 입장 및 초대자 근처로 이동
       try {
@@ -531,63 +568,47 @@ function App() {
         // 3. 게임 방 입장 (사용자 프로필 정보와 함께)
         console.log('🎮 minigameService 연결 상태:', minigameService.connected);
 
-        // 연결 상태를 확인하고 방 입장 시도
-        const tryJoinRoom = () => {
-          if (minigameService.connected) {
-            console.log('✅ 게임 방 입장 요청:', {
-              roomId,
-              level: userProfile?.level || 1,
-              selectedProfile: userProfile?.selectedProfile?.id,
-              selectedOutline: userProfile?.selectedOutline?.id
-            });
+        // 낙관적 UI: 초대 수락 즉시 대기방으로 전환 (서버 ACK를 기다리지 않음)
+        console.log('🎮 초대 수락 - 대기방 UI 즉시 전환:', roomId);
+        setPendingJoinRoomId(roomId);
+        setMinigameModalMode('waiting');
+        setShowMinigameModal(true);
 
-            minigameService.joinRoom(
-              roomId,
-              userProfile?.level || 1,
-              userProfile?.selectedProfile?.imagePath,
-              userProfile?.selectedOutline?.imagePath
-            );
-            return true;
+        try {
+          if (!minigameService.connected) {
+            console.warn('⚠️ minigameService가 연결되지 않음, 연결 시도...');
+            await minigameService.connect(userId, username, 5000);
           }
-          return false;
-        };
 
-        // 연결되어 있으면 바로 입장
-        if (!tryJoinRoom()) {
-          // 연결되지 않았으면 재연결 시도
-          console.warn('⚠️ minigameService가 연결되지 않음, 재연결 시도...');
-          minigameService.connect(userId, username);
+          console.log('✅ 게임 방 입장 요청:', {
+            roomId,
+            level: userProfile?.level || 1,
+            selectedProfile: userProfile?.selectedProfile?.id,
+            selectedOutline: userProfile?.selectedOutline?.id
+          });
 
-          // 연결 확인을 위해 최대 5초 동안 폴링
-          let attempts = 0;
-          const maxAttempts = 10; // 5초 (500ms * 10)
-          const checkInterval = setInterval(() => {
-            attempts++;
-            if (tryJoinRoom()) {
-              console.log('✅ 재연결 후 방 입장 성공');
-              clearInterval(checkInterval);
-            } else if (attempts >= maxAttempts) {
-              console.error('❌ 방 입장 실패: WebSocket 연결 시간 초과');
-              clearInterval(checkInterval);
-              alert('게임 방 입장에 실패했습니다. 다시 시도해주세요.');
-            } else {
-              console.log(`🔄 연결 대기 중... (${attempts}/${maxAttempts})`);
-            }
-          }, 500);
-        }
+          minigameService.joinRoom(
+            roomId,
+            userProfile?.level || 1,
+            userProfile?.selectedProfile?.imagePath,
+            userProfile?.selectedOutline?.imagePath
+          );
 
-        // 4. 미니게임 모달 열기 (이미 열려 있지 않으면)
-        if (!showMinigameModal) {
-          console.log('🎮 미니게임 모달 열기');
-          setShowMinigameModal(true);
-        } else {
-          console.log('🎮 미니게임 모달 이미 열려 있음');
+          // 최신 방 목록 요청하여 modal이 방 정보를 찾을 수 있게 함
+          minigameService.requestRoomsList();
+        } catch (err) {
+          console.error('❌ 게임 방 입장 실패 (초대 수락 처리 중):', err);
+          alert('게임 방 입장에 실패했습니다. 다시 시도해주세요.');
+          // 실패 시 pending reset
+          setPendingJoinRoomId(null);
+          setShowMinigameModal(false);
         }
 
         // 5. 알림을 읽음으로 표시
         notificationService.markAsRead(notification.id);
       } catch (error) {
         console.error('게임 방 입장 실패:', error);
+        alert('게임 방 입장에 실패했습니다. 다시 시도해주세요.');
       }
     }
   };
@@ -1264,10 +1285,12 @@ function App() {
           onClose={() => {
             setShowMinigameModal(false);
             setMinigameModalMode('lobby'); // 모달 닫을 때 로비 모드로 초기화
+            setPendingJoinRoomId(null);
           }}
           userProfile={userProfile}
           onlinePlayers={otherPlayers}
           initialMode={minigameModalMode}
+          initialRoomId={pendingJoinRoomId}
         />
       )}
 

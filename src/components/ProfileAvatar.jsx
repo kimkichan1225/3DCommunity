@@ -9,7 +9,7 @@ import './ProfileAvatar.css';
  * @param {string} className - 추가 CSS 클래스
  */
 function ProfileAvatar({ profileImage, outlineImage, size = 60, className = '' }) {
-  const defaultProfile = '/resources/Profile/base-profile1.png';
+  const defaultProfile = '/resources/Profile/base-profile3.png';
   const defaultOutline = '/resources/ProfileOutline/base-outline1.png';
 
   const profileSrc = profileImage?.imagePath || defaultProfile;

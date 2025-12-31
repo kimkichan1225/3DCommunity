@@ -1,0 +1,55 @@
+.aimgame-overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+.aimgame-topbar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 16px;
+  pointer-events: none;
+  color: white;
+  font-weight: bold;
+}
+
+.aimgame-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 36px;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 0 6px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+
+.aimgame-target {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: crosshair;
+  pointer-events: auto; /* allow clicks */
+  transition: transform 0.08s ease;
+}
+
+.aimgame-target:active { transform: scale(0.9); }
+
+.aimgame-target .target-inner {
+  width: 70%;
+  height: 70%;
+  background: rgba(255,0,0,0.45);
+  border-radius: 50%;
+}
+
+.aimgame-score { background: rgba(0,0,0,0.5); padding: 6px 10px; border-radius: 6px; }
+.score-item { background: rgba(0,0,0,0.4); padding: 4px 6px; border-radius: 4px; margin-left: 6px; }
