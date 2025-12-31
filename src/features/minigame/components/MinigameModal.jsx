@@ -21,6 +21,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [roomChatInput, setRoomChatInput] = useState('');
     const [roomChatMessages, setRoomChatMessages] = useState([]);
     const [isSwitchingRole, setIsSwitchingRole] = useState(false);
+    const [isReconnecting, setIsReconnecting] = useState(false); // 재연결 중 상태
 
     const gameTypes = [
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
@@ -154,6 +155,25 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             minigameService.joinRoom(initialRoomId, userProfile.level || 1, userProfile.selectedProfile?.imagePath || null, userProfile.selectedOutline?.imagePath || null);
         }
     }, [initialRoomId]); // userProfile 제거하여 중복 입장 방지
+
+    // WebSocket 재연결 감지 및 복구
+    useEffect(() => {
+        const onConnectionStatus = (status) => {
+            if (!status.connected) {
+                // WebSocket 연결 끊김 - 로딩 화면 표시
+                setIsReconnecting(true);
+            } else {
+                // WebSocket 재연결 성공 - 현재 방이 있으면 다시 구독
+                if (currentRoom?.roomId) {
+                    minigameService.subscribeToRoom(currentRoom.roomId);
+                    minigameService.requestRoomsList(); // 방 목록도 다시 요청
+                }
+                setIsReconnecting(false);
+            }
+        };
+        minigameService.on('connectionStatus', onConnectionStatus);
+        return () => minigameService.off('connectionStatus', onConnectionStatus);
+    }, [currentRoom]);
 
     const handleRoomClick = (room) => {
         if (room.isLocked) return alert('비공개 방입니다.');
@@ -401,6 +421,12 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 </div>
             )}
             {inviteNotification && (<div className={`invite-notification ${inviteNotification.type}`}>{inviteNotification.message}</div>)}
+            {isReconnecting && (
+                <div className="reconnecting-overlay">
+                    <div className="reconnecting-spinner"></div>
+                    <div className="reconnecting-message">재연결 중...</div>
+                </div>
+            )}
         </div>
     );
 }

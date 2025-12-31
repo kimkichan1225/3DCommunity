@@ -19,7 +19,8 @@ class MinigameService {
       roomDelete: new Set(),
       gameInvite: new Set(),
       gameEvent: new Set(),
-      joinResult: new Set()
+      joinResult: new Set(),
+      connectionStatus: new Set() // 연결 상태 변경 이벤트
     };
   }
 
@@ -58,6 +59,7 @@ class MinigameService {
         onConnect: () => {
           console.log('✅ Minigame WebSocket Connected');
           this.connected = true;
+          this.emit('connectionStatus', { connected: true }); // 연결 상태 전달
 
           // 방 목록 업데이트 구독
           this.client.subscribe('/topic/minigame/rooms', (message) => {
@@ -104,6 +106,7 @@ class MinigameService {
         onWebSocketClose: () => {
           console.log('⚠️ Minigame WebSocket Closed');
           this.connected = false;
+          this.emit('connectionStatus', { connected: false }); // 연결 상태 전달
         }
       });
 
