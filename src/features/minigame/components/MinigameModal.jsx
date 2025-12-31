@@ -153,7 +153,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         if (initialRoomId && userProfile?.id) {
             minigameService.joinRoom(initialRoomId, userProfile.level || 1, userProfile.selectedProfile?.imagePath || null, userProfile.selectedOutline?.imagePath || null);
         }
-    }, [initialRoomId, userProfile]);
+    }, [initialRoomId]); // userProfile 제거하여 중복 입장 방지
 
     const handleRoomClick = (room) => {
         if (room.isLocked) return alert('비공개 방입니다.');
