@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
@@ -6,6 +6,8 @@ import { useGLTF, useAnimations } from '@react-three/drei';
 import mapboxgl from 'mapbox-gl';
 import { MapboxManager } from '../core/map/MapboxManager';
 import { useKeyboardControls } from '../useKeyboardControls';
+import multiplayerService from '../services/multiplayerService';
+import OtherPlayer from '../components/character/OtherPlayer';
 import '../pages/MapGamePageNew.css';
 
 /**
@@ -13,7 +15,7 @@ import '../pages/MapGamePageNew.css';
  * 좌측: Three.js 3D 캐릭터 (Level1과 동일한 이동 로직)
  * 우측: Mapbox 지도 (GPS 위치)
  */
-function MapGamePageNew() {
+function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
   const navigate = useNavigate();
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN;
   const mapContainerRef = useRef(null);
@@ -22,15 +24,112 @@ function MapGamePageNew() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
 
+  // 다른 플레이어 상태 (App.js와 동일)
+  const [otherPlayers, setOtherPlayers] = useState({});
+  
+  // 사용자 정보 (localStorage에서 가져오기)
+  const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+  const userId = userInfo.id || `guest_${Date.now()}`;
+  const username = userInfo.username || '게스트';
+  const isLoggedIn = !!userInfo.id;
+
+  // 고정된 스폰 위치 (모든 플레이어 동일)
+  const SPAWN_POSITION = [0, 0, 0];
+
   // 캐릭터 상태 공유
   const characterStateRef = useRef({
-    position: [0, 0, 0],
+    position: SPAWN_POSITION,
     rotation: 0,
-    isMoving: false
+    isMoving: false,
+    animation: 'idle'
   });
 
   // Mapbox 참조
   const mapboxManagerRef = useRef(null);
+
+  // 멀티플레이어 서비스 연결 (App.js와 동일한 로직)
+  useEffect(() => {
+    console.log('🎮 MapGamePageNew: 멀티플레이어 서비스 연결...');
+    
+    // 플레이어 입장 콜백
+    multiplayerService.onPlayerJoin((data) => {
+      // 중복 로그인 체크
+      if (data.action === 'duplicate') {
+        if (isLoggedIn && String(data.userId) === String(userId)) {
+          alert('현재 접속 중인 아이디입니다.');
+          // 로그아웃 처리는 메인에서 담당
+        }
+        return;
+      }
+
+      // 자신의 join 이벤트는 무시
+      if (String(data.userId) === String(multiplayerService.userId)) {
+        console.log('Ignoring own join event:', data.userId);
+        return;
+      }
+
+      console.log('👤 플레이어 입장:', data.username, data.userId);
+
+      // 다른 플레이어 추가 (모든 플레이어 동일 스폰 위치)
+      setOtherPlayers((prev) => ({
+        ...prev,
+        [data.userId]: {
+          userId: data.userId,
+          username: data.username,
+          position: [0, 0, 0], // 모든 플레이어가 동일한 스폰 위치
+          rotationY: 0,
+          animation: 'idle',
+          modelPath: '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
+        }
+      }));
+    });
+
+    // 플레이어 퇴장 콜백
+    multiplayerService.onPlayerLeave((data) => {
+      console.log('👋 플레이어 퇴장:', data.username, data.userId);
+      setOtherPlayers((prev) => {
+        const newPlayers = { ...prev };
+        delete newPlayers[data.userId];
+        return newPlayers;
+      });
+    });
+
+    // 위치 업데이트 콜백
+    multiplayerService.onPositionUpdate((data) => {
+      // 자신의 위치 업데이트는 무시
+      if (String(data.userId) === String(multiplayerService.userId)) {
+        return;
+      }
+      
+      setOtherPlayers((prev) => ({
+        ...prev,
+        [data.userId]: {
+          userId: data.userId,
+          username: data.username,
+          position: [data.x, data.y, data.z], // 받은 위치 그대로 사용 (GPS 변환 없음)
+          rotationY: data.rotationY,
+          animation: data.animation || 'idle',
+          modelPath: data.modelPath || '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf',
+          isChangingAvatar: data.isChangingAvatar || false
+        }
+      }));
+    });
+
+    // 연결 처리 (App.js와 동일)
+    if (isLoggedIn && userId && username) {
+      console.log('🔗 플레이어로 연결:', { userId, username });
+      multiplayerService.connect(userId, username);
+    } else {
+      console.log('👀 관찰자로 연결');
+      const observerId = 'observer_' + Date.now();
+      multiplayerService.connect(observerId, '게스트', true); // true = observer mode
+    }
+
+    return () => {
+      console.log('🔌 MapGamePageNew: 멀티플레이어 콜백 해제');
+      // 연결 해제는 하지 않음 (메인에서 관리)
+    };
+  }, [isLoggedIn, userId, username]);
 
   // GPS 위치 요청
   useEffect(() => {
@@ -223,6 +322,20 @@ function MapGamePageNew() {
     navigate(-1);
   };
 
+  const handleCreateRoom = () => {
+    console.log('🏠 방 생성 버튼 클릭');
+    if (onShowCreateRoom) {
+      onShowCreateRoom();
+    }
+  };
+
+  const handleJoinLobby = () => {
+    console.log('📍 로비 입장 버튼 클릭');
+    if (onShowLobby) {
+      onShowLobby();
+    }
+  };
+
   if (error) {
     return (
       <div style={{
@@ -270,8 +383,26 @@ function MapGamePageNew() {
           {/* 가상 풀숲 바닥 */}
           <VirtualGrassGround />
 
-          {/* 캐릭터 */}
-          <CharacterViewer characterStateRef={characterStateRef} />
+          {/* 내 캐릭터 */}
+          <CharacterViewer 
+            characterStateRef={characterStateRef} 
+            userId={userId}
+            username={username}
+          />
+          
+          {/* 다른 플레이어들 (App.js Level1과 동일한 로직) */}
+          {Object.values(otherPlayers).map((player) => (
+            <OtherPlayer
+              key={player.userId}
+              userId={player.userId}
+              username={player.username}
+              position={player.position}
+              rotationY={player.rotationY}
+              animation={player.animation}
+              modelPath={player.modelPath}
+              isChangingAvatar={player.isChangingAvatar}
+            />
+          ))}
           
           {/* 카메라 제어 */}
           <CameraTracker characterStateRef={characterStateRef} />
@@ -319,10 +450,10 @@ function MapGamePageNew() {
 
           {/* 중앙: 방 생성/입장 버튼 */}
           <div className="bottom-bar-center">
-            <button className="room-button room-create-button">
+            <button className="room-button room-create-button" onClick={handleCreateRoom}>
               🏠 방 생성
             </button>
-            <button className="room-button room-join-button">
+            <button className="room-button room-join-button" onClick={handleJoinLobby}>
               📍 방 입장
             </button>
           </div>
@@ -348,14 +479,17 @@ function MapGamePageNew() {
 /**
  * 캐릭터 뷰어 컴포넌트
  * MapCharacterController와 동일한 이동 로직 사용
+ * + 위치 브로드캐스트 기능 추가
  */
-function CharacterViewer({ characterStateRef }) {
+function CharacterViewer({ characterStateRef, userId, username }) {
   const characterRef = useRef(null);
   const groupRef = useRef(null);
   const modelGroupRef = useRef(null);
   const [currentAnimation, setCurrentAnimation] = useState('Idle');
   const currentRotationRef = useRef(new THREE.Quaternion());
   const lastRotationYRef = useRef(0);
+  const lastBroadcastTimeRef = useRef(0);
+  const BROADCAST_INTERVAL = 100; // 100ms마다 위치 전송
   
   // MapCharacterController와 동일하게 useKeyboardControls 사용
   const { forward, backward, left, right, shift } = useKeyboardControls();
@@ -442,13 +576,31 @@ function CharacterViewer({ characterStateRef }) {
     modelGroupRef.current.quaternion.copy(currentRotationRef.current);
 
     // 상태 공유 (isMoving 포함)
-    characterStateRef.current.position = [
+    const currentPos = [
       modelGroupRef.current.position.x,
       modelGroupRef.current.position.y,
       modelGroupRef.current.position.z
     ];
+    characterStateRef.current.position = currentPos;
     characterStateRef.current.rotation = lastRotationYRef.current;
     characterStateRef.current.isMoving = isMoving;
+    characterStateRef.current.animation = currentAnimation.toLowerCase();
+
+    // 위치 브로드캐스트 (100ms마다)
+    const now = Date.now();
+    if (now - lastBroadcastTimeRef.current > BROADCAST_INTERVAL) {
+      lastBroadcastTimeRef.current = now;
+      
+      // 멀티플레이어 서비스를 통해 위치 전송
+      if (multiplayerService.connected && userId && username) {
+        multiplayerService.sendPositionUpdate(
+          currentPos,
+          lastRotationYRef.current,
+          currentAnimation.toLowerCase(),
+          '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
+        );
+      }
+    }
   });
 
   return (
@@ -471,7 +623,7 @@ export default MapGamePageNew;
  */
 function CameraTracker({ characterStateRef }) {
   const { camera } = useThree();
-  const cameraOffset = new THREE.Vector3(0, 38, 45); // 각도를 낮춘 카메라 오프셋
+  const cameraOffset = new THREE.Vector3(-0.00, 28.35, 19.76); // 고정된 카메라 오프셋 (메인맵과 동일)
   const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
@@ -487,11 +639,11 @@ function CameraTracker({ characterStateRef }) {
     // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
     const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
-    // 부드러운 카메라 이동 (속도 감소)
-    camera.position.lerp(targetCameraPosition, delta * 3.0);
+    // 부드러운 카메라 이동 (메인맵과 동일한 속도)
+    camera.position.lerp(targetCameraPosition, delta * 5.0);
 
-    // 캐릭터를 바라보도록 설정
-    camera.lookAt(targetPositionRef.current);
+    // 고정된 각도 유지 (lookAt 제거 - 메인맵과 동일)
+    // camera.lookAt(targetPositionRef.current);
   });
 
   return null;

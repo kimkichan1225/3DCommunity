@@ -19,6 +19,21 @@ import PaymentCallback from './features/payment/components/PaymentCallback';
 import Statistics from './pages/admin/Statistics';
 
 function AppRouter() {
+  // MapGamePageNew에 전달할 핸들러들
+  const handleShowCreateRoom = () => {
+    // App 컴포넌트의 상태를 업데이트하기 위해 커스텀 이벤트 발생
+    window.dispatchEvent(new CustomEvent('showMinigameModal', {
+      detail: { mode: 'create' }
+    }));
+  };
+
+  const handleShowLobby = () => {
+    // App 컴포넌트의 상태를 업데이트하기 위해 커스텀 이벤트 발생
+    window.dispatchEvent(new CustomEvent('showMinigameModal', {
+      detail: { mode: 'lobby' }
+    }));
+  };
+
   return (
     <BrowserRouter>
       <Routes>
@@ -51,7 +66,15 @@ function AppRouter() {
         </Route>
 
         <Route path="/minigame-select" element={<MinigameSelectPage />} />
-        <Route path="/map-game" element={<MapGamePageNew />} />
+        <Route 
+          path="/map-game" 
+          element={
+            <MapGamePageNew 
+              onShowCreateRoom={handleShowCreateRoom}
+              onShowLobby={handleShowLobby}
+            />
+          } 
+        />
 
         {/* 결제 위젯 팝업용 경로 */}
         <Route path="/payment/checkout" element={<PaymentCheckout />} />

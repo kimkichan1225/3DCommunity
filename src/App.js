@@ -886,6 +886,30 @@ function App() {
     };
   }, [isLoggedIn, userId, username]);
 
+  // MapGamePageNew에서 보낸 minigame 모달 열기 신호 처리 (커스텀 이벤트)
+  useEffect(() => {
+    const handleShowMinigameModal = (event) => {
+      const mode = event.detail?.mode;
+      console.log('🎮 Minigame modal 신호 받음 (커스텀 이벤트):', mode);
+      
+      if (mode === 'create') {
+        setMinigameModalMode('create');
+      } else if (mode === 'lobby') {
+        setMinigameModalMode('lobby');
+      }
+      
+      setShowMinigameModal(true);
+    };
+
+    window.addEventListener('showMinigameModal', handleShowMinigameModal);
+    
+    return () => {
+      window.removeEventListener('showMinigameModal', handleShowMinigameModal);
+    };
+  }, []);
+
+  // MapGamePageNew에서 보낸 minigame 모달 열기 신호 처리
+
   // Cleanup on window close or refresh
   useEffect(() => {
     const handleBeforeUnload = (e) => {
