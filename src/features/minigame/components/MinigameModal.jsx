@@ -23,6 +23,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [isSwitchingRole, setIsSwitchingRole] = useState(false);
     const [isReconnecting, setIsReconnecting] = useState(false); // 재연결 중 상태
     const [showSpectatorList, setShowSpectatorList] = useState(false); // 관전자 목록 모달
+    const [showErrorPopup, setShowErrorPopup] = useState(false); // 에러 팝업
+    const [errorMessage, setErrorMessage] = useState(''); // 에러 메시지
 
     const gameTypes = [
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
@@ -278,6 +280,12 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         setShowFriendInviteModal(false);
     };
     const handleGameStart = () => {
+        // 오목 게임은 최소 2명의 참가자가 필요
+        if (currentRoom?.gameName === '오목' && (currentRoom?.players?.length || 0) < 2) {
+            setErrorMessage('오목 게임은 최소 2명의 참가자가 필요합니다.');
+            setShowErrorPopup(true);
+            return;
+        }
         if (currentRoom?.roomId) minigameService.startGame(currentRoom.roomId);
     };
     const handleReady = () => {
@@ -604,6 +612,23 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 >
                     <div className="reconnecting-spinner"></div>
                     <div className="reconnecting-message">재연결 중...</div>
+                </div>
+            )}
+            {showErrorPopup && (
+                <div className="error-popup-overlay" onClick={(e) => { e.stopPropagation(); setShowErrorPopup(false); }}>
+                    <div className="error-popup-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="error-popup-header">
+                            <h3>⚠️ 알림</h3>
+                        </div>
+                        <div className="error-popup-body">
+                            <p>{errorMessage}</p>
+                        </div>
+                        <div className="error-popup-footer">
+                            <button className="error-popup-close-btn" onClick={() => setShowErrorPopup(false)}>
+                                확인
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
