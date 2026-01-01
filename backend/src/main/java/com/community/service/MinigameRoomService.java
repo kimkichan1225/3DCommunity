@@ -760,9 +760,37 @@ public class MinigameRoomService {
         int moveCount = 0;
         int remainingSeconds = 15;
         java.util.concurrent.ScheduledFuture<?> timerFuture;
+        Set<String> rematchRequests = new HashSet<>(); // 다시하기 요청한 플레이어 ID
 
         public OmokGameSession(String roomId) {
             this.roomId = roomId;
         }
+    }
+
+    /**
+     * 오목 다시하기 요청 추가
+     * @return 모든 플레이어가 동의했으면 true
+     */
+    public boolean addOmokRematchRequest(String roomId, String playerId) {
+        OmokGameSession session = omokSessions.get(roomId);
+        MinigameRoomDto room = rooms.get(roomId);
+
+        if (session == null || room == null) {
+            return false;
+        }
+
+        // 다시하기 요청 추가
+        session.rematchRequests.add(playerId);
+        log.info("오목 다시하기 요청 추가: roomId={}, playerId={}, 현재 요청 수={}/{}",
+                 roomId, playerId, session.rematchRequests.size(), room.getPlayers().size());
+
+        // 모든 플레이어가 동의했는지 확인
+        if (session.rematchRequests.size() >= room.getPlayers().size()) {
+            // 요청 초기화
+            session.rematchRequests.clear();
+            return true;
+        }
+
+        return false;
     }
 }

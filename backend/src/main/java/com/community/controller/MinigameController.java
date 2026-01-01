@@ -300,6 +300,38 @@ public class MinigameController {
             roomService.startOmokTimer(roomId);
         }
 
+        if ("omokRematchRequest".equals(event.getType())) {
+            // 다시하기 요청
+            String roomId = event.getRoomId();
+            String playerId = event.getPlayerId();
+            log.info("오목 다시하기 요청: roomId={}, playerId={}", roomId, playerId);
+
+            // 다시하기 요청 브로드캐스트
+            GameEventDto rematchReqEvt = new GameEventDto();
+            rematchReqEvt.setRoomId(roomId);
+            rematchReqEvt.setType("omokRematchRequest");
+            rematchReqEvt.setPlayerId(playerId);
+            rematchReqEvt.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", rematchReqEvt);
+
+            // 모든 플레이어가 동의했는지 확인
+            boolean allAgreed = roomService.addOmokRematchRequest(roomId, playerId);
+            if (allAgreed) {
+                log.info("모든 플레이어 동의 - 오목 게임 재시작: roomId={}", roomId);
+
+                // 게임 재시작
+                roomService.initOmokGame(roomId);
+                roomService.startOmokTimer(roomId);
+
+                // 재시작 이벤트 브로드캐스트
+                GameEventDto rematchStartEvt = new GameEventDto();
+                rematchStartEvt.setRoomId(roomId);
+                rematchStartEvt.setType("omokRematchStart");
+                rematchStartEvt.setTimestamp(System.currentTimeMillis());
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", rematchStartEvt);
+            }
+        }
+
         if ("countdownStart".equals(event.getType())) {
             // 카운트다운 시작 이벤트 처리
             String roomId = event.getRoomId();

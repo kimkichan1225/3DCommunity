@@ -381,6 +381,27 @@
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 }
 
+/* 다시하기 대기 메시지 */
+.waiting-rematch {
+  padding: 14px 35px;
+  font-size: 1em;
+  font-weight: 600;
+  color: #667eea;
+  background: #f0f4ff;
+  border-radius: 50px;
+  border: 2px solid #667eea;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 /* 반응형 */
 @media (max-width: 768px) {
   .omok-game-wrapper {
