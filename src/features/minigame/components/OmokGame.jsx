@@ -253,7 +253,7 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
                 다시 하기
               </button>
               <button className="btn-back" onClick={onGameEnd}>
-                로비로
+                대기방으로
               </button>
             </div>
           </div>

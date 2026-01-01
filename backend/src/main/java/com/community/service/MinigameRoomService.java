@@ -417,11 +417,44 @@ public class MinigameRoomService {
         evt.setTimestamp(System.currentTimeMillis());
         messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", evt);
 
-        // reset room playing flag
+        // reset room playing flag and ready states
         MinigameRoomDto room = rooms.get(roomId);
         if (room != null) {
             room.setPlaying(false);
+            // 모든 플레이어의 준비 상태 초기화 (방장 제외)
+            if (room.getPlayers() != null) {
+                for (MinigamePlayerDto player : room.getPlayers()) {
+                    if (!player.isHost()) {
+                        player.setReady(false);
+                    }
+                }
+            }
+            // 방 상태 업데이트를 모든 클라이언트에 브로드캐스트
+            room.setAction("gameEnd");
+            room.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId, room);
         }
+    }
+
+    public MinigameRoomDto endGameAndResetReady(String roomId) {
+        MinigameRoomDto room = rooms.get(roomId);
+        if (room == null) {
+            return null;
+        }
+
+        room.setPlaying(false);
+
+        // 모든 플레이어의 준비 상태 초기화 (방장 제외)
+        if (room.getPlayers() != null) {
+            for (MinigamePlayerDto player : room.getPlayers()) {
+                if (!player.isHost()) {
+                    player.setReady(false);
+                }
+            }
+        }
+
+        log.info("게임 종료 및 준비 상태 초기화: {}", roomId);
+        return room;
     }
 
     public synchronized GameScoreDto handleHit(String roomId, String playerId, String playerName, String targetId,

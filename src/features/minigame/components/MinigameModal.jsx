@@ -348,6 +348,16 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             setTimeout(() => setIsSwitchingRole(false), 1000);
         }
     };
+    const handleGameEnd = () => {
+        // 백엔드에 게임 종료 및 준비 상태 초기화 요청
+        if (currentRoom?.roomId) {
+            minigameService.sendGameEvent(currentRoom.roomId, {
+                type: 'backToWaiting'
+            });
+        }
+        // 로컬 상태도 업데이트
+        setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null));
+    };
     const handleSendRoomChat = () => {
         if (roomChatInput.trim() && currentRoom?.roomId) {
             minigameService.sendRoomChat(currentRoom.roomId, roomChatInput.trim());
@@ -377,7 +387,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     isHost={isHost}
                     userProfile={userProfile}
                     players={currentRoom.players}
-                    onGameEnd={() => setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null))}
+                    onGameEnd={handleGameEnd}
                 />;
             } else if (currentRoom.gameName === '에임 맞추기') {
                 gameComponent = <AimingGame
@@ -385,7 +395,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     isHost={isHost}
                     userProfile={userProfile}
                     players={currentRoom.players}
-                    onGameEnd={() => setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null))}
+                    onGameEnd={handleGameEnd}
                 />;
             } else {
                 return <div>선택된 게임({currentRoom.gameName})을 찾을 수 없습니다.</div>;

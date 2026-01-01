@@ -299,6 +299,21 @@ public class MinigameController {
             messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", countdownEvt);
         }
 
+        if ("backToWaiting".equals(event.getType())) {
+            // 대기방으로 돌아가기 이벤트 처리
+            String roomId = event.getRoomId();
+
+            log.info("대기방으로 돌아가기: roomId={}", roomId);
+
+            // 방 상태 업데이트
+            MinigameRoomDto room = roomService.endGameAndResetReady(roomId);
+            if (room != null) {
+                room.setAction("backToWaiting");
+                room.setTimestamp(System.currentTimeMillis());
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId, room);
+            }
+        }
+
         if ("reactionStart".equals(event.getType())) {
             String roomId = event.getRoomId();
             boolean immediate = false;
