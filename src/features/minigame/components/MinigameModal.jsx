@@ -27,6 +27,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [errorMessage, setErrorMessage] = useState(''); // 에러 메시지
     const [showCountdown, setShowCountdown] = useState(false); // 카운트다운 모달
     const [countdown, setCountdown] = useState(3); // 카운트다운 숫자
+    const [showPlayerLeavePopup, setShowPlayerLeavePopup] = useState(false); // 플레이어 이탈 팝업
+    const [pendingRoomUpdate, setPendingRoomUpdate] = useState(null); // 대기 중인 방 업데이트
 
     const gameTypes = [
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
@@ -116,6 +118,16 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     useEffect(() => {
         const onRoomUpdate = (roomData) => {
+            console.log('Room update received:', roomData.action, roomData);
+
+            // 플레이어 이탈로 인한 게임 종료인 경우 팝업 표시
+            if (roomData.action === 'gameEndByPlayerLeave' && currentRoom && roomData.roomId === currentRoom.roomId) {
+                console.log('Showing player leave popup');
+                setPendingRoomUpdate(roomData);
+                setShowPlayerLeavePopup(true);
+                return; // 팝업 확인 전까지 방 업데이트 보류
+            }
+
             // 방 목록 업데이트
             setRooms(prev => {
                 const exists = prev.some(r => r.roomId === roomData.roomId);
@@ -149,6 +161,16 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             }
         };
         const onRoomJoin = (roomPayload) => {
+            console.log('Room join/update received:', roomPayload.action, roomPayload);
+
+            // 플레이어 이탈로 인한 게임 종료인 경우 팝업 표시
+            if (roomPayload.action === 'gameEndByPlayerLeave' && currentRoom && roomPayload.roomId === currentRoom.roomId) {
+                console.log('Showing player leave popup (from roomJoin)');
+                setPendingRoomUpdate(roomPayload);
+                setShowPlayerLeavePopup(true);
+                return; // 팝업 확인 전까지 방 업데이트 보류
+            }
+
             const isInPlayers = (roomPayload?.players || []).some(p => String(p.userId) === String(userProfile?.id));
             const isInSpectators = (roomPayload?.spectators || []).some(s => String(s.userId) === String(userProfile?.id));
 
@@ -703,6 +725,34 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     <div className="countdown-modal">
                         <div className="countdown-text">게임을 시작합니다</div>
                         <div className="countdown-number">{countdown}</div>
+                    </div>
+                </div>
+            )}
+            {showPlayerLeavePopup && (
+                <div className="error-popup-overlay" onClick={(e) => e.stopPropagation()}>
+                    <div className="error-popup-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="error-popup-header">
+                            <h3>⚠️ 게임 종료</h3>
+                        </div>
+                        <div className="error-popup-body">
+                            <p>상대방이 게임을 나갔습니다.{'\n'}대기방으로 돌아갑니다.</p>
+                        </div>
+                        <div className="error-popup-footer">
+                            <button
+                                className="error-popup-close-btn"
+                                onClick={() => {
+                                    console.log('Player leave popup confirmed');
+                                    setShowPlayerLeavePopup(false);
+                                    if (pendingRoomUpdate) {
+                                        console.log('Applying pending room update:', pendingRoomUpdate);
+                                        setCurrentRoom(pendingRoomUpdate);
+                                        setPendingRoomUpdate(null);
+                                    }
+                                }}
+                            >
+                                확인
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

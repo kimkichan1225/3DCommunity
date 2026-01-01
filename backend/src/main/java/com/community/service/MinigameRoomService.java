@@ -144,6 +144,40 @@ public class MinigameRoomService {
         if (wasPlayer) {
             room.setCurrentPlayers(room.getPlayers().size());
             log.info("참가자 {} 방 나가기: {} (현재 {}/{})", userId, roomId, room.getCurrentPlayers(), room.getMaxPlayers());
+
+            // 게임 중에 참가자가 나가서 인원이 부족한 경우
+            if (room.isPlaying() && "오목".equals(room.getGameName()) && room.getPlayers().size() < 2) {
+                log.info("오목 게임 중 인원 부족으로 게임 종료: roomId={}", roomId);
+                room.setPlaying(false);
+
+                // 모든 플레이어의 준비 상태 초기화
+                for (MinigamePlayerDto player : room.getPlayers()) {
+                    if (!player.isHost()) {
+                        player.setReady(false);
+                    }
+                }
+
+                // 오목 타이머 중지
+                OmokGameSession omokSession = omokSessions.remove(roomId);
+                if (omokSession != null && omokSession.timerFuture != null) {
+                    omokSession.timerFuture.cancel(false);
+                }
+
+                // 게임 종료 이벤트 브로드캐스트
+                GameEventDto gameEndEvt = new GameEventDto();
+                gameEndEvt.setRoomId(roomId);
+                gameEndEvt.setType("gameEndByPlayerLeave");
+                gameEndEvt.setPayload("insufficient_players");
+                gameEndEvt.setTimestamp(System.currentTimeMillis());
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", gameEndEvt);
+                log.info("게임 종료 이벤트 전송: roomId={}, type=gameEndByPlayerLeave", roomId);
+
+                // 방 상태 업데이트 브로드캐스트
+                room.setAction("gameEndByPlayerLeave");
+                room.setTimestamp(System.currentTimeMillis());
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId, room);
+                log.info("방 업데이트 전송: roomId={}, action=gameEndByPlayerLeave, playing={}", roomId, room.isPlaying());
+            }
         } else if (wasSpectator) {
             log.info("관전자 {} 방 나가기: {} (관전자 수: {})", userId, roomId, room.getSpectators().size());
         }

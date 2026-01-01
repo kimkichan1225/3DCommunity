@@ -136,14 +136,20 @@ public class MinigameController {
 
             messagingTemplate.convertAndSend("/topic/minigame/rooms", deletedRoom);
         } else {
-            room.setAction("leave");
-            room.setTimestamp(System.currentTimeMillis());
+            // 서비스에서 이미 gameEndByPlayerLeave 액션을 설정한 경우 덮어쓰지 않음
+            if (!"gameEndByPlayerLeave".equals(room.getAction())) {
+                room.setAction("leave");
+                room.setTimestamp(System.currentTimeMillis());
 
-            // 방에 있는 모든 사람에게 브로드캐스트
-            messagingTemplate.convertAndSend("/topic/minigame/room/" + request.getRoomId(), room);
+                // 방에 있는 모든 사람에게 브로드캐스트
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + request.getRoomId(), room);
 
-            // 방 목록 업데이트 브로드캐스트
-            messagingTemplate.convertAndSend("/topic/minigame/rooms", room);
+                // 방 목록 업데이트 브로드캐스트
+                messagingTemplate.convertAndSend("/topic/minigame/rooms", room);
+                log.info("일반 나가기 처리: roomId={}, action=leave", request.getRoomId());
+            } else {
+                log.info("gameEndByPlayerLeave 액션 감지 - 중복 브로드캐스트 스킵: roomId={}", request.getRoomId());
+            }
         }
     }
 
