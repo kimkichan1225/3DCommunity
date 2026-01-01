@@ -36,17 +36,17 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
     return -1;
   };
 
-  // 게임 시작 시 타이머 초기화
+  // 게임 시작 시 타이머 초기화 (방장만)
   useEffect(() => {
-    if (!gameStartedRef.current) {
+    if (!gameStartedRef.current && isHost) {
       gameStartedRef.current = true;
       // 백엔드에 오목 게임 시작 알림
       minigameService.sendGameEvent(roomId, {
         type: 'omokStart'
       });
-      console.log('오목 게임 시작 이벤트 전송');
+      console.log('오목 게임 시작 이벤트 전송 (방장)');
     }
-  }, [roomId]);
+  }, [roomId, isHost]);
 
   // 디버깅: props 확인
   useEffect(() => {
