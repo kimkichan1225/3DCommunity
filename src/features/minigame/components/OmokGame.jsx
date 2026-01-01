@@ -9,7 +9,9 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
   const [moveCount, setMoveCount] = useState(0); // 전체 이동 카운트 (턴의 근원)
   const [gameStatus, setGameStatus] = useState('playing'); // playing, ended
   const [winner, setWinner] = useState(null);
+  const [timerSeconds, setTimerSeconds] = useState(15); // 턴 타이머
   const processedMovesRef = React.useRef(new Set()); // 중복 처리 방지
+  const gameStartedRef = React.useRef(false); // 게임 시작 여부
 
   // 플레이어 매칭 헬퍼 함수
   const getMyPlayerIndex = () => {
@@ -34,6 +36,18 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
     return -1;
   };
 
+  // 게임 시작 시 타이머 초기화
+  useEffect(() => {
+    if (!gameStartedRef.current) {
+      gameStartedRef.current = true;
+      // 백엔드에 오목 게임 시작 알림
+      minigameService.sendGameEvent(roomId, {
+        type: 'omokStart'
+      });
+      console.log('오목 게임 시작 이벤트 전송');
+    }
+  }, [roomId]);
+
   // 디버깅: props 확인
   useEffect(() => {
     console.log('=== OmokGame Props Debug ===');
@@ -41,7 +55,7 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
     console.log('players:', players);
     console.log('roomId:', roomId);
     console.log('isHost:', isHost);
-    
+
     if (players.length > 0) {
       console.log('First player structure:', players[0]);
       console.log('My player index:', getMyPlayerIndex());
@@ -52,8 +66,6 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
   useEffect(() => {
     const handler = (evt) => {
       if (!evt || !evt.type || evt.roomId !== roomId) return;
-
-      console.log('OmokGame received event:', evt);
 
       switch (evt.type) {
         case 'omokMove': {
@@ -85,6 +97,13 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
 
           // moveCount 증가 (모든 클라이언트가 동기화)
           setMoveCount(prev => prev + 1);
+          break;
+        }
+
+        case 'omokTimer': {
+          // 타이머 업데이트
+          const seconds = parseInt(evt.payload);
+          setTimerSeconds(seconds);
           break;
         }
 
@@ -211,7 +230,8 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
         )}
       </div>
 
-      <div className="omok-board-container">
+      <div className="omok-game-content">
+        <div className="omok-board-container">
         <div className="omok-board">
           {board.map((cell, index) => {
             const row = Math.floor(index / BOARD_SIZE);
@@ -232,6 +252,18 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
             );
           })}
         </div>
+      </div>
+
+        {/* 타이머 표시 */}
+        {gameStatus === 'playing' && (
+          <div className="omok-timer-panel">
+            <div className="omok-timer-label">남은 시간</div>
+            <div className={`omok-timer-display ${timerSeconds <= 5 ? 'warning' : ''}`}>
+              {timerSeconds}
+            </div>
+            <div className="omok-timer-unit">초</div>
+          </div>
+        )}
       </div>
 
       {gameStatus === 'ended' && (

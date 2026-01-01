@@ -273,6 +273,9 @@ public class MinigameController {
 
             log.info("오목 움직임: roomId={}, playerId={}, position={}", roomId, playerId, position);
 
+            // 타이머 재시작 (다음 턴)
+            roomService.startOmokTimer(roomId);
+
             // 모든 플레이어에게 브로드캐스트
             GameEventDto omokEvt = new GameEventDto();
             omokEvt.setRoomId(roomId);
@@ -281,6 +284,14 @@ public class MinigameController {
             omokEvt.setPosition(position);
             omokEvt.setTimestamp(System.currentTimeMillis());
             messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", omokEvt);
+        }
+
+        if ("omokStart".equals(event.getType())) {
+            // 오목 게임 시작 시 첫 타이머 시작
+            String roomId = event.getRoomId();
+            log.info("오목 게임 시작, 타이머 시작: roomId={}", roomId);
+            roomService.initOmokGame(roomId);
+            roomService.startOmokTimer(roomId);
         }
 
         if ("countdownStart".equals(event.getType())) {

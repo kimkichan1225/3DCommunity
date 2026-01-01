@@ -159,7 +159,6 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             }
         };
         const onGameEvent = (evt) => {
-            console.log('Received gameEvent:', evt);
             if (evt?.roomId === currentRoom?.roomId) {
                 if (evt.type === 'gameStart' || evt.type === 'spawnTarget') {
                     setCurrentRoom(prev => ({ ...(prev || {}), playing: true }));
