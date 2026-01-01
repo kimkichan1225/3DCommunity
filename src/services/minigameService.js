@@ -8,6 +8,7 @@ class MinigameService {
     this.userId = null;
     this.username = null;
     this.currentRoomId = null;
+    this.subscribedRooms = new Set(); // 구독한 방 ID 추적
 
     // Event Listeners (Map<EventType, Set<Callback>>)
     this.listeners = {
@@ -122,6 +123,7 @@ class MinigameService {
       }
       this.client.deactivate();
       this.connected = false;
+      this.subscribedRooms.clear(); // 모든 구독 목록 초기화
       console.log('🔌 Minigame WebSocket Disconnected');
     }
   }
@@ -202,6 +204,15 @@ class MinigameService {
       return;
     }
 
+    // 이미 구독한 방이면 중복 구독 방지
+    if (this.subscribedRooms.has(roomId)) {
+      console.log('⚠️ Already subscribed to room:', roomId);
+      return;
+    }
+
+    console.log('📡 Subscribing to room:', roomId);
+    this.subscribedRooms.add(roomId);
+
     // 방 업데이트 구독
     this.client.subscribe('/topic/minigame/room/' + roomId, (message) => {
       const data = JSON.parse(message.body);
@@ -241,6 +252,7 @@ class MinigameService {
     });
 
     this.currentRoomId = null;
+    this.subscribedRooms.delete(roomId); // 구독 목록에서 제거
   }
 
   /**

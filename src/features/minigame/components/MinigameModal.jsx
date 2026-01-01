@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MinigameModal.css';
 import ProfileAvatar from '../../../components/ProfileAvatar';
-import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen, FaComments, FaPaperPlane } from 'react-icons/fa';
 import friendService from '../../../services/friendService';
 import minigameService from '../../../services/minigameService';
 import AimingGame from './AimingGame';
@@ -22,12 +22,22 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [roomChatMessages, setRoomChatMessages] = useState([]);
     const [isSwitchingRole, setIsSwitchingRole] = useState(false);
     const [isReconnecting, setIsReconnecting] = useState(false); // 재연결 중 상태
+    const [showSpectatorList, setShowSpectatorList] = useState(false); // 관전자 목록 모달
+    const [showErrorPopup, setShowErrorPopup] = useState(false); // 에러 팝업
+    const [errorMessage, setErrorMessage] = useState(''); // 에러 메시지
+    const [showCountdown, setShowCountdown] = useState(false); // 카운트다운 모달
+    const [countdown, setCountdown] = useState(3); // 카운트다운 숫자
+    const [showPlayerLeavePopup, setShowPlayerLeavePopup] = useState(false); // 플레이어 이탈 팝업
+    const [pendingRoomUpdate, setPendingRoomUpdate] = useState(null); // 대기 중인 방 업데이트
 
     const gameTypes = [
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
         { id: 'word', name: '끝말잇기', image: '/resources/GameIllust/Word.png', maxPlayers: [2, 4, 6, 8] },
+        { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png', maxPlayers: [2, 4, 6] },
+        { id: 'liar', name: '라이어 게임', image: '/resources/GameIllust/Liar.png', maxPlayers: [4, 6] },
+        { id: 'reaction', name: '반응속도', image: '/resources/GameIllust/Reactiontest.png', maxPlayers: [2, 4] },
         { id: 'aim', name: '에임 맞추기', image: '/resources/GameIllust/Aim.png', maxPlayers: [2, 4] },
-        { id: 'twenty', name: '스무고개', image: '/resources/GameIllust/Twenty.png', maxPlayers: [2, 4, 6] }
+        { id: 'collection', name: '미니게임 모음', image: '/resources/GameIllust/Collection.png', maxPlayers: [4] }
     ];
 
     const formatProfileImage = (item) => {
@@ -78,8 +88,21 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         if (!minigameService.connected) {
             minigameService.connect(userProfile?.id || 'guest', userProfile?.username || '게스트');
         }
-        const onRoomsList = (roomsList) => setRooms(roomsList || []);
+        const onRoomsList = (roomsList) => {
+            console.log('Received rooms list:', roomsList);
+            setRooms(roomsList || []);
+        };
+        const onRoomDelete = (deleteData) => {
+            console.log('Room deleted:', deleteData);
+            setRooms(prev => prev.filter(r => r.roomId !== deleteData.roomId));
+            // 현재 방이 삭제된 경우
+            if (currentRoom?.roomId === deleteData.roomId) {
+                setCurrentRoom(null);
+                setCurrentView('lobby');
+            }
+        };
         minigameService.on('roomsList', onRoomsList);
+        minigameService.on('roomDelete', onRoomDelete);
         const handleBeforeUnload = () => {
             if (minigameService.currentRoomId) {
                 minigameService.leaveRoom(minigameService.currentRoomId);
@@ -88,12 +111,23 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => {
             minigameService.off('roomsList', onRoomsList);
+            minigameService.off('roomDelete', onRoomDelete);
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
-    }, [userProfile]);
+    }, [userProfile, currentRoom]);
 
     useEffect(() => {
         const onRoomUpdate = (roomData) => {
+            console.log('Room update received:', roomData.action, roomData);
+
+            // 플레이어 이탈로 인한 게임 종료인 경우 팝업 표시
+            if (roomData.action === 'gameEndByPlayerLeave' && currentRoom && roomData.roomId === currentRoom.roomId) {
+                console.log('Showing player leave popup');
+                setPendingRoomUpdate(roomData);
+                setShowPlayerLeavePopup(true);
+                return; // 팝업 확인 전까지 방 업데이트 보류
+            }
+
             // 방 목록 업데이트
             setRooms(prev => {
                 const exists = prev.some(r => r.roomId === roomData.roomId);
@@ -108,8 +142,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     // 새로운 방 추가
                     return [...prev, roomData];
                 } else {
-                    // 알 수 없는 방 (create action 없이 들어온 경우) - 추가
-                    return [...prev, roomData];
+                    // action이 'create'가 아니고 방이 존재하지 않으면 추가하지 않음
+                    console.warn('Unknown room update without create action:', roomData);
+                    return prev;
                 }
             });
 
@@ -126,6 +161,16 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             }
         };
         const onRoomJoin = (roomPayload) => {
+            console.log('Room join/update received:', roomPayload.action, roomPayload);
+
+            // 플레이어 이탈로 인한 게임 종료인 경우 팝업 표시
+            if (roomPayload.action === 'gameEndByPlayerLeave' && currentRoom && roomPayload.roomId === currentRoom.roomId) {
+                console.log('Showing player leave popup (from roomJoin)');
+                setPendingRoomUpdate(roomPayload);
+                setShowPlayerLeavePopup(true);
+                return; // 팝업 확인 전까지 방 업데이트 보류
+            }
+
             const isInPlayers = (roomPayload?.players || []).some(p => String(p.userId) === String(userProfile?.id));
             const isInSpectators = (roomPayload?.spectators || []).some(s => String(s.userId) === String(userProfile?.id));
 
@@ -136,17 +181,51 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             }
         };
         const onGameEvent = (evt) => {
-            if (evt?.roomId === currentRoom?.roomId && (evt.type === 'gameStart' || evt.type === 'spawnTarget')) {
-                setCurrentRoom(prev => ({ ...(prev || {}), playing: true }));
+            if (evt?.roomId === currentRoom?.roomId) {
+                if (evt.type === 'gameStart' || evt.type === 'spawnTarget') {
+                    setCurrentRoom(prev => ({ ...(prev || {}), playing: true }));
+                } else if (evt.type === 'countdownStart') {
+                    // 모든 플레이어에게 카운트다운 표시
+                    console.log('Starting countdown for all players');
+                    setCountdown(3);
+                    setShowCountdown(true);
+                }
             }
+        };
+        const onRoomChat = (chatData) => {
+            if (chatData?.roomId === currentRoom?.roomId) {
+                setRoomChatMessages(prev => [...prev, chatData]);
+            }
+        };
+        const onJoinResult = (result) => {
+            console.log('joinResult received:', result);
+
+            // success가 명시적으로 false인 경우에만 에러 처리
+            if (result.success === false) {
+                const errorMsg = result.error || result.message || '알 수 없는 오류';
+                console.error('방 입장 실패:', errorMsg);
+                alert(`게임 방 입장에 실패했습니다: ${errorMsg}`);
+
+                // 방 목록에서 해당 방 제거 (서버에 존재하지 않는 방)
+                if (errorMsg.includes('not found')) {
+                    setRooms(prev => prev.filter(r => r.roomId !== result.roomId));
+                }
+            } else if (result.success === true) {
+                console.log('방 입장 성공:', result);
+            }
+            // success가 undefined인 경우는 무시 (다른 타입의 이벤트일 수 있음)
         };
         minigameService.on('roomUpdate', onRoomUpdate);
         minigameService.on('roomJoin', onRoomJoin);
         minigameService.on('gameEvent', onGameEvent);
+        minigameService.on('roomChat', onRoomChat);
+        minigameService.on('joinResult', onJoinResult);
         return () => {
             minigameService.off('roomUpdate', onRoomUpdate);
             minigameService.off('roomJoin', onRoomJoin);
             minigameService.off('gameEvent', onGameEvent);
+            minigameService.off('roomChat', onRoomChat);
+            minigameService.off('joinResult', onJoinResult);
         };
     }, [currentRoom, userProfile]);
 
@@ -155,6 +234,14 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             minigameService.joinRoom(initialRoomId, userProfile.level || 1, userProfile.selectedProfile?.imagePath || null, userProfile.selectedOutline?.imagePath || null);
         }
     }, [initialRoomId]); // userProfile 제거하여 중복 입장 방지
+
+    // 채팅 메시지 자동 스크롤
+    useEffect(() => {
+        const chatMessages = document.querySelector('.chat-messages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }, [roomChatMessages]);
 
     // WebSocket 재연결 감지 및 복구
     useEffect(() => {
@@ -191,6 +278,28 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         };
     }, [currentRoom]);
 
+    // 카운트다운 처리
+    useEffect(() => {
+        if (!showCountdown) return;
+
+        if (countdown === 0) {
+            // 카운트다운 종료 후 게임 시작 (방장만 실제 게임 시작 명령 전송)
+            setShowCountdown(false);
+            const isHost = String(currentRoom?.hostId) === String(userProfile?.id);
+            if (currentRoom?.roomId && isHost) {
+                minigameService.startGame(currentRoom.roomId);
+            }
+            return;
+        }
+
+        // 1초마다 카운트다운 감소
+        const timer = setTimeout(() => {
+            setCountdown(prev => prev - 1);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [showCountdown, countdown, currentRoom, userProfile]);
+
     const handleRoomClick = (room) => {
         if (room.isLocked) return alert('비공개 방입니다.');
         // 방이 가득 차도 관전자로 입장 가능
@@ -209,6 +318,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         if (currentRoom?.roomId) minigameService.leaveRoom(currentRoom.roomId);
         setCurrentRoom(null);
         setCurrentView('lobby');
+        setRoomChatMessages([]); // 채팅 메시지 초기화
+        setRoomChatInput(''); // 입력창 초기화
     };
     const handleInviteFriend = () => setShowFriendInviteModal(true);
     const handleInviteFriendToRoom = (friend) => {
@@ -222,7 +333,30 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         setShowFriendInviteModal(false);
     };
     const handleGameStart = () => {
-        if (currentRoom?.roomId) minigameService.startGame(currentRoom.roomId);
+        // 오목 게임은 최소 2명의 참가자가 필요
+        if (currentRoom?.gameName === '오목' && (currentRoom?.players?.length || 0) < 2) {
+            setErrorMessage('오목 게임은 최소 2명의 참가자가 필요합니다.');
+            setShowErrorPopup(true);
+            return;
+        }
+
+        // 모든 참가자가 준비 완료 상태인지 확인 (방장 제외)
+        const notReadyPlayers = currentRoom?.players?.filter(p => !p.host && !p.ready) || [];
+        if (notReadyPlayers.length > 0) {
+            const notReadyNames = notReadyPlayers.map(p => p.username).join(', ');
+            setErrorMessage(`모든 참가자가 준비 완료 상태여야 합니다.\n준비하지 않은 참가자: ${notReadyNames}`);
+            setShowErrorPopup(true);
+            return;
+        }
+
+        // 모든 플레이어에게 카운트다운 시작 이벤트 전송
+        if (currentRoom?.roomId) {
+            console.log('Sending countdownStart event to room:', currentRoom.roomId);
+            minigameService.sendGameEvent(currentRoom.roomId, {
+                type: 'countdownStart',
+                hostId: userProfile?.id
+            });
+        }
     };
     const handleReady = () => {
         if (currentRoom?.roomId) minigameService.toggleReady(currentRoom.roomId);
@@ -235,6 +369,28 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             setTimeout(() => setIsSwitchingRole(false), 1000);
         }
     };
+    const handleGameEnd = () => {
+        // 백엔드에 게임 종료 및 준비 상태 초기화 요청
+        if (currentRoom?.roomId) {
+            minigameService.sendGameEvent(currentRoom.roomId, {
+                type: 'backToWaiting'
+            });
+        }
+        // 로컬 상태도 업데이트
+        setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null));
+    };
+    const handleSendRoomChat = () => {
+        if (roomChatInput.trim() && currentRoom?.roomId) {
+            minigameService.sendRoomChat(currentRoom.roomId, roomChatInput.trim());
+            setRoomChatInput('');
+        }
+    };
+    const handleRoomChatKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendRoomChat();
+        }
+    };
 
     const isHost = String(currentRoom?.hostId) === String(userProfile?.id);
     const isPlayer = currentRoom?.players?.some(p => String(p.userId) === String(userProfile?.id));
@@ -243,25 +399,37 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     const renderContent = () => {
         if (currentRoom?.playing) {
+            const spectatorCount = currentRoom.spectators?.length || 0;
+            let gameComponent;
+
             if (currentRoom.gameName === '오목') {
-                return <OmokGame
+                gameComponent = <OmokGame
                     roomId={currentRoom.roomId}
                     isHost={isHost}
                     userProfile={userProfile}
                     players={currentRoom.players}
-                    onGameEnd={() => setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null))}
+                    onGameEnd={handleGameEnd}
                 />;
-            }
-            if (currentRoom.gameName === '에임 맞추기') {
-                return <AimingGame
+            } else if (currentRoom.gameName === '에임 맞추기') {
+                gameComponent = <AimingGame
                     roomId={currentRoom.roomId}
                     isHost={isHost}
                     userProfile={userProfile}
                     players={currentRoom.players}
-                    onGameEnd={() => setCurrentRoom(prev => (prev ? { ...prev, playing: false } : null))}
+                    onGameEnd={handleGameEnd}
                 />;
+            } else {
+                return <div>선택된 게임({currentRoom.gameName})을 찾을 수 없습니다.</div>;
             }
-            return <div>선택된 게임({currentRoom.gameName})을 찾을 수 없습니다.</div>;
+
+            return (
+                <div className="game-container">
+                    <div className="game-spectator-info" onClick={() => setShowSpectatorList(true)}>
+                        <FaUsers /> 관전자 {spectatorCount}명
+                    </div>
+                    {gameComponent}
+                </div>
+            );
         }
 
         switch (currentView) {
@@ -355,7 +523,14 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             default:
                 return (
                     <div className="minigame-room-list">
-                        {rooms.map((room) => (
+                        {rooms.length === 0 ? (
+                            <div className="no-rooms-message">
+                                <div className="no-rooms-icon">🎮</div>
+                                <h3>현재 생성된 방이 없습니다</h3>
+                                <p>새로운 방을 만들어 게임을 시작해보세요!</p>
+                            </div>
+                        ) : (
+                            rooms.map((room) => (
                             <div key={room.roomId} className={`room-item ${room.isPlaying ? 'playing' : ''} ${room.currentPlayers >= room.maxPlayers ? 'full' : ''}`} onClick={() => handleRoomClick(room)}>
                                 <div className="room-header">
                                     <div className="room-title">
@@ -380,7 +555,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 );
         }
@@ -407,7 +583,39 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     ) : (
                         <div className="sidebar-nav-buttons"><button className="leave-room-btn" onClick={handleLeaveRoom}><FaTimes /><span>방 나가기</span></button></div>
                     )}
-                    <div className="sidebar-friends"><h3 className="friends-title">친구 목록 ({friends.length})</h3><div className="friends-list">{isLoadingFriends ? <div>로딩 중...</div> : friends.length === 0 ? <div>친구가 없습니다</div> : friends.map((friend) => { const isOnline = isFriendOnline(friend); return (<div key={friend.friendshipId} className={`friend-item ${isOnline ? 'online' : 'offline'}`}><ProfileAvatar profileImage={{ imagePath: friend.profileImagePath }} outlineImage={{ imagePath: friend.outlineImagePath }} size={40} className="friend-avatar" /><div className="friend-info"><div className="friend-name">{friend.username}</div><div className="friend-level">Lv. {friend.level || 1}</div></div>{isOnline && <div className="friend-status-online">온라인</div>}<div className="friend-status-dot"></div></div>); })}</div></div>
+                    {currentView === 'waiting' ? (
+                        <div className="sidebar-room-chat">
+                            <h3 className="room-chat-title"><FaComments /> 대기방 채팅</h3>
+                            <div className="chat-messages">
+                                {roomChatMessages.length === 0 ? (
+                                    <div className="no-messages">채팅 메시지가 없습니다</div>
+                                ) : (
+                                    roomChatMessages.map((msg, idx) => (
+                                        <div key={idx} className={`chat-message ${String(msg.userId) === String(userProfile?.id) ? 'my-message' : ''}`}>
+                                            <span className="message-author">{msg.username}</span>
+                                            <span className="message-separator"> : </span>
+                                            <span className="message-content">{msg.message}</span>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            <div className="chat-input-container">
+                                <input
+                                    type="text"
+                                    className="chat-input"
+                                    placeholder="메시지를 입력하세요..."
+                                    value={roomChatInput}
+                                    onChange={(e) => setRoomChatInput(e.target.value)}
+                                    onKeyPress={handleRoomChatKeyPress}
+                                />
+                                <button className="chat-send-btn" onClick={handleSendRoomChat}>
+                                    <FaPaperPlane />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="sidebar-friends"><h3 className="friends-title">친구 목록 ({friends.length})</h3><div className="friends-list">{isLoadingFriends ? <div>로딩 중...</div> : friends.length === 0 ? <div>친구가 없습니다</div> : friends.map((friend) => { const isOnline = isFriendOnline(friend); return (<div key={friend.friendshipId} className={`friend-item ${isOnline ? 'online' : 'offline'}`}><ProfileAvatar profileImage={{ imagePath: friend.profileImagePath }} outlineImage={{ imagePath: friend.outlineImagePath }} size={40} className="friend-avatar" /><div className="friend-info"><div className="friend-name">{friend.username}</div><div className="friend-level">Lv. {friend.level || 1}</div></div>{isOnline && <div className="friend-status-online">온라인</div>}<div className="friend-status-dot"></div></div>); })}</div></div>
+                    )}
                 </div>
             </div>
             {showFriendInviteModal && (
@@ -436,6 +644,40 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                     </div>
                 </div>
             )}
+            {showSpectatorList && (
+                <div className="spectator-list-modal-overlay" onClick={(e) => { e.stopPropagation(); setShowSpectatorList(false); }}>
+                    <div className="spectator-list-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="spectator-list-header">
+                            <h3>관전자 목록</h3>
+                            <button className="close-btn" onClick={() => setShowSpectatorList(false)}>×</button>
+                        </div>
+                        <div className="spectator-list-body">
+                            {currentRoom?.spectators?.length === 0 ? (
+                                <div className="no-spectators">관전자가 없습니다.</div>
+                            ) : (
+                                <div className="spectator-list">
+                                    {currentRoom?.spectators?.map((spectator) => (
+                                        <div key={spectator.userId} className="spectator-item">
+                                            <ProfileAvatar
+                                                profileImage={formatProfileImage(spectator.selectedProfile)}
+                                                outlineImage={formatOutlineImage(spectator.selectedOutline)}
+                                                size={50}
+                                            />
+                                            <div className="spectator-info">
+                                                <div className="spectator-name">
+                                                    {spectator.host && <FaCrown className="host-icon" />}
+                                                    {spectator.username}
+                                                </div>
+                                                <div className="spectator-level">Lv. {spectator.level}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
             {inviteNotification && (<div className={`invite-notification ${inviteNotification.type}`}>{inviteNotification.message}</div>)}
             {isReconnecting && (
                 <div
@@ -450,6 +692,68 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 >
                     <div className="reconnecting-spinner"></div>
                     <div className="reconnecting-message">재연결 중...</div>
+                </div>
+            )}
+            {showErrorPopup && (
+                <div className="error-popup-overlay" onClick={(e) => { e.stopPropagation(); setShowErrorPopup(false); }}>
+                    <div className="error-popup-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="error-popup-header">
+                            <h3>⚠️ 알림</h3>
+                        </div>
+                        <div className="error-popup-body">
+                            <p>{errorMessage}</p>
+                        </div>
+                        <div className="error-popup-footer">
+                            <button className="error-popup-close-btn" onClick={() => setShowErrorPopup(false)}>
+                                확인
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showCountdown && (
+                <div
+                    className="countdown-overlay"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.preventDefault()}
+                    onKeyUp={(e) => e.preventDefault()}
+                    onKeyPress={(e) => e.preventDefault()}
+                    tabIndex={-1}
+                >
+                    <div className="countdown-modal">
+                        <div className="countdown-text">게임을 시작합니다</div>
+                        <div className="countdown-number">{countdown}</div>
+                    </div>
+                </div>
+            )}
+            {showPlayerLeavePopup && (
+                <div className="error-popup-overlay" onClick={(e) => e.stopPropagation()}>
+                    <div className="error-popup-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="error-popup-header">
+                            <h3>⚠️ 게임 종료</h3>
+                        </div>
+                        <div className="error-popup-body">
+                            <p>상대방이 게임을 나갔습니다.{'\n'}대기방으로 돌아갑니다.</p>
+                        </div>
+                        <div className="error-popup-footer">
+                            <button
+                                className="error-popup-close-btn"
+                                onClick={() => {
+                                    console.log('Player leave popup confirmed');
+                                    setShowPlayerLeavePopup(false);
+                                    if (pendingRoomUpdate) {
+                                        console.log('Applying pending room update:', pendingRoomUpdate);
+                                        setCurrentRoom(pendingRoomUpdate);
+                                        setPendingRoomUpdate(null);
+                                    }
+                                }}
+                            >
+                                확인
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

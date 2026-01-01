@@ -194,9 +194,11 @@ function ProfileModal({ onClose, onLogout, onProfileUpdate }) {
                   try {
                     const profile = await profileService.getCurrentUserProfile();
                     setUserData(profile);
-                    // 부모 컴포넌트(App.js)에도 알림
+                    // 로컬 스토리지 업데이트
+                    localStorage.setItem('user', JSON.stringify(profile));
+                    // 부모 컴포넌트(App.js)에도 업데이트된 프로필 전달
                     if (onProfileUpdate) {
-                      onProfileUpdate();
+                      onProfileUpdate(profile);
                     }
                   } catch (error) {
                     console.error('프로필 새로고침 실패:', error);

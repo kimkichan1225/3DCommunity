@@ -9,7 +9,11 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
   const [moveCount, setMoveCount] = useState(0); // 전체 이동 카운트 (턴의 근원)
   const [gameStatus, setGameStatus] = useState('playing'); // playing, ended
   const [winner, setWinner] = useState(null);
+  const [timerSeconds, setTimerSeconds] = useState(15); // 턴 타이머
+  const [rematchRequests, setRematchRequests] = useState(new Set()); // 다시하기 요청한 플레이어들
+  const [waitingForRematch, setWaitingForRematch] = useState(false); // 상대방 응답 대기 중
   const processedMovesRef = React.useRef(new Set()); // 중복 처리 방지
+  const gameStartedRef = React.useRef(false); // 게임 시작 여부
 
   // 플레이어 매칭 헬퍼 함수
   const getMyPlayerIndex = () => {
@@ -34,6 +38,18 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
     return -1;
   };
 
+  // 게임 시작 시 타이머 초기화 (방장만)
+  useEffect(() => {
+    if (!gameStartedRef.current && isHost) {
+      gameStartedRef.current = true;
+      // 백엔드에 오목 게임 시작 알림
+      minigameService.sendGameEvent(roomId, {
+        type: 'omokStart'
+      });
+      console.log('오목 게임 시작 이벤트 전송 (방장)');
+    }
+  }, [roomId, isHost]);
+
   // 디버깅: props 확인
   useEffect(() => {
     console.log('=== OmokGame Props Debug ===');
@@ -41,7 +57,7 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
     console.log('players:', players);
     console.log('roomId:', roomId);
     console.log('isHost:', isHost);
-    
+
     if (players.length > 0) {
       console.log('First player structure:', players[0]);
       console.log('My player index:', getMyPlayerIndex());
@@ -52,8 +68,6 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
   useEffect(() => {
     const handler = (evt) => {
       if (!evt || !evt.type || evt.roomId !== roomId) return;
-
-      console.log('OmokGame received event:', evt);
 
       switch (evt.type) {
         case 'omokMove': {
@@ -85,6 +99,32 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
 
           // moveCount 증가 (모든 클라이언트가 동기화)
           setMoveCount(prev => prev + 1);
+          break;
+        }
+
+        case 'omokTimer': {
+          // 타이머 업데이트
+          const seconds = parseInt(evt.payload);
+          setTimerSeconds(seconds);
+          break;
+        }
+
+        case 'omokRematchRequest': {
+          // 다시하기 요청
+          setRematchRequests(prev => new Set([...prev, evt.playerId]));
+          break;
+        }
+
+        case 'omokRematchStart': {
+          // 양쪽 모두 동의 - 게임 재시작
+          setBoard(Array(BOARD_SIZE * BOARD_SIZE).fill(null));
+          setMoveCount(0);
+          setGameStatus('playing');
+          setWinner(null);
+          setRematchRequests(new Set());
+          setWaitingForRematch(false);
+          processedMovesRef.current.clear();
+          gameStartedRef.current = true;
           break;
         }
 
@@ -175,12 +215,17 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
     });
   };
 
-  const resetGame = () => {
-    setBoard(Array(BOARD_SIZE * BOARD_SIZE).fill(null));
-    setMoveCount(0);
-    setGameStatus('playing');
-    setWinner(null);
-    processedMovesRef.current.clear();
+  const handleRematchRequest = () => {
+    // 다시하기 요청 전송
+    minigameService.sendGameEvent(roomId, {
+      type: 'omokRematchRequest',
+      playerId: userProfile.id,
+      playerName: userProfile.username
+    });
+
+    // 내 요청 추가
+    setRematchRequests(prev => new Set([...prev, userProfile.id]));
+    setWaitingForRematch(true);
   };
 
   // 모든 클라이언트가 같은 방식으로 턴 계산
@@ -200,7 +245,7 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
           </div>
           <span className="omok-vs">vs</span>
           <div className="omok-player-2">
-            <span className="omok-player-symbol white">○</span>
+            <span className="omok-player-symbol white">●</span>
             <span className="omok-player-name">{players[1]?.username}</span>
           </div>
         </div>
@@ -211,7 +256,8 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
         )}
       </div>
 
-      <div className="omok-board-container">
+      <div className="omok-game-content">
+        <div className="omok-board-container">
         <div className="omok-board">
           {board.map((cell, index) => {
             const row = Math.floor(index / BOARD_SIZE);
@@ -234,6 +280,18 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
         </div>
       </div>
 
+        {/* 타이머 표시 */}
+        {gameStatus === 'playing' && (
+          <div className="omok-timer-panel">
+            <div className="omok-timer-label">남은 시간</div>
+            <div className={`omok-timer-display ${timerSeconds <= 5 ? 'warning' : ''}`}>
+              {timerSeconds}
+            </div>
+            <div className="omok-timer-unit">초</div>
+          </div>
+        )}
+      </div>
+
       {gameStatus === 'ended' && (
         <div className="omok-result-modal">
           <div className="omok-result-content">
@@ -249,11 +307,17 @@ const OmokGame = ({ roomId, isHost, userProfile, players = [], onGameEnd }) => {
               <p>무승부</p>
             )}
             <div className="omok-result-actions">
-              <button className="btn-reset" onClick={resetGame}>
-                다시 하기
-              </button>
+              {waitingForRematch ? (
+                <div className="waiting-rematch">
+                  ⏳ 상대방의 응답 대기 중...
+                </div>
+              ) : (
+                <button className="btn-reset" onClick={handleRematchRequest}>
+                  다시 하기
+                </button>
+              )}
               <button className="btn-back" onClick={onGameEnd}>
-                로비로
+                대기방으로
               </button>
             </div>
           </div>

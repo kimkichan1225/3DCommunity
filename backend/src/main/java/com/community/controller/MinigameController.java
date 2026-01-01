@@ -136,14 +136,20 @@ public class MinigameController {
 
             messagingTemplate.convertAndSend("/topic/minigame/rooms", deletedRoom);
         } else {
-            room.setAction("leave");
-            room.setTimestamp(System.currentTimeMillis());
+            // 서비스에서 이미 gameEndByPlayerLeave 액션을 설정한 경우 덮어쓰지 않음
+            if (!"gameEndByPlayerLeave".equals(room.getAction())) {
+                room.setAction("leave");
+                room.setTimestamp(System.currentTimeMillis());
 
-            // 방에 있는 모든 사람에게 브로드캐스트
-            messagingTemplate.convertAndSend("/topic/minigame/room/" + request.getRoomId(), room);
+                // 방에 있는 모든 사람에게 브로드캐스트
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + request.getRoomId(), room);
 
-            // 방 목록 업데이트 브로드캐스트
-            messagingTemplate.convertAndSend("/topic/minigame/rooms", room);
+                // 방 목록 업데이트 브로드캐스트
+                messagingTemplate.convertAndSend("/topic/minigame/rooms", room);
+                log.info("일반 나가기 처리: roomId={}, action=leave", request.getRoomId());
+            } else {
+                log.info("gameEndByPlayerLeave 액션 감지 - 중복 브로드캐스트 스킵: roomId={}", request.getRoomId());
+            }
         }
     }
 
@@ -273,6 +279,9 @@ public class MinigameController {
 
             log.info("오목 움직임: roomId={}, playerId={}, position={}", roomId, playerId, position);
 
+            // 타이머 재시작 (다음 턴)
+            roomService.startOmokTimer(roomId);
+
             // 모든 플레이어에게 브로드캐스트
             GameEventDto omokEvt = new GameEventDto();
             omokEvt.setRoomId(roomId);
@@ -281,6 +290,77 @@ public class MinigameController {
             omokEvt.setPosition(position);
             omokEvt.setTimestamp(System.currentTimeMillis());
             messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", omokEvt);
+        }
+
+        if ("omokStart".equals(event.getType())) {
+            // 오목 게임 시작 시 첫 타이머 시작
+            String roomId = event.getRoomId();
+            log.info("오목 게임 시작, 타이머 시작: roomId={}", roomId);
+            roomService.initOmokGame(roomId);
+            roomService.startOmokTimer(roomId);
+        }
+
+        if ("omokRematchRequest".equals(event.getType())) {
+            // 다시하기 요청
+            String roomId = event.getRoomId();
+            String playerId = event.getPlayerId();
+            log.info("오목 다시하기 요청: roomId={}, playerId={}", roomId, playerId);
+
+            // 다시하기 요청 브로드캐스트
+            GameEventDto rematchReqEvt = new GameEventDto();
+            rematchReqEvt.setRoomId(roomId);
+            rematchReqEvt.setType("omokRematchRequest");
+            rematchReqEvt.setPlayerId(playerId);
+            rematchReqEvt.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", rematchReqEvt);
+
+            // 모든 플레이어가 동의했는지 확인
+            boolean allAgreed = roomService.addOmokRematchRequest(roomId, playerId);
+            if (allAgreed) {
+                log.info("모든 플레이어 동의 - 오목 게임 재시작: roomId={}", roomId);
+
+                // 게임 재시작
+                roomService.initOmokGame(roomId);
+                roomService.startOmokTimer(roomId);
+
+                // 재시작 이벤트 브로드캐스트
+                GameEventDto rematchStartEvt = new GameEventDto();
+                rematchStartEvt.setRoomId(roomId);
+                rematchStartEvt.setType("omokRematchStart");
+                rematchStartEvt.setTimestamp(System.currentTimeMillis());
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", rematchStartEvt);
+            }
+        }
+
+        if ("countdownStart".equals(event.getType())) {
+            // 카운트다운 시작 이벤트 처리
+            String roomId = event.getRoomId();
+            String hostId = event.getPlayerId();
+
+            log.info("카운트다운 시작: roomId={}, hostId={}", roomId, hostId);
+
+            // 모든 플레이어에게 브로드캐스트
+            GameEventDto countdownEvt = new GameEventDto();
+            countdownEvt.setRoomId(roomId);
+            countdownEvt.setType("countdownStart");
+            countdownEvt.setPlayerId(hostId);
+            countdownEvt.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", countdownEvt);
+        }
+
+        if ("backToWaiting".equals(event.getType())) {
+            // 대기방으로 돌아가기 이벤트 처리
+            String roomId = event.getRoomId();
+
+            log.info("대기방으로 돌아가기: roomId={}", roomId);
+
+            // 방 상태 업데이트
+            MinigameRoomDto room = roomService.endGameAndResetReady(roomId);
+            if (room != null) {
+                room.setAction("backToWaiting");
+                room.setTimestamp(System.currentTimeMillis());
+                messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId, room);
+            }
         }
 
         if ("reactionStart".equals(event.getType())) {
