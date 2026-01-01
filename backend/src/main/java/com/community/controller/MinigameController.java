@@ -283,6 +283,22 @@ public class MinigameController {
             messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", omokEvt);
         }
 
+        if ("countdownStart".equals(event.getType())) {
+            // 카운트다운 시작 이벤트 처리
+            String roomId = event.getRoomId();
+            String hostId = event.getPlayerId();
+
+            log.info("카운트다운 시작: roomId={}, hostId={}", roomId, hostId);
+
+            // 모든 플레이어에게 브로드캐스트
+            GameEventDto countdownEvt = new GameEventDto();
+            countdownEvt.setRoomId(roomId);
+            countdownEvt.setType("countdownStart");
+            countdownEvt.setPlayerId(hostId);
+            countdownEvt.setTimestamp(System.currentTimeMillis());
+            messagingTemplate.convertAndSend("/topic/minigame/room/" + roomId + "/game", countdownEvt);
+        }
+
         if ("reactionStart".equals(event.getType())) {
             String roomId = event.getRoomId();
             boolean immediate = false;

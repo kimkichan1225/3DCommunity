@@ -25,6 +25,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [showSpectatorList, setShowSpectatorList] = useState(false); // 관전자 목록 모달
     const [showErrorPopup, setShowErrorPopup] = useState(false); // 에러 팝업
     const [errorMessage, setErrorMessage] = useState(''); // 에러 메시지
+    const [showCountdown, setShowCountdown] = useState(false); // 카운트다운 모달
+    const [countdown, setCountdown] = useState(3); // 카운트다운 숫자
 
     const gameTypes = [
         { id: 'omok', name: '오목', image: '/resources/GameIllust/Omok.png', maxPlayers: [2] },
@@ -157,8 +159,16 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             }
         };
         const onGameEvent = (evt) => {
-            if (evt?.roomId === currentRoom?.roomId && (evt.type === 'gameStart' || evt.type === 'spawnTarget')) {
-                setCurrentRoom(prev => ({ ...(prev || {}), playing: true }));
+            console.log('Received gameEvent:', evt);
+            if (evt?.roomId === currentRoom?.roomId) {
+                if (evt.type === 'gameStart' || evt.type === 'spawnTarget') {
+                    setCurrentRoom(prev => ({ ...(prev || {}), playing: true }));
+                } else if (evt.type === 'countdownStart') {
+                    // 모든 플레이어에게 카운트다운 표시
+                    console.log('Starting countdown for all players');
+                    setCountdown(3);
+                    setShowCountdown(true);
+                }
             }
         };
         const onRoomChat = (chatData) => {
@@ -247,6 +257,28 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         };
     }, [currentRoom]);
 
+    // 카운트다운 처리
+    useEffect(() => {
+        if (!showCountdown) return;
+
+        if (countdown === 0) {
+            // 카운트다운 종료 후 게임 시작 (방장만 실제 게임 시작 명령 전송)
+            setShowCountdown(false);
+            const isHost = String(currentRoom?.hostId) === String(userProfile?.id);
+            if (currentRoom?.roomId && isHost) {
+                minigameService.startGame(currentRoom.roomId);
+            }
+            return;
+        }
+
+        // 1초마다 카운트다운 감소
+        const timer = setTimeout(() => {
+            setCountdown(prev => prev - 1);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [showCountdown, countdown, currentRoom, userProfile]);
+
     const handleRoomClick = (room) => {
         if (room.isLocked) return alert('비공개 방입니다.');
         // 방이 가득 차도 관전자로 입장 가능
@@ -286,7 +318,24 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             setShowErrorPopup(true);
             return;
         }
-        if (currentRoom?.roomId) minigameService.startGame(currentRoom.roomId);
+
+        // 모든 참가자가 준비 완료 상태인지 확인 (방장 제외)
+        const notReadyPlayers = currentRoom?.players?.filter(p => !p.host && !p.ready) || [];
+        if (notReadyPlayers.length > 0) {
+            const notReadyNames = notReadyPlayers.map(p => p.username).join(', ');
+            setErrorMessage(`모든 참가자가 준비 완료 상태여야 합니다.\n준비하지 않은 참가자: ${notReadyNames}`);
+            setShowErrorPopup(true);
+            return;
+        }
+
+        // 모든 플레이어에게 카운트다운 시작 이벤트 전송
+        if (currentRoom?.roomId) {
+            console.log('Sending countdownStart event to room:', currentRoom.roomId);
+            minigameService.sendGameEvent(currentRoom.roomId, {
+                type: 'countdownStart',
+                hostId: userProfile?.id
+            });
+        }
     };
     const handleReady = () => {
         if (currentRoom?.roomId) minigameService.toggleReady(currentRoom.roomId);
@@ -628,6 +677,23 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                                 확인
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+            {showCountdown && (
+                <div
+                    className="countdown-overlay"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.preventDefault()}
+                    onKeyUp={(e) => e.preventDefault()}
+                    onKeyPress={(e) => e.preventDefault()}
+                    tabIndex={-1}
+                >
+                    <div className="countdown-modal">
+                        <div className="countdown-text">게임을 시작합니다</div>
+                        <div className="countdown-number">{countdown}</div>
                     </div>
                 </div>
             )}
