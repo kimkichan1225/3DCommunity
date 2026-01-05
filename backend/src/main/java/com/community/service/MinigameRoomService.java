@@ -212,6 +212,37 @@ public class MinigameRoomService {
         }
 
         room.setGameName(gameName);
+
+        // 최대 인원 수를 줄였을 때 초과 인원을 관전자로 이동
+        if (maxPlayers < room.getMaxPlayers()) {
+            int currentPlayers = room.getPlayers().size();
+            if (currentPlayers > maxPlayers) {
+                // 초과된 플레이어 수 계산
+                int excessPlayers = currentPlayers - maxPlayers;
+
+                // 뒤에서부터 플레이어를 관전자로 이동 (방장 제외)
+                List<MinigamePlayerDto> playersToMove = new ArrayList<>();
+                for (int i = room.getPlayers().size() - 1; i >= 0 && playersToMove.size() < excessPlayers; i--) {
+                    MinigamePlayerDto player = room.getPlayers().get(i);
+                    // 방장이 아닌 경우에만 이동
+                    if (!player.isHost()) {
+                        playersToMove.add(player);
+                    }
+                }
+
+                // 관전자로 이동
+                for (MinigamePlayerDto player : playersToMove) {
+                    room.getPlayers().remove(player);
+                    player.setReady(false); // 준비 상태 초기화
+                    room.getSpectators().add(player);
+                    log.info("플레이어 {}를 관전자로 이동: roomId={}", player.getUsername(), roomId);
+                }
+
+                // 현재 플레이어 수 업데이트
+                room.setCurrentPlayers(room.getPlayers().size());
+            }
+        }
+
         room.setMaxPlayers(maxPlayers);
 
         log.info("방 설정 변경: {} - 게임: {}, 최대 인원: {}", roomId, gameName, maxPlayers);
