@@ -36,9 +36,7 @@ public class UserDto {
     private LocalDateTime suspendedUntil;
     private String suspensionReason;
 
-    // 재화 정보
-    private Integer goldCoins;
-    private Integer silverCoins;
+
 
     public static UserDto fromEntity(User user) {
         UserDtoBuilder builder = UserDto.builder()
