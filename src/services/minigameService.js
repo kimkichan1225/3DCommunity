@@ -138,7 +138,7 @@ class MinigameService {
   /**
    * 방 생성
    */
-  createRoom(roomName, gameName, maxPlayers, isLocked, hostLevel, selectedProfile, selectedOutline) {
+  createRoom(roomName, gameName, maxPlayers, isLocked, hostLevel, selectedProfile, selectedOutline, gpsLocation = null) {
     if (!this.connected || !this.client) {
       console.error('WebSocket not connected');
       return;
@@ -153,7 +153,10 @@ class MinigameService {
       isLocked,
       hostLevel: hostLevel || 1,
       selectedProfile: selectedProfile || null,
-      selectedOutline: selectedOutline || null
+      selectedOutline: selectedOutline || null,
+      // GPS 위치 정보 추가
+      gpsLng: gpsLocation ? gpsLocation[0] : null,
+      gpsLat: gpsLocation ? gpsLocation[1] : null
     };
 
     this.client.publish({

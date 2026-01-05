@@ -40,7 +40,7 @@ public class MinigameRoomService {
      */
     public MinigameRoomDto createRoom(String roomName, String gameName, String hostId, String hostName,
             int maxPlayers, boolean isLocked, int hostLevel,
-            String selectedProfile, String selectedOutline) {
+            String selectedProfile, String selectedOutline, Double gpsLng, Double gpsLat) {
         String roomId = UUID.randomUUID().toString();
 
         MinigameRoomDto room = new MinigameRoomDto();
@@ -53,6 +53,8 @@ public class MinigameRoomService {
         room.setLocked(isLocked);
         room.setPlaying(false);
         room.setCurrentPlayers(1);
+        room.setGpsLng(gpsLng);
+        room.setGpsLat(gpsLat);
 
         MinigamePlayerDto host = new MinigamePlayerDto();
         host.setUserId(hostId);
@@ -66,7 +68,7 @@ public class MinigameRoomService {
         room.getPlayers().add(host);
         rooms.put(roomId, room);
 
-        log.info("방 생성: {} (ID: {})", roomName, roomId);
+        log.info("방 생성: {} (ID: {}, GPS: {}, {})", roomName, roomId, gpsLng, gpsLat);
         return room;
     }
 

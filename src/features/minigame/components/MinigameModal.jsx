@@ -8,7 +8,7 @@ import AimingGame from './AimingGame';
 import ReactionRace from './ReactionRace';
 import OmokGame from './OmokGame';
 
-function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby', initialRoomId = null }) {
+function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby', initialRoomId = null, gpsLocation = null }) {
     const [currentView, setCurrentView] = useState(initialMode === 'create' ? 'create' : 'lobby');
     const [currentRoom, setCurrentRoom] = useState(null);
     const [rooms, setRooms] = useState([]);
@@ -144,7 +144,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     };
     const getCurrentMaxPlayersOptions = () => gameTypes.find(g => g.name === roomForm.gameType)?.maxPlayers || [2, 4, 6, 8];
     const handleSubmitCreateRoom = () => {
-        minigameService.createRoom(roomForm.roomName, roomForm.gameType, roomForm.maxPlayers, roomForm.isPrivate, userProfile?.level || 1, userProfile?.selectedProfile?.imagePath, userProfile?.selectedOutline?.imagePath);
+        minigameService.createRoom(roomForm.roomName, roomForm.gameType, roomForm.maxPlayers, roomForm.isPrivate, userProfile?.level || 1, userProfile?.selectedProfile?.imagePath, userProfile?.selectedOutline?.imagePath, gpsLocation);
     };
     const handleLeaveRoom = () => {
         if (currentRoom?.roomId) minigameService.leaveRoom(currentRoom.roomId);

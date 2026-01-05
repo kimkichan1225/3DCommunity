@@ -38,7 +38,9 @@ public class MinigameController {
                 request.isLocked(),
                 request.getHostLevel(),
                 request.getSelectedProfile(),
-                request.getSelectedOutline());
+                request.getSelectedOutline(),
+                request.getGpsLng(),
+                request.getGpsLat());
         room.setAction("create");
         room.setTimestamp(System.currentTimeMillis());
 

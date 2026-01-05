@@ -7,10 +7,10 @@ import mapboxgl from 'mapbox-gl';
 import { MapboxManager } from '../core/map/MapboxManager';
 import { useKeyboardControls } from '../useKeyboardControls';
 import multiplayerService from '../services/multiplayerService';
-import minigameService from '../services/minigameService';
 import shopService from '../features/shop/services/shopService';
 import OtherPlayer from '../components/character/OtherPlayer';
-import { MinigameModal } from '../features/minigame';
+import PersonalRoomModal from '../components/PersonalRoomModal';
+import PersonalRoom3D from '../components/map/PersonalRoom3D';
 import '../pages/MapGamePageNew.css';
 
 // 기본 캐릭터 모델 경로
@@ -21,6 +21,10 @@ const GPS_SCALE = 100000;
 
 // 포탈 진입 거리 (유닛)
 const PORTAL_ENTER_DISTANCE = 5;
+
+// 개인 룸 관련 상수
+const EXIT_PORTAL_POSITION = [0, 0, -18]; // PersonalRoom3D.jsx의 ExitPortal 위치와 동일
+const EXIT_DISTANCE = 3; // 출구 포탈 진입 거리
 
 /**
  * 새로운 지도 게임 페이지
@@ -39,10 +43,10 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
   // 다른 플레이어 상태 (App.js와 동일)
   const [otherPlayers, setOtherPlayers] = useState({});
   
-  // 사용자 정보 (localStorage에서 가져오기)
-  const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
-  const userId = userInfo.id || `guest_${Date.now()}`;
-  const username = userInfo.username || '게스트';
+  // 사용자 정보 (localStorage에서 가져오기) - useMemo로 안정화
+  const userInfo = useMemo(() => JSON.parse(localStorage.getItem('user') || '{}'), []);
+  const userId = useMemo(() => userInfo.id || `guest_${Date.now()}`, [userInfo.id]);
+  const username = useMemo(() => userInfo.username || '게스트', [userInfo.username]);
   const isLoggedIn = !!userInfo.id;
 
   // 캐릭터 모델 경로 상태 (메인맵과 동일하게 착용 중인 아바타 사용)
@@ -95,78 +99,40 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
   // 미니맵 캔버스 참조
   const minimapCanvasRef = useRef(null);
 
-  // 미니게임 모달 상태 (App.js와 동일)
-  const [showMinigameModal, setShowMinigameModal] = useState(false);
-  const [minigameModalMode, setMinigameModalMode] = useState('lobby'); // 'lobby', 'create', 'waiting'
+  // 개인 룸 모달 상태
+  const [showPersonalRoomModal, setShowPersonalRoomModal] = useState(false);
+  const [personalRoomMode, setPersonalRoomMode] = useState('create'); // 'create', 'waiting', 'browse'
+  const [currentPersonalRoom, setCurrentPersonalRoom] = useState(null);
+  
+  // 개인 룸 3D 뷰 모드 (true면 개인 룸 내부 3D로 전환)
+  const [isInPersonalRoom, setIsInPersonalRoom] = useState(false);
+  
+  // 친구 목록 상태 (실제로는 서비스에서 가져옴)
+  const [friendsList, setFriendsList] = useState([]);
 
-  // 미니게임 서비스 연결 및 방 목록 구독
+  // 친구 목록 로드
   useEffect(() => {
-    const initMinigameService = async () => {
-      // 미니게임 서비스 연결 (아직 연결되지 않은 경우)
-      if (!minigameService.connected) {
-        try {
-          console.log('🎮 [MapGamePage] 미니게임 서비스 연결 시도...');
-          await minigameService.connect(userId, username);
-          console.log('✅ [MapGamePage] 미니게임 서비스 연결 성공');
-        } catch (error) {
-          console.error('❌ [MapGamePage] 미니게임 서비스 연결 실패:', error);
-        }
-      }
-
-      // 연결된 경우 방 목록 요청
-      if (minigameService.connected) {
-        minigameService.requestRoomsList();
-      }
-    };
-
-    // 방 목록 수신 핸들러
-    const handleRoomsList = (rooms) => {
-      console.log('🏠 [MapGamePage] 방 목록 수신:', rooms?.length || 0);
-      if (Array.isArray(rooms)) {
-        // GPS 기반으로 방 위치 설정
-        const processedRooms = rooms.map((room, index) => ({
-          ...room,
-          // 방마다 고유한 위치 (roomId 기반 해시로 일관된 위치 생성)
-          gpsLng: userLocation ? userLocation[0] + ((room.roomId % 100) - 50) * 0.00004 : 127.0276 + ((room.roomId % 100) - 50) * 0.00004,
-          gpsLat: userLocation ? userLocation[1] + (((room.roomId * 7) % 100) - 50) * 0.00004 : 37.4979 + (((room.roomId * 7) % 100) - 50) * 0.00004,
-        }));
-        setNearbyRooms(processedRooms);
-      }
-    };
-
-    // 방 업데이트 핸들러 (생성, 수정, 입장, 퇴장)
-    const handleRoomUpdate = (data) => {
-      console.log('🔄 [MapGamePage] 방 업데이트:', data.action, data);
-      // 방 목록 새로고침 요청
-      if (minigameService.connected) {
-        minigameService.requestRoomsList();
-      }
-    };
-
-    // 방 삭제 핸들러
-    const handleRoomDelete = (data) => {
-      console.log('🗑️ [MapGamePage] 방 삭제:', data);
-      setNearbyRooms(prev => prev.filter(room => room.roomId !== data.roomId));
-    };
-
-    // 이벤트 구독
-    minigameService.on('roomsList', handleRoomsList);
-    minigameService.on('roomUpdate', handleRoomUpdate);
-    minigameService.on('roomDelete', handleRoomDelete);
-
-    // 초기화
-    initMinigameService();
-
-    return () => {
-      minigameService.off('roomsList', handleRoomsList);
-      minigameService.off('roomUpdate', handleRoomUpdate);
-      minigameService.off('roomDelete', handleRoomDelete);
-    };
-  }, [userId, username, userLocation]);
+    // TODO: 실제 친구 서비스에서 친구 목록을 가져오도록 구현
+    // 지금은 다른 플레이어를 친구로 가정
+    const friendsFromPlayers = Object.values(otherPlayers).map(player => ({
+      id: player.id,
+      username: player.username,
+      selectedProfile: player.selectedProfile,
+      isOnline: true
+    }));
+    setFriendsList(friendsFromPlayers);
+  }, [otherPlayers]);
 
   // 멀티플레이어 서비스 콜백 설정 (App.js와 동일한 로직)
   useEffect(() => {
     console.log('🎮 MapGamePageNew: 멀티플레이어 콜백 설정...');
+    console.log('📊 연결 상태:', { 
+      connected: multiplayerService.connected, 
+      clientConnected: multiplayerService.client?.connected,
+      userId, 
+      username, 
+      isLoggedIn 
+    });
     
     // 플레이어 입장 콜백
     const handlePlayerJoin = (data) => {
@@ -236,18 +202,27 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     const unsubLeave = multiplayerService.onPlayerLeave(handlePlayerLeave);
     const unsubPosition = multiplayerService.onPositionUpdate(handlePositionUpdate);
 
-    // 연결 처리 - 아직 연결되지 않은 경우에만 연결
-    if (!multiplayerService.connected) {
+    // 연결 처리
+    if (!multiplayerService.connected || !multiplayerService.client?.connected) {
+      // 아직 연결되지 않았으면 새로 연결
       if (isLoggedIn && userId && username) {
-        console.log('🔗 [MapGamePage] 플레이어로 연결:', { userId, username });
+        console.log('🔗 [MapGamePage] 플레이어로 새 연결:', { userId, username });
         multiplayerService.connect(userId, username);
       } else {
-        console.log('👀 [MapGamePage] 관찰자로 연결');
+        console.log('👀 [MapGamePage] 관찰자로 새 연결');
         const observerId = 'observer_' + Date.now();
         multiplayerService.connect(observerId, '게스트', true);
       }
     } else {
-      console.log('✅ [MapGamePage] 멀티플레이어 이미 연결됨');
+      // 이미 연결되어 있으면 입장 메시지만 다시 보냄 (다른 플레이어들에게 알림)
+      console.log('✅ [MapGamePage] 멀티플레이어 이미 연결됨 - 입장 재전송');
+      if (isLoggedIn && userId && username && !multiplayerService.isObserver) {
+        // 잠시 후 join 메시지 재전송 (콜백 등록 완료 후)
+        setTimeout(() => {
+          multiplayerService.sendPlayerJoin();
+          console.log('📢 [MapGamePage] 입장 메시지 재전송 완료');
+        }, 500);
+      }
     }
 
     return () => {
@@ -451,35 +426,80 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     navigate(-1);
   };
 
+  // 개인 룸 생성 버튼
   const handleCreateRoom = () => {
-    console.log('🏠 방 생성 버튼 클릭');
-    setMinigameModalMode('create');
-    setShowMinigameModal(true);
+    console.log('🏠 개인 룸 생성 버튼 클릭');
+    setPersonalRoomMode('create');
+    setShowPersonalRoomModal(true);
   };
 
-  const handleJoinLobby = () => {
-    console.log('📍 로비 입장 버튼 클릭');
-    setMinigameModalMode('lobby');
-    setShowMinigameModal(true);
+  // 공개 룸 찾기 버튼
+  const handleBrowseRooms = () => {
+    console.log('🔍 공개 룸 찾기 버튼 클릭');
+    setPersonalRoomMode('browse');
+    setShowPersonalRoomModal(true);
   };
 
-  // 방 입장 처리
-  const handleJoinRoom = useCallback((room) => {
-    console.log('🚪 방 입장 시도:', room.roomName);
-    if (minigameService.connected) {
-      const userProfile = JSON.parse(localStorage.getItem('user') || '{}');
-      minigameService.joinRoom(
-        room.roomId,
-        userProfile?.level || 1,
-        userProfile?.selectedProfile?.imagePath,
-        userProfile?.selectedOutline?.imagePath
-      );
-      // 대기방 모달 열기
-      setMinigameModalMode('waiting');
-      setShowMinigameModal(true);
+  // 개인 룸 생성 처리
+  const handlePersonalRoomCreate = useCallback((roomData) => {
+    console.log('🏠 개인 룸 생성됨:', roomData);
+    setCurrentPersonalRoom(roomData);
+    
+    // GPS 위치가 있으면 방 위치에 추가
+    const roomWithLocation = {
+      ...roomData,
+      gpsLng: userLocation ? userLocation[0] : 127.0276,
+      gpsLat: userLocation ? userLocation[1] : 37.4979,
+      gameName: '개인 룸', // 포탈 색상용
+    };
+    
+    // 주변 방 목록에 추가
+    setNearbyRooms(prev => [...prev, roomWithLocation]);
+    
+    // 모달 닫기
+    setShowPersonalRoomModal(false);
+    
+    // 개인 룸 3D 뷰로 전환
+    console.log('🚀 개인 룸 3D 뷰로 전환');
+    setIsInPersonalRoom(true);
+    
+    // TODO: 서버에 방 생성 알림 (WebSocket)
+  }, [userLocation]);
+
+  // 친구 초대 처리
+  const handleInviteFriend = useCallback((friend) => {
+    console.log('📨 친구 초대:', friend);
+    // TODO: WebSocket으로 친구에게 초대 메시지 전송
+    // multiplayerService.sendInvite(friend.id, currentPersonalRoom);
+  }, [currentPersonalRoom]);
+
+  // 개인 룸 나가기
+  const handleLeavePersonalRoom = useCallback(() => {
+    console.log('🚪 개인 룸 나가기');
+    if (currentPersonalRoom) {
+      // 방 목록에서 제거
+      setNearbyRooms(prev => prev.filter(r => r.roomId !== currentPersonalRoom.roomId));
     }
+    setCurrentPersonalRoom(null);
+    setIsInPersonalRoom(false); // 메인 맵으로 복귀
+    setShowPersonalRoomModal(false);
+  }, [currentPersonalRoom]);
+
+  // 개인 룸에서 나가기 (3D 뷰에서)
+  const handleExitPersonalRoom = useCallback(() => {
+    console.log('🚪 개인 룸 3D에서 나가기');
+    setIsInPersonalRoom(false);
+    // 방 데이터는 유지 (나중에 다시 들어갈 수 있음)
+  }, []);
+
+  // 공개 룸 입장
+  const handleJoinPublicRoom = useCallback((room) => {
+    console.log('🚪 공개 룸 입장:', room);
+    setCurrentPersonalRoom(room);
+    setShowPersonalRoomModal(false);
     setShowRoomPopup(false);
-    setSelectedRoom(null);
+    setIsInPersonalRoom(true); // 개인 룸 3D 뷰로 전환
+    // TODO: 서버에 입장 알림
   }, []);
 
   // 포탈 근접 체크 (CharacterViewer에서 호출)
@@ -515,11 +535,11 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
 
   return (
     <div className="map-game-split-container">
-      {/* 좌측: Three.js 캐릭터 */}
-      <div className="map-game-left">
+      {/* 좌측: Three.js 캐릭터 또는 개인 룸 3D */}
+      <div className={`map-game-left ${isInPersonalRoom ? 'full-width' : ''}`}>
         <Canvas
           camera={{
-            position: [0, 38, 45],
+            position: isInPersonalRoom ? [0, 8, 15] : [0, 38, 45],
             fov: 60,
             near: 0.1,
             far: 10000
@@ -527,8 +547,36 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           style={{ width: '100%', height: '100%' }}
           gl={{ antialias: true, alpha: false }}
         >
-          {/* 시간 기반 동적 하늘 */}
-          <DynamicSky />
+          {isInPersonalRoom ? (
+            /* 개인 룸 3D 뷰 */
+            <>
+              <PersonalRoom3D 
+                roomData={currentPersonalRoom}
+                onExit={handleExitPersonalRoom}
+              />
+              
+              {/* 내 캐릭터 (개인 룸 내부) */}
+              <CharacterViewer 
+                characterStateRef={characterStateRef} 
+                userId={userId}
+                username={username}
+                modelPath={characterModelPath}
+                nearbyRooms={[]}
+                userLocation={userLocation}
+                onPortalEnter={() => {}}
+                isModalOpen={false}
+                isInPersonalRoom={true}
+                onExitRoom={handleExitPersonalRoom}
+              />
+              
+              {/* 카메라 제어 (개인 룸용) */}
+              <PersonalRoomCamera characterStateRef={characterStateRef} />
+            </>
+          ) : (
+            /* 메인 맵 뷰 */
+            <>
+              {/* 시간 기반 동적 하늘 */}
+              <DynamicSky />
           
           {/* 동적 조명 (시간 기반) */}
           <DynamicLighting />
@@ -548,7 +596,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
               userLocation={userLocation}
               characterStateRef={characterStateRef}
               onProximity={handlePortalProximity}
-              onEnter={() => handleJoinRoom(room)}
+              onEnter={() => handleJoinPublicRoom(room)}
             />
           ))}
 
@@ -560,8 +608,8 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
             modelPath={characterModelPath}
             nearbyRooms={nearbyRooms}
             userLocation={userLocation}
-            onPortalEnter={handleJoinRoom}
-            isModalOpen={showMinigameModal || showRoomPopup}
+            onPortalEnter={handleJoinPublicRoom}
+            isModalOpen={showPersonalRoomModal || showRoomPopup}
           />
           
           {/* 다른 플레이어들 (App.js Level1과 동일한 로직) */}
@@ -583,15 +631,31 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           
           {/* 지도 마커 업데이트 (실시간) */}
           <MarkerUpdater characterStateRef={characterStateRef} mapboxManagerRef={mapboxManagerRef} userLocation={userLocation} isReady={isReady} />
+            </>
+          )}
         </Canvas>
 
-        {/* 미니맵 오버레이 */}
-        <Minimap 
-          userLocation={userLocation}
-          characterStateRef={characterStateRef}
-          nearbyRooms={nearbyRooms}
-          otherPlayers={otherPlayers}
-        />
+        {/* 개인 룸 나가기 버튼 (개인 룸 모드일 때만) */}
+        {isInPersonalRoom && (
+          <div className="personal-room-exit-overlay">
+            <div className="personal-room-info">
+              <span className="room-name">🏠 {currentPersonalRoom?.roomName || '개인 룸'}</span>
+              <button className="exit-room-btn" onClick={handleExitPersonalRoom}>
+                🚪 방 나가기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 미니맵 오버레이 (메인 맵일 때만) */}
+        {!isInPersonalRoom && (
+          <Minimap 
+            userLocation={userLocation}
+            characterStateRef={characterStateRef}
+            nearbyRooms={nearbyRooms}
+            otherPlayers={otherPlayers}
+          />
+        )}
         
         {/* 시간대 표시 */}
         <TimeIndicator />
@@ -603,25 +667,27 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         )}
       </div>
 
-      {/* 우측: Mapbox 지도 */}
-      <div className="map-game-right">
-        <div
-          ref={mapContainerRef}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%'
-          }}
-        />
-        
-        {!isReady && (
-          <div className="map-game-loading-overlay">
-            🗺️ 지도 로딩 중...
-          </div>
-        )}
-      </div>
+      {/* 우측: Mapbox 지도 (개인 룸이 아닐 때만 표시) */}
+      {!isInPersonalRoom && (
+        <div className="map-game-right">
+          <div
+            ref={mapContainerRef}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%'
+            }}
+          />
+          
+          {!isReady && (
+            <div className="map-game-loading-overlay">
+              🗺️ 지도 로딩 중...
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 하단 통합 UI 바 */}
       {isReady && (
@@ -633,13 +699,13 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
             </button>
           </div>
 
-          {/* 중앙: 방 생성/입장 버튼 */}
+          {/* 중앙: 개인 룸 버튼 */}
           <div className="bottom-bar-center">
             <button className="room-button room-create-button" onClick={handleCreateRoom}>
-              🏠 방 생성
+              🏠 내 방 만들기
             </button>
-            <button className="room-button room-join-button" onClick={handleJoinLobby}>
-              📍 방 입장
+            <button className="room-button room-join-button" onClick={handleBrowseRooms}>
+              🔍 공개 방 찾기
             </button>
           </div>
 
@@ -662,7 +728,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
       {showRoomPopup && selectedRoom && (
         <RoomInfoPopup 
           room={selectedRoom}
-          onJoin={() => handleJoinRoom(selectedRoom)}
+          onJoin={() => handleJoinPublicRoom(selectedRoom)}
           onClose={() => {
             setShowRoomPopup(false);
             setSelectedRoom(null);
@@ -670,15 +736,30 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         />
       )}
 
-      {/* 미니게임 모달 (App.js와 동일) */}
-      {showMinigameModal && (
-        <MinigameModal
-          onClose={() => setShowMinigameModal(false)}
+      {/* 개인 룸 모달 */}
+      {showPersonalRoomModal && (
+        <PersonalRoomModal
+          onClose={() => setShowPersonalRoomModal(false)}
           userProfile={userInfo}
-          onlinePlayers={otherPlayers}
-          initialMode={minigameModalMode}
+          friends={friendsList}
+          mode={personalRoomMode}
+          currentRoom={currentPersonalRoom}
+          onCreateRoom={handlePersonalRoomCreate}
+          onInviteFriend={handleInviteFriend}
+          onLeaveRoom={handleLeavePersonalRoom}
+          onJoinRoom={handleJoinPublicRoom}
         />
       )}
+
+      {/* 좌측 방 목록 패널 */}
+      <RoomListPanel 
+        rooms={nearbyRooms}
+        onRoomSelect={(room) => {
+          setSelectedRoom(room);
+          setShowRoomPopup(true);
+        }}
+        selectedRoomId={selectedRoom?.roomId}
+      />
     </div>
   );
 }
@@ -688,7 +769,15 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
  * MapCharacterController와 동일한 이동 로직 사용
  * + 위치 브로드캐스트 기능 추가
  */
-function CharacterViewer({ characterStateRef, userId, username, modelPath = DEFAULT_CHARACTER_MODEL, isModalOpen = false }) {
+function CharacterViewer({ 
+  characterStateRef, 
+  userId, 
+  username, 
+  modelPath = DEFAULT_CHARACTER_MODEL, 
+  isModalOpen = false,
+  isInPersonalRoom = false,
+  onExitRoom
+}) {
   const characterRef = useRef(null);
   const groupRef = useRef(null);
   const modelGroupRef = useRef(null);
@@ -697,6 +786,10 @@ function CharacterViewer({ characterStateRef, userId, username, modelPath = DEFA
   const lastRotationYRef = useRef(0);
   const lastBroadcastTimeRef = useRef(0);
   const BROADCAST_INTERVAL = 100; // 100ms마다 위치 전송
+  
+  // 개인 룸 출구 거리 체크
+  const EXIT_PORTAL_POSITION = [0, 0, -9];
+  const EXIT_DISTANCE = 3;
   
   // MapCharacterController와 동일하게 useKeyboardControls 사용
   const { forward, backward, left, right, shift } = useKeyboardControls();
@@ -790,6 +883,27 @@ function CharacterViewer({ characterStateRef, userId, username, modelPath = DEFA
       lastRotationYRef.current = targetAngle;
     }
 
+    // 개인 룸 경계 체크 (개인 룸 모드일 때만)
+    if (isInPersonalRoom) {
+      // 벽 경계 제한 (-19 ~ 19)
+      const ROOM_BOUNDS = 18;
+      modelGroupRef.current.position.x = Math.max(-ROOM_BOUNDS, Math.min(ROOM_BOUNDS, modelGroupRef.current.position.x));
+      modelGroupRef.current.position.z = Math.max(-ROOM_BOUNDS, Math.min(ROOM_BOUNDS, modelGroupRef.current.position.z));
+      
+      // 출구 포탈 근처에서 F키 체크
+      const distToExit = Math.sqrt(
+        Math.pow(modelGroupRef.current.position.x - EXIT_PORTAL_POSITION[0], 2) +
+        Math.pow(modelGroupRef.current.position.z - EXIT_PORTAL_POSITION[2], 2)
+      );
+      
+      if (distToExit < EXIT_DISTANCE) {
+        // F키 체크는 별도 이벤트로 처리 (useEffect에서)
+        characterStateRef.current.nearExit = true;
+      } else {
+        characterStateRef.current.nearExit = false;
+      }
+    }
+
     // 모델 회전 적용
     modelGroupRef.current.quaternion.copy(currentRotationRef.current);
 
@@ -804,35 +918,54 @@ function CharacterViewer({ characterStateRef, userId, username, modelPath = DEFA
     characterStateRef.current.isMoving = isMoving;
     characterStateRef.current.animation = currentAnimation.toLowerCase();
 
-    // 위치 브로드캐스트 (100ms마다)
-    const now = Date.now();
-    if (now - lastBroadcastTimeRef.current > BROADCAST_INTERVAL) {
-      lastBroadcastTimeRef.current = now;
-      
-      // 멀티플레이어 서비스를 통해 위치 전송 (사용자의 캐릭터 모델 경로 사용)
-      // 연결 상태와 클라이언트 연결 상태를 모두 체크
-      if (multiplayerService.connected && multiplayerService.client?.connected && userId && username) {
-        try {
-          multiplayerService.sendPositionUpdate(
-            currentPos,
-            lastRotationYRef.current,
-            currentAnimation.toLowerCase(),
-            modelPath
-          );
-        } catch (error) {
-          // STOMP 연결 오류 무시 (재연결 시 자동 복구)
-          console.warn('Position broadcast failed:', error.message);
+    // 위치 브로드캐스트 (100ms마다) - 개인 룸이 아닐 때만
+    if (!isInPersonalRoom) {
+      const now = Date.now();
+      if (now - lastBroadcastTimeRef.current > BROADCAST_INTERVAL) {
+        lastBroadcastTimeRef.current = now;
+        
+        // 멀티플레이어 서비스를 통해 위치 전송 (사용자의 캐릭터 모델 경로 사용)
+        // 연결 상태와 클라이언트 연결 상태를 모두 체크
+        if (multiplayerService.connected && multiplayerService.client?.connected && userId && username) {
+          try {
+            multiplayerService.sendPositionUpdate(
+              currentPos,
+              lastRotationYRef.current,
+              currentAnimation.toLowerCase(),
+              modelPath
+            );
+          } catch (error) {
+            // STOMP 연결 오류 무시 (재연결 시 자동 복구)
+            console.warn('Position broadcast failed:', error.message);
+          }
         }
       }
     }
   });
+
+  // F키로 출구 나가기 (개인 룸 모드일 때만)
+  useEffect(() => {
+    if (!isInPersonalRoom) return;
+    
+    const handleKeyDown = (e) => {
+      if (e.key === 'f' || e.key === 'F') {
+        if (characterStateRef.current?.nearExit && onExitRoom) {
+          console.log('🚪 F키로 개인 룸 나가기');
+          onExitRoom();
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isInPersonalRoom, onExitRoom, characterStateRef]);
 
   return (
     <group ref={modelGroupRef} position={[0, 0, 0]}>
       <primitive
         ref={characterRef}
         object={scene}
-        scale={2}
+        scale={isInPersonalRoom ? 1.2 : 2}  // 개인 룸: 1.2배, 메인 맵: 2배
         position={[0, 0, 0]}
       />
     </group>
@@ -840,6 +973,38 @@ function CharacterViewer({ characterStateRef, userId, username, modelPath = DEFA
 }
 
 export default MapGamePageNew;
+
+/**
+ * 개인 룸 카메라 컨트롤러
+ * 더 가까운 시점으로 캐릭터를 따라감
+ */
+function PersonalRoomCamera({ characterStateRef }) {
+  const { camera } = useThree();
+  const cameraOffset = new THREE.Vector3(0, 6, 12); // 개인 룸용 카메라 오프셋 (더 가까움)
+  const targetPositionRef = useRef(new THREE.Vector3());
+
+  useFrame((state, delta) => {
+    if (!characterStateRef.current) return;
+
+    // 캐릭터 위치 가져오기
+    const [charX, charY, charZ] = characterStateRef.current.position;
+    const characterPosition = new THREE.Vector3(charX, charY, charZ);
+
+    // 타겟 위치를 부드럽게 보간
+    targetPositionRef.current.lerp(characterPosition, delta * 8.0);
+
+    // 타겟 위치에 오프셋을 더해서 카메라 위치 계산
+    const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
+
+    // 부드러운 카메라 이동
+    camera.position.lerp(targetCameraPosition, delta * 5.0);
+
+    // 캐릭터를 바라봄
+    camera.lookAt(targetPositionRef.current.x, targetPositionRef.current.y + 1.5, targetPositionRef.current.z);
+  });
+
+  return null;
+}
 
 /**
  * 카메라 추적 컴포넌트
@@ -1508,6 +1673,149 @@ function TimeIndicator() {
     <div className="time-indicator">
       <span className="time-icon">{timeInfo.icon}</span>
       <span>{timeInfo.text} {timeInfo.time}</span>
+    </div>
+  );
+}
+
+/**
+ * 좌측 방 목록 패널 컴포넌트
+ * GPS 기반 주변 방 목록을 표시하고 클릭 시 확대 보기
+ */
+function RoomListPanel({ rooms, onRoomSelect, selectedRoomId }) {
+  const [expandedRoomId, setExpandedRoomId] = useState(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // 게임 타입별 아이콘
+  const getGameIcon = (gameName) => {
+    const icons = {
+      '오목': '⚫',
+      '끝말잇기': '💬',
+      '에임 맞추기': '🎯',
+      'Reaction Race': '⚡',
+      '반응속도': '⚡',
+      '스무고개': '❓',
+      default: '🎮'
+    };
+    return icons[gameName] || icons.default;
+  };
+
+  // 게임 타입별 색상
+  const getGameColor = (gameName) => {
+    const colors = {
+      '오목': '#4CAF50',
+      '끝말잇기': '#2196F3',
+      '에임 맞추기': '#FF5722',
+      'Reaction Race': '#FF6B6B',
+      '반응속도': '#FF6B6B',
+      '스무고개': '#9C27B0',
+      default: '#607D8B'
+    };
+    return colors[gameName] || colors.default;
+  };
+
+  const handleRoomClick = (room) => {
+    if (expandedRoomId === room.roomId) {
+      // 이미 확대된 상태면 선택
+      onRoomSelect(room);
+    } else {
+      // 확대
+      setExpandedRoomId(room.roomId);
+    }
+  };
+
+  const handleJoinClick = (e, room) => {
+    e.stopPropagation();
+    onRoomSelect(room);
+  };
+
+  if (rooms.length === 0 && isCollapsed) {
+    return null;
+  }
+
+  return (
+    <div className={`room-list-panel ${isCollapsed ? 'collapsed' : ''}`}>
+      <div className="room-list-header">
+        <h3>📍 주변 게임방 ({rooms.length})</h3>
+        <button 
+          className="collapse-btn"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? '▶' : '◀'}
+        </button>
+      </div>
+      
+      {!isCollapsed && (
+        <div className="room-list-content">
+          {rooms.length === 0 ? (
+            <div className="no-rooms">
+              <span className="no-rooms-icon">🏠</span>
+              <p>주변에 게임방이 없습니다</p>
+              <p className="no-rooms-hint">방을 생성해보세요!</p>
+            </div>
+          ) : (
+            <div className="room-items">
+              {rooms.map((room) => (
+                <div 
+                  key={room.roomId}
+                  className={`room-item ${expandedRoomId === room.roomId ? 'expanded' : ''} ${selectedRoomId === room.roomId ? 'selected' : ''}`}
+                  onClick={() => handleRoomClick(room)}
+                  style={{ borderLeftColor: getGameColor(room.gameName) }}
+                >
+                  <div className="room-item-header">
+                    <span className="room-icon" style={{ backgroundColor: getGameColor(room.gameName) }}>
+                      {getGameIcon(room.gameName)}
+                    </span>
+                    <div className="room-info">
+                      <span className="room-name">{room.roomName}</span>
+                      <span className="room-game">{room.gameName}</span>
+                    </div>
+                    <div className="room-players">
+                      <span className="player-count">
+                        {room.currentPlayers || 1}/{room.maxPlayers || 4}
+                      </span>
+                      {room.isLocked && <span className="lock-icon">🔒</span>}
+                    </div>
+                  </div>
+                  
+                  {/* 확대 시 추가 정보 */}
+                  {expandedRoomId === room.roomId && (
+                    <div className="room-item-expanded">
+                      <div className="expanded-info">
+                        <div className="info-row">
+                          <span className="label">👑 방장</span>
+                          <span className="value">{room.hostName || '알 수 없음'}</span>
+                        </div>
+                        <div className="info-row">
+                          <span className="label">📍 위치</span>
+                          <span className="value">
+                            {room.gpsLat && room.gpsLng 
+                              ? `${room.gpsLat.toFixed(4)}, ${room.gpsLng.toFixed(4)}`
+                              : '위치 정보 없음'
+                            }
+                          </span>
+                        </div>
+                        <div className="info-row">
+                          <span className="label">🎮 상태</span>
+                          <span className="value">{room.isPlaying ? '게임 중' : '대기 중'}</span>
+                        </div>
+                      </div>
+                      <button 
+                        className="join-btn"
+                        onClick={(e) => handleJoinClick(e, room)}
+                        disabled={room.isLocked || (room.currentPlayers >= room.maxPlayers)}
+                      >
+                        {room.isLocked ? '🔒 비공개' : 
+                         room.currentPlayers >= room.maxPlayers ? '인원 초과' : 
+                         '🚪 입장하기'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

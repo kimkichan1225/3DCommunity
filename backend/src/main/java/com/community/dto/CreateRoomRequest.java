@@ -13,4 +13,8 @@ public class CreateRoomRequest {
     private int hostLevel;
     private String selectedProfile;
     private String selectedOutline;
+    
+    // GPS 위치 정보
+    private Double gpsLng;
+    private Double gpsLat;
 }

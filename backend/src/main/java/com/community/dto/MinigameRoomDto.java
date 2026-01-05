@@ -19,4 +19,8 @@ public class MinigameRoomDto {
     private List<MinigamePlayerDto> spectators = new ArrayList<>();
     private String action; // create, join, leave, update, delete
     private Long timestamp;
+    
+    // GPS 위치 정보
+    private Double gpsLng;
+    private Double gpsLat;
 }
