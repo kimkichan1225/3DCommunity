@@ -38,6 +38,10 @@ public class ProfileController {
             response.put("nickname", user.getNickname());
             response.put("level", profile != null ? profile.getLevel() : 1);
             response.put("statusMessage", profile != null ? profile.getStatusMessage() : "");
+            
+            // 재화 정보 추가
+            response.put("goldCoins", user.getGoldCoins());
+            response.put("silverCoins", user.getSilverCoins());
 
             // 프로필 이미지 경로 추가 (User 엔티티의 ProfileItem 관계 사용)
             response.put("selectedProfile", user.getSelectedProfile() != null ? user.getSelectedProfile().getImagePath() : null);

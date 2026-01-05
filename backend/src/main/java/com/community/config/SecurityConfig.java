@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/h2-console/**", "/error").permitAll()
                         .requestMatchers("/api/boards/**", "/api/posts/**").permitAll()
                         .requestMatchers("/api/comments/**", "/api/likes/**").permitAll()
+                        .requestMatchers("/resources/**").permitAll() // 이미지 리소스 허용 추가
                         .requestMatchers("/ws/**").permitAll() // WebSocket endpoints
                         .requestMatchers("/actuator/health/**").permitAll() // Health check endpoint
                         .anyRequest().authenticated())
@@ -60,7 +61,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // 환경 변수에서 허용 도메인 읽기 (쉼표로 구분)
-        String allowedOrigins = System.getenv().getOrDefault("ALLOWED_ORIGINS", "http://localhost:3000,https://metaplaza-ashy.vercel.app");
+        String allowedOrigins = System.getenv().getOrDefault("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173,https://metaplaza-ashy.vercel.app");
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
