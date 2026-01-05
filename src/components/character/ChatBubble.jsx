@@ -7,7 +7,7 @@ import { Text, Billboard, RoundedBox } from '@react-three/drei';
  * - 일정 시간 후 자동으로 사라짐
  * - Billboard를 사용하여 항상 카메라를 향함
  */
-function ChatBubble({ message, position = [0, 8.5, 0], duration = 5000 }) {
+const ChatBubble = React.memo(function ChatBubble({ message, position = [0, 8.5, 0], duration = 5000 }) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -89,6 +89,6 @@ function ChatBubble({ message, position = [0, 8.5, 0], duration = 5000 }) {
       </group>
     </Billboard>
   );
-}
+});
 
 export default ChatBubble;
