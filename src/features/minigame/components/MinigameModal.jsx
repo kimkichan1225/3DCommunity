@@ -17,7 +17,8 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [inviteNotification, setInviteNotification] = useState(null);
     const [roomForm, setRoomForm] = useState({ roomName: '', gameType: '오목', maxPlayers: 2, isPrivate: false });
     const [pendingRoomId, setPendingRoomId] = useState(initialRoomId);
-    const [isEditingRoomSettings, setIsEditingRoomSettings] = useState(false);
+    const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
+    const [roomSettingsForm, setRoomSettingsForm] = useState({ gameType: '', maxPlayers: 2 });
     const [roomChatInput, setRoomChatInput] = useState('');
     const [roomChatMessages, setRoomChatMessages] = useState([]);
     const [isSwitchingRole, setIsSwitchingRole] = useState(false);
@@ -391,6 +392,37 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             handleSendRoomChat();
         }
     };
+    const handleOpenRoomSettings = () => {
+        // 현재 방 정보로 폼 초기화
+        setRoomSettingsForm({
+            gameType: currentRoom?.gameName || '오목',
+            maxPlayers: currentRoom?.maxPlayers || 2
+        });
+        setShowRoomSettingsModal(true);
+    };
+    const handleRoomSettingsFormChange = (field, value) => {
+        setRoomSettingsForm(prev => ({
+            ...prev,
+            [field]: value,
+            // 게임 종류가 변경되면 해당 게임의 첫 번째 maxPlayers 옵션으로 설정
+            ...(field === 'gameType' && {
+                maxPlayers: gameTypes.find(g => g.name === value)?.maxPlayers[0] || 2
+            })
+        }));
+    };
+    const getRoomSettingsMaxPlayersOptions = () => {
+        return gameTypes.find(g => g.name === roomSettingsForm.gameType)?.maxPlayers || [2, 4, 6, 8];
+    };
+    const handleSubmitRoomSettings = () => {
+        if (currentRoom?.roomId) {
+            minigameService.updateRoom(
+                currentRoom.roomId,
+                roomSettingsForm.gameType,
+                roomSettingsForm.maxPlayers
+            );
+            setShowRoomSettingsModal(false);
+        }
+    };
 
     const isHost = String(currentRoom?.hostId) === String(userProfile?.id);
     const isPlayer = currentRoom?.players?.some(p => String(p.userId) === String(userProfile?.id));
@@ -492,6 +524,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                             {isHost ? (
                                 <>
                                     <button className="game-start-btn" onClick={handleGameStart}><FaGamepad /> 게임 시작</button>
+                                    <button className="room-settings-btn" onClick={handleOpenRoomSettings}>⚙️ 방 설정</button>
                                     {isPlayer ? (
                                         <button className="switch-role-btn" onClick={handleSwitchRole} disabled={isSwitchingRole}>
                                             {isSwitchingRole ? '전환 중...' : '관전자로 전환'}
@@ -752,6 +785,50 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                             >
                                 확인
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showRoomSettingsModal && (
+                <div className="friend-invite-modal-overlay" onClick={(e) => { e.stopPropagation(); setShowRoomSettingsModal(false); }}>
+                    <div className="friend-invite-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="friend-invite-header">
+                            <h3>⚙️ 방 설정</h3>
+                            <button className="close-btn" onClick={() => setShowRoomSettingsModal(false)}>×</button>
+                        </div>
+                        <div className="friend-invite-body">
+                            <div className="create-room-form">
+                                <div className="form-group">
+                                    <label>게임 종류</label>
+                                    <div className="game-type-grid">
+                                        {gameTypes.map((game) => (
+                                            <div
+                                                key={game.id}
+                                                className={`game-type-card ${roomSettingsForm.gameType === game.name ? 'selected' : ''}`}
+                                                onClick={() => handleRoomSettingsFormChange('gameType', game.name)}
+                                            >
+                                                <img src={game.image} alt={game.name} className="game-type-image" />
+                                                <div className="game-type-name">{game.name}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>최대 인원</label>
+                                    <select
+                                        value={roomSettingsForm.maxPlayers}
+                                        onChange={(e) => handleRoomSettingsFormChange('maxPlayers', parseInt(e.target.value))}
+                                    >
+                                        {getRoomSettingsMaxPlayersOptions().map((c) => (
+                                            <option key={c} value={c}>{c}명</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-actions">
+                                    <button className="btn-cancel" onClick={() => setShowRoomSettingsModal(false)}>취소</button>
+                                    <button className="btn-submit" onClick={handleSubmitRoomSettings}>저장</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
