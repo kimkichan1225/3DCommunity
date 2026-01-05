@@ -5,7 +5,7 @@ import { SkeletonUtils } from 'three-stdlib';
 import * as THREE from 'three';
 import ChatBubble from './ChatBubble';
 
-function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf', isChangingAvatar = false }) {
+const OtherPlayer = React.memo(function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf', isChangingAvatar = false }) {
   const groupRef = useRef();
   const modelRef = useRef();
   const targetPosition = useRef(position || [0, 0, 0]);
@@ -145,7 +145,21 @@ function OtherPlayer({ userId, username, position, rotationY, animation, chatMes
       )}
     </group>
   );
-}
+}, (prevProps, nextProps) => {
+  // 커스텀 비교 함수: 이 props들이 변경되지 않았으면 리렌더링하지 않음
+  return (
+    prevProps.userId === nextProps.userId &&
+    prevProps.username === nextProps.username &&
+    prevProps.position?.[0] === nextProps.position?.[0] &&
+    prevProps.position?.[1] === nextProps.position?.[1] &&
+    prevProps.position?.[2] === nextProps.position?.[2] &&
+    prevProps.rotationY === nextProps.rotationY &&
+    prevProps.animation === nextProps.animation &&
+    prevProps.chatMessage === nextProps.chatMessage &&
+    prevProps.modelPath === nextProps.modelPath &&
+    prevProps.isChangingAvatar === nextProps.isChangingAvatar
+  );
+});
 
 // Preload the model
 useGLTF.preload('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
