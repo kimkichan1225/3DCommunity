@@ -1,50 +1,77 @@
+# 🌐 MetaPlaza - 3D 소셜 메타버스
 
-# 🌐 3D Community - 위치기반 소셜 메타버스
-
-React, Three.js, Spring Boot를 활용한 위치기반 3D 소셜 커뮤니티 플랫폼입니다. 실제 위치와 연동된 가상 공간에서 다른 사용자들과 만나고 소통하며 다양한 활동을 즐길 수 있습니다.
+React, Three.js, Spring Boot를 활용한 3D 소셜 커뮤니티 플랫폼입니다. 가상 공간에서 다른 사용자들과 실시간으로 만나고 소통하며 다양한 활동을 즐길 수 있습니다.
 
 ## ✨ 주요 기능
 
-### 🎯 3D 가상 광장 (메인 화면)
-- **실시간 3D 렌더링**: Three.js와 React Three Fiber를 활용한 고품질 3D 그래픽
+### 🎮 3D 가상 광장
+- **실시간 3D 렌더링**: Three.js와 React Three Fiber를 활용한 3D 그래픽
+- **물리 엔진**: React Three Rapier로 현실감 있는 움직임 구현
 - **동적 조명**: 그림자와 조명 효과가 적용된 몰입감 있는 환경
-- **다중 사용자 지원**: 실시간으로 다른 사용자들과 만남
+- **실시간 멀티플레이어**: WebSocket(STOMP)을 통한 실시간 사용자 동기화
 
-### 👤 회원 시스템 (Spring Boot)
+### 👤 회원 시스템
 - **회원가입/로그인**: JWT 기반 인증 시스템
-- **프로필 관리**: 사용자 정보 및 프로필 커스터마이징
-- **소셜 기능**: 친구 추가, 친구 목록 관리
+- **프로필 관리**: 닉네임, 레벨, 프로필 이미지 커스터마이징
+- **관리자 권한**: ROLE_USER, ROLE_DEVELOPER 역할 기반 접근 제어
 
 ### 🚶‍♂️ 캐릭터 시스템
-- **개인 캐릭터**: 로그인 후 3D 광장에 생성되는 나만의 캐릭터 (BaseCharacter.gltf)
-- **애니메이션**: 걷기, 뛰기, 대기 등 다양한 애니메이션
-- **키보드/터치 조작**: WASD 및 방향키로 캐릭터 이동
-- **커스터마이징**: 캐릭터 외형, 의상, 액세서리 변경
+- **3D 캐릭터**: BaseCharacter.gltf 기반 캐릭터
+- **애니메이션**: Idle, Walk, Run 상태 자동 전환
+- **키보드 조작**: WASD/방향키로 이동, Shift로 달리기
+- **상점 아바타**: 상점에서 구매한 아바타로 변경 가능
+- **실시간 동기화**: 다른 플레이어들에게 내 위치/애니메이션 실시간 전송
 
 ### 💬 실시간 소셜 기능
-- **채팅 시스템**: 광장 내 실시간 채팅
-- **사용자 상호작용**: 다른 캐릭터와 상호작용
-- **친구 관리**: 친구 추가, 삭제, 친구 목록
-- **프로필 보기**: 다른 사용자 프로필 확인
+- **전역 채팅**: 광장 내 모든 사용자와 실시간 채팅
+- **채팅 말풍선**: 캐릭터 위에 말풍선으로 메시지 표시 (5초간)
+- **친구 시스템**: 친구 추가, 친구 목록 관리
+- **DM(Direct Message)**: 친구와 1:1 채팅
+- **온라인 상태**: 실시간 접속자 수 표시
+- **사용자 프로필**: 다른 플레이어 우클릭으로 프로필 보기
+
+### 📋 게시판 시스템
+- **게시판**: 자유게시판, 공지사항 등 다양한 게시판
+- **게시글 작성/수정/삭제**: 로그인한 사용자만 작성 가능
+- **댓글**: 게시글에 댓글 작성/삭제
+- **좋아요**: 게시글/댓글 좋아요 기능
+- **신고**: 부적절한 게시글/댓글 신고
 
 ### 🎮 미니게임 시스템
-- **게임 생성**: 사용자가 직접 미니게임 방 생성
-- **게임 참가**: 다양한 미니게임 참여
-- **관전 모드**: 게임 관전 기능
-- **게임 관리**: 생성한 게임 삭제 및 관리
+- **게임 로비**: 미니게임 방 목록 조회
+- **방 생성**: 사용자가 게임 방 생성 (게임 선택, 인원 설정)
+- **게임 참가**: 다른 사용자가 만든 방에 입장
+- **게임 초대**: 친구를 게임에 초대
+- **구현된 게임**:
+  - 오목 (Omok): 2인 대전
+  - 반응속도 게임 (Reaction Race): 여러 명 참여 가능
 
-### 🗺️ 위치 기반 시스템
-- **지도 API 연동**: 실제 지리 정보와 연동
-- **GPS 기반**: 사용자의 실제 위치 활용
-- **랜드마크 맵**: 주요 랜드마크에 기본 맵 제작
-- **커스텀 방 생성**: 자신의 위치에 새로운 방(맵) 생성
-- **근거리 접속**: 방 생성 위치 주변 사람들만 접속 가능
-- **지도에서 확인**: 생성된 방을 지도 API에서 확인
+### 💰 경제 시스템
+- **재화**: Silver Coin(일반 재화), Gold Coin(유료 재화)
+- **상점**: 아바타, 프로필 이미지, 아웃라인 이미지 구매
+- **인벤토리**: 구매한 아이템 관리 및 착용
+- **결제**: TossPayments 연동 (Gold Coin 충전)
+- **재화 교환**: Gold Coin을 Silver Coin으로 교환
+- **출석 체크**: 매일 출석하여 Silver/Gold Coin 획득
 
-### 💰 상점 및 결제 시스템
-- **아이템 상점**: 캐릭터 커스터마이징 아이템 구매
-- **결제 연동**: 실제 결제 시스템 연동
-- **인벤토리**: 구매한 아이템 관리
+### 🗺️ 지도 연동
+- **Mapbox 지도**: 실제 지리 정보 연동
+- **GPS 위치**: 사용자의 현재 위치 기반 캐릭터 스폰
+- **지도 모드**: 3D 광장과 지도 모드 전환 가능
+
+### 🔔 알림 시스템
+- **친구 요청 알림**: 친구 요청 수신 시 실시간 알림
+- **게임 초대 알림**: 게임 초대 수신 시 알림
+- **DM 알림**: 메시지 수신 시 알림
+- **토스트 알림**: 화면 우측 상단에 팝업 알림
+- **알림 센터**: 과거 알림 이력 조회
+
+### 👑 관리자 기능
+- **유저 관리**: 사용자 목록, 역할 변경
+- **게시판 관리**: 게시글/댓글 삭제, 공지사항 작성
+- **신고 관리**: 신고된 게시글/댓글 검토 및 처리
+- **제재**: 사용자 정지 (기간 설정 가능)
+- **통계**: 회원 수, 게시글 수 등 대시보드
 
 ## 🎮 조작법
 
@@ -55,86 +82,57 @@ React, Three.js, Spring Boot를 활용한 위치기반 3D 소셜 커뮤니티 �
 | `A` / `←` | 왼쪽으로 이동 |
 | `D` / `→` | 오른쪽으로 이동 |
 | `Shift` | 달리기 (이동 키와 함께) |
-| `E` | 상호작용 (자동차, NPC, 오브젝트 등) |
 | `Enter` | 채팅 입력 |
-| `Tab` | 메뉴 열기 (프로필, 친구, 상점, 설정) |
-
-## 🏗️ 시스템 구조
-
-### 메인 화면 (3D 광장)
-광장을 배경으로 로그인하지 않은 사용자에게 표시되는 초기 화면
-- **회원가입 버튼**: 새 계정 생성
-- **로그인 버튼**: 기존 계정으로 접속
-- **배경**: 3D 광장 환경 (다른 사용자들의 활동 보임)
-
-### 로그인 후 광장
-- **개인 캐릭터 생성**: BaseCharacter.gltf 기반 캐릭터가 광장에 스폰
-- **실시간 멀티플레이**: 다른 사용자들의 캐릭터 확인
-- **상호작용**: 채팅, 친구 추가, 미니게임 참여 등
-
-### 커스텀 방 (위치 기반)
-- **방 생성**: 자신의 위치에서 새로운 3D 공간 생성
-- **접근 제한**: GPS 기반 근거리 사용자만 접속 가능
-- **지도 표시**: 생성된 방이 지도 API에 마커로 표시
+| `ESC` | 메뉴 닫기 |
+| `C` | 카메라 위치 로그 출력 (개발용) |
+| **우클릭** | 다른 플레이어 우클릭 시 메뉴 (프로필 보기, 친구 추가) |
 
 ## 🛠️ 기술 스택
 
 ### Frontend
-- **React 19.1.1**: 최신 React 기능 활용
+- **React 19.1.1**: 최신 React
 - **Three.js 0.179.1**: 3D 그래픽 렌더링
 - **React Three Fiber 9.3.0**: React와 Three.js 통합
 - **React Three Drei 10.7.4**: Three.js 헬퍼 라이브러리
-- **Socket.io-client**: 실시간 통신 (채팅, 멀티플레이)
-- **Axios**: HTTP 통신 (REST API)
-- **React Router**: SPA 라우팅
-- **Zustand / Redux**: 상태 관리
+- **React Three Rapier 2.2.0**: 물리 엔진
+- **React Router 7.9.6**: SPA 라우팅
+- **Axios 1.13.2**: HTTP 통신
+- **STOMP/SockJS**: 실시간 WebSocket 통신
+- **Mapbox GL 2.15.0**: 지도 서비스
+- **Supabase JS 2.86.0**: 데이터베이스 클라이언트
+- **jwt-decode 4.0.0**: JWT 디코딩
+- **TossPayments SDK 1.9.2**: 결제 시스템
 
 ### Backend
-- **Spring Boot 3.x**: 메인 백엔드 프레임워크
+- **Spring Boot 3.2.0**: 메인 백엔드 프레임워크
+- **Java 17**: JDK 버전
 - **Spring Security**: 인증 및 권한 관리
-- **JWT**: 토큰 기반 인증
+- **JWT (JJWT 0.12.3)**: 토큰 기반 인증
 - **Spring Data JPA**: 데이터베이스 ORM
-- **WebSocket / Socket.io**: 실시간 통신
-- **MySQL / PostgreSQL**: 관계형 데이터베이스
-- **Redis**: 세션 관리 및 캐싱
+- **Spring WebSocket**: 실시간 통신
+- **PostgreSQL**: 관계형 데이터베이스 (Supabase)
+- **Gradle**: 빌드 툴
 
-### 위치 기반 서비스
-- **Kakao Maps API / Google Maps API**: 지도 서비스
-- **Geolocation API**: GPS 위치 정보
-- **Turf.js**: 지리 공간 계산
-
-### 3D 에셋
-- **캐릭터**: BaseCharacter.gltf
-- **환경**: 커스텀 3D 모델 (광장, 커스텀 방)
-- **자동차**: Kenney Car Kit (미니게임용)
-
-### 결제
-- **PortOne (구 아임포트)**: 통합 결제 시스템
-- **Toss Payments / Kakao Pay**: PG 연동
-
-### 배포 및 인프라
-- **Frontend**: Netlify / Vercel
-- **Backend**: AWS EC2 / AWS Elastic Beanstalk
-- **Database**: AWS RDS
-- **파일 저장소**: AWS S3 (캐릭터 이미지, 3D 모델)
-- **CI/CD**: GitHub Actions
+### 배포
+- **Frontend**: Netlify
+- **Backend**: Spring Boot (내장 Tomcat)
+- **Database**: Supabase PostgreSQL
 
 ## 🚀 설치 및 실행
 
 ### 필요 조건
-- **Frontend**: Node.js 18.0 이상, npm 또는 yarn
-- **Backend**: JDK 17 이상, Maven 또는 Gradle
-- **Database**: MySQL 8.0 이상 또는 PostgreSQL 14 이상
-- **Redis**: Redis 6.0 이상 (선택사항)
+- **Frontend**: Node.js 18.0 이상, npm
+- **Backend**: JDK 17 이상, Gradle
+- **Database**: PostgreSQL (Supabase 사용)
 
 ### Frontend 설치 및 실행
 ```bash
 # 저장소 클론
 git clone https://github.com/kimkichan1225/3DCommunity
-cd 3DCommunity
+cd MetaPlaza
 
-# 의존성 설치
-npm install
+# 의존성 설치 (peer dependency 경고로 인해 --legacy-peer-deps 필요)
+npm install --legacy-peer-deps
 
 # 개발 서버 실행
 npm start
@@ -146,34 +144,29 @@ npm start
 # Backend 디렉토리로 이동
 cd backend
 
-# application.properties 또는 application.yml 설정
-# - 데이터베이스 연결 정보
-# - JWT 비밀키
-# - 지도 API 키
-# - 결제 API 키
+# Gradle 빌드 및 실행 (Windows)
+gradlew bootRun
 
-# Gradle 빌드 및 실행
+# Gradle 빌드 및 실행 (Mac/Linux)
 ./gradlew bootRun
 
-# 또는 Maven 사용시
-./mvnw spring-boot:run
+# 또는 IntelliJ IDEA에서 CommunityApplication.java 실행 (권장)
 ```
 백엔드 서버는 `http://localhost:8080`에서 실행
 
 ### 환경 변수 설정
-프론트엔드 `.env` 파일:
+
+Frontend `.env` 파일:
 ```env
 REACT_APP_API_URL=http://localhost:8080
-REACT_APP_SOCKET_URL=http://localhost:8080
-REACT_APP_MAP_API_KEY=your_map_api_key
 REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
 ```
 
-백엔드 `application.yml`:
+Backend `application.yml`:
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/community_db
+    url: jdbc:postgresql://your-supabase-url:5432/postgres
     username: your_username
     password: your_password
   jpa:
@@ -182,63 +175,19 @@ spring:
 
 jwt:
   secret: your_jwt_secret_key
-  expiration: 86400000
-
-map:
-  api:
-    key: your_map_api_key
+  expiration: 86400000  # 24시간
 ```
 
 ## 🌐 배포
 
-### Frontend 배포 (Netlify/Vercel)
+### Frontend 배포 (Netlify)
 ```bash
 # 프로덕션 빌드
 npm run build
 
 # Netlify CLI로 배포
 netlify deploy --prod
-
-# 또는 Vercel CLI로 배포
-vercel --prod
 ```
-
-### Backend 배포 (AWS)
-```bash
-# JAR 파일 생성
-./gradlew build
-
-# AWS Elastic Beanstalk 또는 EC2에 배포
-# Docker 컨테이너화 후 배포 권장
-```
-
-## 🌐 Netlify 배포
-
-### 방법 1: Netlify CLI 사용
-```bash
-# Netlify CLI 설치
-npm install -g netlify-cli
-
-# 빌드
-npm run build
-
-# Netlify에 배포
-netlify deploy --prod
-```
-
-### 방법 2: Git 연동 (권장)
-1. GitHub/GitLab에 코드를 푸시
-2. [Netlify](https://www.netlify.com/)에 로그인
-3. "New site from Git" 클릭
-4. 저장소 선택
-5. 빌드 설정 자동 감지 (netlify.toml 사용)
-6. "Deploy site" 클릭
-
-### 방법 3: 드래그 앤 드롭
-```bash
-npm run build
-```
-빌드 후 생성된 `build` 폴더를 [Netlify Drop](https://app.netlify.com/drop)에 드래그 앤 드롭
 
 ### 배포 설정
 - **빌드 명령어**: `npm run build`
@@ -248,52 +197,89 @@ npm run build
 ## 📁 프로젝트 구조
 
 ```
-3DCommunity/
-├── frontend/               # React 프론트엔드
+MetaPlaza/
+├── frontend/
 │   ├── public/
-│   │   ├── resources/          # 3D 모델 및 텍스처
-│   │   │   ├── characters/     # 캐릭터 모델
-│   │   │   │   └── BaseCharacter.gltf
-│   │   │   ├── environments/   # 환경 모델
-│   │   │   └── items/          # 아이템 모델
-│   │   └── sounds/             # 오디오 파일
+│   │   └── resources/
+│   │       ├── Ultimate Animated Character Pack/  # 캐릭터 모델
+│   │       ├── GameView/                         # 맵 모델
+│   │       ├── Icon/                             # UI 아이콘
+│   │       └── Sounds/                           # 오디오 파일
 │   ├── src/
-│   │   ├── components/         # React 컴포넌트
-│   │   │   ├── 3d/            # 3D 관련 컴포넌트
-│   │   │   │   ├── Character.jsx
-│   │   │   │   ├── Plaza.jsx
-│   │   │   │   └── Room.jsx
-│   │   │   ├── auth/          # 인증 관련
-│   │   │   │   ├── Login.jsx
-│   │   │   │   └── Register.jsx
-│   │   │   ├── ui/            # UI 컴포넌트
-│   │   │   │   ├── ChatBox.jsx
-│   │   │   │   ├── ProfileMenu.jsx
-│   │   │   │   └── Shop.jsx
-│   │   │   └── map/           # 지도 관련
-│   │   │       └── MapView.jsx
-│   │   ├── services/          # API 서비스
-│   │   │   ├── authService.js
-│   │   │   ├── chatService.js
-│   │   │   └── mapService.js
-│   │   ├── store/             # 상태 관리
-│   │   ├── hooks/             # 커스텀 훅
-│   │   └── App.js
+│   │   ├── features/                   # 기능별 모듈 (feature-based)
+│   │   │   ├── auth/                  # 로그인/회원가입
+│   │   │   ├── board/                 # 게시판
+│   │   │   ├── profile/               # 프로필
+│   │   │   ├── shop/                  # 상점
+│   │   │   ├── inventory/             # 인벤토리
+│   │   │   ├── payment/               # 결제
+│   │   │   ├── event/                 # 이벤트/출석체크
+│   │   │   ├── minigame/              # 미니게임
+│   │   │   ├── map/                   # 지도
+│   │   │   └── system/settings/       # 설정
+│   │   ├── components/                 # 공용 컴포넌트
+│   │   │   ├── character/             # 캐릭터 관련
+│   │   │   ├── camera/                # 카메라 관련
+│   │   │   ├── map/                   # 맵 관련
+│   │   │   ├── GlobalChat.jsx         # 전역 채팅
+│   │   │   ├── PhoneUI.jsx            # 친구/DM UI
+│   │   │   ├── Notification.jsx       # 알림
+│   │   │   └── ...
+│   │   ├── services/                   # API 서비스
+│   │   │   ├── multiplayerService.js  # 멀티플레이어 WebSocket
+│   │   │   ├── minigameService.js     # 미니게임 WebSocket
+│   │   │   ├── friendService.js       # 친구 API
+│   │   │   ├── currencyService.js     # 재화 API
+│   │   │   ├── attendanceService.js   # 출석 API
+│   │   │   └── notificationService.js # 알림 서비스
+│   │   ├── pages/admin/                # 관리자 페이지
+│   │   ├── App.js                      # 메인 앱
+│   │   ├── AppRouter.jsx               # 라우터
+│   │   └── index.js                    # 엔트리 포인트
 │   └── package.json
 │
-├── backend/                # Spring Boot 백엔드
+├── backend/
 │   ├── src/main/java/com/community/
-│   │   ├── controller/        # REST API 컨트롤러
+│   │   ├── controller/         # REST API 컨트롤러
 │   │   │   ├── AuthController.java
-│   │   │   ├── UserController.java
-│   │   │   ├── ChatController.java
-│   │   │   └── RoomController.java
-│   │   ├── service/           # 비즈니스 로직
-│   │   ├── repository/        # 데이터베이스 접근
-│   │   ├── model/             # 엔티티 모델
-│   │   ├── dto/               # 데이터 전송 객체
-│   │   ├── security/          # 보안 설정
-│   │   └── websocket/         # WebSocket 설정
+│   │   │   ├── BoardController.java
+│   │   │   ├── PostController.java
+│   │   │   ├── CommentController.java
+│   │   │   ├── FriendController.java
+│   │   │   ├── MessageController.java
+│   │   │   ├── ProfileController.java
+│   │   │   ├── ShopController.java
+│   │   │   ├── PaymentController.java
+│   │   │   ├── CurrencyController.java
+│   │   │   ├── AttendanceController.java
+│   │   │   ├── MinigameController.java
+│   │   │   ├── MultiplayerController.java
+│   │   │   ├── ReportController.java
+│   │   │   ├── AdminController.java
+│   │   │   └── ...
+│   │   ├── service/            # 비즈니스 로직
+│   │   ├── repository/         # JPA Repository
+│   │   ├── model/              # JPA Entity
+│   │   │   ├── User.java
+│   │   │   ├── Profile.java
+│   │   │   ├── Board.java
+│   │   │   ├── Post.java
+│   │   │   ├── Comment.java
+│   │   │   ├── Friendship.java
+│   │   │   ├── Message.java
+│   │   │   ├── ShopItem.java
+│   │   │   ├── UserShop.java
+│   │   │   ├── Currency.java
+│   │   │   ├── Attendance.java
+│   │   │   └── ...
+│   │   ├── dto/                # DTO
+│   │   ├── security/           # JWT 인증
+│   │   │   ├── JwtTokenProvider.java
+│   │   │   └── JwtAuthenticationFilter.java
+│   │   └── config/
+│   │       ├── SecurityConfig.java
+│   │       ├── WebSocketConfig.java
+│   │       └── DataInitializer.java
 │   ├── src/main/resources/
 │   │   └── application.yml
 │   └── build.gradle
@@ -301,77 +287,102 @@ npm run build
 └── README.md
 ```
 
+## 📊 주요 API 엔드포인트
+
+### 인증
+- `POST /api/auth/register` - 회원가입
+- `POST /api/auth/login` - 로그인
+- `POST /api/auth/logout` - 로그아웃
+
+### 프로필
+- `GET /api/profile` - 현재 사용자 프로필 조회
+- `PUT /api/profile` - 프로필 수정
+
+### 게시판
+- `GET /api/boards` - 게시판 목록
+- `GET /api/boards/{id}/posts` - 게시글 목록
+- `POST /api/posts` - 게시글 작성
+- `GET /api/posts/{id}` - 게시글 상세
+- `PUT /api/posts/{id}` - 게시글 수정
+- `DELETE /api/posts/{id}` - 게시글 삭제
+- `POST /api/posts/{id}/comments` - 댓글 작성
+- `POST /api/posts/{id}/like` - 게시글 좋아요
+
+### 친구
+- `GET /api/friends` - 친구 목록
+- `POST /api/friends/request` - 친구 요청
+- `POST /api/friends/accept/{id}` - 친구 수락
+- `POST /api/friends/reject/{id}` - 친구 거절
+- `DELETE /api/friends/{id}` - 친구 삭제
+
+### 메시지 (DM)
+- `GET /api/messages/{friendId}` - DM 내역 조회
+- WebSocket `/app/dm.send` - DM 전송
+
+### 상점
+- `GET /api/shop/items` - 상점 아이템 목록
+- `POST /api/shop/purchase` - 아이템 구매
+- `GET /api/usershop/inventory` - 인벤토리 조회
+- `POST /api/usershop/equip/{id}` - 아이템 착용
+
+### 재화
+- `GET /api/currency` - 재화 조회
+- `POST /api/currency/exchange` - Gold Coin → Silver Coin 교환
+
+### 결제
+- `POST /api/payment/charge` - Gold Coin 충전 (TossPayments)
+
+### 출석 체크
+- `POST /api/attendance/check` - 출석 체크
+- `GET /api/attendance/today` - 오늘 출석 여부
+
+### WebSocket
+- `/app/multiplayer.connect` - 멀티플레이어 접속
+- `/app/multiplayer.move` - 위치 업데이트
+- `/app/chat.send` - 전역 채팅 전송
+- `/app/minigame.*` - 미니게임 이벤트
+
 ## 🎨 주요 기능 상세
 
-### 회원 시스템
-- JWT 기반 토큰 인증
-- 회원가입 시 이메일 인증
-- 소셜 로그인 (Google, Kakao)
-- 비밀번호 암호화 (BCrypt)
+### 실시간 멀티플레이어
+- WebSocket(STOMP) 기반 실시간 통신
+- 사용자 위치/회전/애니메이션 동기화
+- 접속/퇴장 알림
+- 온라인 인원 수 실시간 표시
+- 중복 로그인 방지
 
-### 실시간 통신
-- WebSocket을 통한 실시간 채팅
-- Socket.io로 사용자 위치 동기화
-- 서버-클라이언트 양방향 통신
+### 채팅 시스템
+- **전역 채팅**: 광장 내 모든 사용자와 채팅
+- **채팅 말풍선**: 캐릭터 위 5초간 말풍선 표시
+- **DM**: 친구와 1:1 대화
+- **입력 중 이동 차단**: 채팅 입력 시 캐릭터 이동 자동 차단
 
-### 위치 기반 기능
-- 사용자 현재 위치 추적
-- 반경 내 방 검색
-- 지도에 방 마커 표시
-- 거리 계산 및 필터링
+### 미니게임
+- **오목**: 15x15 보드에서 2인 대전, 5개 연속 배치 시 승리
+- **반응속도 게임**: 신호에 빠르게 반응하여 순위 경쟁
+
+### 경제 시스템
+- **Silver Coin**: 출석 체크, 게임 보상으로 획득
+- **Gold Coin**: 실제 결제로 충전, Silver Coin으로 교환 가능
+- **상점**: 아바타, 프로필, 아웃라인 구매
+- **인벤토리**: 구매 아이템 관리 및 착용
 
 ## 🔧 개발 정보
 
-### API 엔드포인트 (예시)
-```
-POST   /api/auth/register      # 회원가입
-POST   /api/auth/login         # 로그인
-GET    /api/users/profile      # 프로필 조회
-PUT    /api/users/profile      # 프로필 수정
-GET    /api/rooms              # 방 목록 조회
-POST   /api/rooms              # 방 생성
-GET    /api/friends            # 친구 목록
-POST   /api/friends/add        # 친구 추가
-GET    /api/shop/items         # 상점 아이템 조회
-POST   /api/shop/purchase      # 아이템 구매
-```
-
-### WebSocket 이벤트
-```
-chat:message          # 채팅 메시지
-user:join             # 사용자 입장
-user:leave            # 사용자 퇴장
-character:move        # 캐릭터 이동
-game:create           # 게임 생성
-game:join             # 게임 참가
-```
+### 브라우저 지원
+- Chrome, Firefox, Safari, Edge (WebGL 2.0 지원 필수)
+- 모바일 브라우저 (터치 조작 미지원)
 
 ### 성능 최적화
-- 3D 모델 LOD (Level of Detail) 적용
-- 캐릭터 인스턴싱으로 다중 사용자 렌더링 최적화
-- Redis 캐싱으로 DB 부하 감소
-- CDN을 통한 정적 파일 제공
+- 3D 모델 프리로드로 로딩 시간 단축
+- 모델 클론으로 메모리 효율화
+- WebSocket 재연결 로직
+- 그림자 맵 품질 조절 (설정에서 변경 가능)
 
-### 브라우저 및 플랫폼 지원
-- **데스크톱**: Chrome, Firefox, Safari, Edge (WebGL 2.0 지원 필수)
-- **모바일**: iOS Safari, Android Chrome (터치 컨트롤 지원)
-- **크로스플랫폼**: 반응형 디자인으로 웹/모바일 동시 지원
-
-## 📱 모바일 지원
-
-### 터치 컨트롤
-- 가상 조이스틱으로 캐릭터 이동
-- 탭으로 상호작용
-- 핀치 줌으로 카메라 조절
-
-## 🔒 보안
-
-- XSS 공격 방지
-- CSRF 토큰 검증
-- SQL Injection 방지 (Prepared Statement)
-- HTTPS 통신 강제
-- 비밀번호 해싱 (BCrypt)
-- JWT 토큰 만료 및 갱신
+### Git 브랜치 전략
+- `main`: 프로덕션 코드
+- `kim`: 현재 개발 브랜치
+- `kichan`: 기능 브랜치
 
 ## 📝 라이선스
 
@@ -392,4 +403,4 @@ game:join             # 게임 참가
 
 ---
 
-**3D Community에서 새로운 소셜 경험을 시작하세요! 🌐✨**
+**MetaPlaza에서 새로운 소셜 경험을 시작하세요! 🌐✨**

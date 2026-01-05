@@ -11,7 +11,7 @@ import * as THREE from 'three';
  * - cliff_block_rock002 위치 정보 전달
  */
 function Level1Map({ mainCameraRef, onCliffBlockFound, ...props }) {
-  const { scene } = useGLTF('/resources/GameView/PublicSquare-v2.glb');
+  const { scene } = useGLTF('/resources/GameView/PublicSquare-v3.glb');
   const cliffInfoSentRef = useRef(false); // 전역 플래그로 완전히 한 번만 실행
   const cliffDataRef = useRef(null); // cliff 데이터 임시 저장
 
@@ -77,6 +77,6 @@ function Level1Map({ mainCameraRef, onCliffBlockFound, ...props }) {
   );
 }
 
-useGLTF.preload('/resources/GameView/PublicSquare-v2.glb');
+useGLTF.preload('/resources/GameView/PublicSquare-v3.glb');
 
 export default Level1Map;
