@@ -126,21 +126,26 @@ class MultiplayerService {
   }
 
   sendPositionUpdate(position, rotationY, animation, modelPath, isChangingAvatar = false) {
-    if (this.connected && this.client) {
-      this.client.publish({
-        destination: '/app/player.position',
-        body: JSON.stringify({
-          userId: this.userId,
-          username: this.username,
-          x: position[0],
-          y: position[1],
-          z: position[2],
-          rotationY: rotationY,
-          animation: animation,
-          modelPath: modelPath,
-          isChangingAvatar: isChangingAvatar
-        })
-      });
+    if (this.connected && this.client?.connected) {
+      try {
+        this.client.publish({
+          destination: '/app/player.position',
+          body: JSON.stringify({
+            userId: this.userId,
+            username: this.username,
+            x: position[0],
+            y: position[1],
+            z: position[2],
+            rotationY: rotationY,
+            animation: animation,
+            modelPath: modelPath,
+            isChangingAvatar: isChangingAvatar
+          })
+        });
+      } catch (error) {
+        console.warn('Failed to send position update:', error.message);
+        this.connected = false;
+      }
     }
   }
 

@@ -1,14 +1,26 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations } from '@react-three/drei';
+import { useGLTF, useAnimations, Text, Billboard } from '@react-three/drei';
 import mapboxgl from 'mapbox-gl';
 import { MapboxManager } from '../core/map/MapboxManager';
 import { useKeyboardControls } from '../useKeyboardControls';
 import multiplayerService from '../services/multiplayerService';
+import minigameService from '../services/minigameService';
+import shopService from '../features/shop/services/shopService';
 import OtherPlayer from '../components/character/OtherPlayer';
+import { MinigameModal } from '../features/minigame';
 import '../pages/MapGamePageNew.css';
+
+// 기본 캐릭터 모델 경로
+const DEFAULT_CHARACTER_MODEL = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf';
+
+// GPS 좌표 <-> 3D 좌표 변환 스케일
+const GPS_SCALE = 100000;
+
+// 포탈 진입 거리 (유닛)
+const PORTAL_ENTER_DISTANCE = 5;
 
 /**
  * 새로운 지도 게임 페이지
@@ -33,6 +45,30 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
   const username = userInfo.username || '게스트';
   const isLoggedIn = !!userInfo.id;
 
+  // 캐릭터 모델 경로 상태 (메인맵과 동일하게 착용 중인 아바타 사용)
+  const [characterModelPath, setCharacterModelPath] = useState(DEFAULT_CHARACTER_MODEL);
+
+  // 착용 중인 아바타 로드
+  useEffect(() => {
+    const loadEquippedAvatar = async () => {
+      if (!isLoggedIn) return;
+      
+      try {
+        const equippedAvatar = await shopService.getEquippedAvatar();
+        if (equippedAvatar && equippedAvatar.shopItem && equippedAvatar.shopItem.modelUrl) {
+          console.log('✅ [MapGamePage] 착용 중인 아바타 로드:', equippedAvatar.shopItem.modelUrl);
+          setCharacterModelPath(equippedAvatar.shopItem.modelUrl);
+        } else {
+          console.log('[MapGamePage] 착용 중인 아바타 없음 - BaseCharacter 사용');
+        }
+      } catch (error) {
+        console.error('[MapGamePage] 착용 아바타 로드 실패:', error);
+      }
+    };
+
+    loadEquippedAvatar();
+  }, [isLoggedIn]);
+
   // 고정된 스폰 위치 (모든 플레이어 동일)
   const SPAWN_POSITION = [0, 0, 0];
 
@@ -47,28 +83,108 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
   // Mapbox 참조
   const mapboxManagerRef = useRef(null);
 
-  // 멀티플레이어 서비스 연결 (App.js와 동일한 로직)
+  // 주변 방 목록 상태
+  const [nearbyRooms, setNearbyRooms] = useState([]);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [showRoomPopup, setShowRoomPopup] = useState(false);
+
+  // 건물 데이터 상태
+  const [buildingsData, setBuildingsData] = useState([]);
+  const [roadsData, setRoadsData] = useState([]);
+
+  // 미니맵 캔버스 참조
+  const minimapCanvasRef = useRef(null);
+
+  // 미니게임 모달 상태 (App.js와 동일)
+  const [showMinigameModal, setShowMinigameModal] = useState(false);
+  const [minigameModalMode, setMinigameModalMode] = useState('lobby'); // 'lobby', 'create', 'waiting'
+
+  // 미니게임 서비스 연결 및 방 목록 구독
   useEffect(() => {
-    console.log('🎮 MapGamePageNew: 멀티플레이어 서비스 연결...');
+    const initMinigameService = async () => {
+      // 미니게임 서비스 연결 (아직 연결되지 않은 경우)
+      if (!minigameService.connected) {
+        try {
+          console.log('🎮 [MapGamePage] 미니게임 서비스 연결 시도...');
+          await minigameService.connect(userId, username);
+          console.log('✅ [MapGamePage] 미니게임 서비스 연결 성공');
+        } catch (error) {
+          console.error('❌ [MapGamePage] 미니게임 서비스 연결 실패:', error);
+        }
+      }
+
+      // 연결된 경우 방 목록 요청
+      if (minigameService.connected) {
+        minigameService.requestRoomsList();
+      }
+    };
+
+    // 방 목록 수신 핸들러
+    const handleRoomsList = (rooms) => {
+      console.log('🏠 [MapGamePage] 방 목록 수신:', rooms?.length || 0);
+      if (Array.isArray(rooms)) {
+        // GPS 기반으로 방 위치 설정
+        const processedRooms = rooms.map((room, index) => ({
+          ...room,
+          // 방마다 고유한 위치 (roomId 기반 해시로 일관된 위치 생성)
+          gpsLng: userLocation ? userLocation[0] + ((room.roomId % 100) - 50) * 0.00004 : 127.0276 + ((room.roomId % 100) - 50) * 0.00004,
+          gpsLat: userLocation ? userLocation[1] + (((room.roomId * 7) % 100) - 50) * 0.00004 : 37.4979 + (((room.roomId * 7) % 100) - 50) * 0.00004,
+        }));
+        setNearbyRooms(processedRooms);
+      }
+    };
+
+    // 방 업데이트 핸들러 (생성, 수정, 입장, 퇴장)
+    const handleRoomUpdate = (data) => {
+      console.log('🔄 [MapGamePage] 방 업데이트:', data.action, data);
+      // 방 목록 새로고침 요청
+      if (minigameService.connected) {
+        minigameService.requestRoomsList();
+      }
+    };
+
+    // 방 삭제 핸들러
+    const handleRoomDelete = (data) => {
+      console.log('🗑️ [MapGamePage] 방 삭제:', data);
+      setNearbyRooms(prev => prev.filter(room => room.roomId !== data.roomId));
+    };
+
+    // 이벤트 구독
+    minigameService.on('roomsList', handleRoomsList);
+    minigameService.on('roomUpdate', handleRoomUpdate);
+    minigameService.on('roomDelete', handleRoomDelete);
+
+    // 초기화
+    initMinigameService();
+
+    return () => {
+      minigameService.off('roomsList', handleRoomsList);
+      minigameService.off('roomUpdate', handleRoomUpdate);
+      minigameService.off('roomDelete', handleRoomDelete);
+    };
+  }, [userId, username, userLocation]);
+
+  // 멀티플레이어 서비스 콜백 설정 (App.js와 동일한 로직)
+  useEffect(() => {
+    console.log('🎮 MapGamePageNew: 멀티플레이어 콜백 설정...');
     
     // 플레이어 입장 콜백
-    multiplayerService.onPlayerJoin((data) => {
+    const handlePlayerJoin = (data) => {
       // 중복 로그인 체크
       if (data.action === 'duplicate') {
         if (isLoggedIn && String(data.userId) === String(userId)) {
           alert('현재 접속 중인 아이디입니다.');
-          // 로그아웃 처리는 메인에서 담당
         }
         return;
       }
 
       // 자신의 join 이벤트는 무시
-      if (String(data.userId) === String(multiplayerService.userId)) {
+      if (String(data.userId) === String(userId)) {
         console.log('Ignoring own join event:', data.userId);
         return;
       }
 
-      console.log('👤 플레이어 입장:', data.username, data.userId);
+      console.log('👤 [MapGamePage] 플레이어 입장:', data.username, data.userId);
 
       // 다른 플레이어 추가 (모든 플레이어 동일 스폰 위치)
       setOtherPlayers((prev) => ({
@@ -79,25 +195,25 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           position: [0, 0, 0], // 모든 플레이어가 동일한 스폰 위치
           rotationY: 0,
           animation: 'idle',
-          modelPath: '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
+          modelPath: data.modelPath || DEFAULT_CHARACTER_MODEL
         }
       }));
-    });
+    };
 
     // 플레이어 퇴장 콜백
-    multiplayerService.onPlayerLeave((data) => {
-      console.log('👋 플레이어 퇴장:', data.username, data.userId);
+    const handlePlayerLeave = (data) => {
+      console.log('👋 [MapGamePage] 플레이어 퇴장:', data.username, data.userId);
       setOtherPlayers((prev) => {
         const newPlayers = { ...prev };
         delete newPlayers[data.userId];
         return newPlayers;
       });
-    });
+    };
 
     // 위치 업데이트 콜백
-    multiplayerService.onPositionUpdate((data) => {
+    const handlePositionUpdate = (data) => {
       // 자신의 위치 업데이트는 무시
-      if (String(data.userId) === String(multiplayerService.userId)) {
+      if (String(data.userId) === String(userId)) {
         return;
       }
       
@@ -106,27 +222,40 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         [data.userId]: {
           userId: data.userId,
           username: data.username,
-          position: [data.x, data.y, data.z], // 받은 위치 그대로 사용 (GPS 변환 없음)
+          position: [data.x, data.y, data.z],
           rotationY: data.rotationY,
           animation: data.animation || 'idle',
-          modelPath: data.modelPath || '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf',
+          modelPath: data.modelPath || DEFAULT_CHARACTER_MODEL,
           isChangingAvatar: data.isChangingAvatar || false
         }
       }));
-    });
+    };
 
-    // 연결 처리 (App.js와 동일)
-    if (isLoggedIn && userId && username) {
-      console.log('🔗 플레이어로 연결:', { userId, username });
-      multiplayerService.connect(userId, username);
+    // 콜백 등록 및 cleanup 함수 저장
+    const unsubJoin = multiplayerService.onPlayerJoin(handlePlayerJoin);
+    const unsubLeave = multiplayerService.onPlayerLeave(handlePlayerLeave);
+    const unsubPosition = multiplayerService.onPositionUpdate(handlePositionUpdate);
+
+    // 연결 처리 - 아직 연결되지 않은 경우에만 연결
+    if (!multiplayerService.connected) {
+      if (isLoggedIn && userId && username) {
+        console.log('🔗 [MapGamePage] 플레이어로 연결:', { userId, username });
+        multiplayerService.connect(userId, username);
+      } else {
+        console.log('👀 [MapGamePage] 관찰자로 연결');
+        const observerId = 'observer_' + Date.now();
+        multiplayerService.connect(observerId, '게스트', true);
+      }
     } else {
-      console.log('👀 관찰자로 연결');
-      const observerId = 'observer_' + Date.now();
-      multiplayerService.connect(observerId, '게스트', true); // true = observer mode
+      console.log('✅ [MapGamePage] 멀티플레이어 이미 연결됨');
     }
 
     return () => {
       console.log('🔌 MapGamePageNew: 멀티플레이어 콜백 해제');
+      // 콜백 해제
+      unsubJoin?.();
+      unsubLeave?.();
+      unsubPosition?.();
       // 연결 해제는 하지 않음 (메인에서 관리)
     };
   }, [isLoggedIn, userId, username]);
@@ -324,17 +453,45 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
 
   const handleCreateRoom = () => {
     console.log('🏠 방 생성 버튼 클릭');
-    if (onShowCreateRoom) {
-      onShowCreateRoom();
-    }
+    setMinigameModalMode('create');
+    setShowMinigameModal(true);
   };
 
   const handleJoinLobby = () => {
     console.log('📍 로비 입장 버튼 클릭');
-    if (onShowLobby) {
-      onShowLobby();
-    }
+    setMinigameModalMode('lobby');
+    setShowMinigameModal(true);
   };
+
+  // 방 입장 처리
+  const handleJoinRoom = useCallback((room) => {
+    console.log('🚪 방 입장 시도:', room.roomName);
+    if (minigameService.connected) {
+      const userProfile = JSON.parse(localStorage.getItem('user') || '{}');
+      minigameService.joinRoom(
+        room.roomId,
+        userProfile?.level || 1,
+        userProfile?.selectedProfile?.imagePath,
+        userProfile?.selectedOutline?.imagePath
+      );
+      // 대기방 모달 열기
+      setMinigameModalMode('waiting');
+      setShowMinigameModal(true);
+    }
+    setShowRoomPopup(false);
+    setSelectedRoom(null);
+  }, []);
+
+  // 포탈 근접 체크 (CharacterViewer에서 호출)
+  const handlePortalProximity = useCallback((room, isNear) => {
+    if (isNear && !showRoomPopup) {
+      setSelectedRoom(room);
+      setShowRoomPopup(true);
+    } else if (!isNear && selectedRoom?.roomId === room.roomId) {
+      setShowRoomPopup(false);
+      setSelectedRoom(null);
+    }
+  }, [showRoomPopup, selectedRoom]);
 
   if (error) {
     return (
@@ -369,25 +526,42 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           }}
           style={{ width: '100%', height: '100%' }}
           gl={{ antialias: true, alpha: false }}
-          onCreated={(state) => {
-            state.gl.setClearColor(0x87CEEB, 1); // 하늘색 배경
-          }}
         >
-          <ambientLight intensity={0.8} />
-          <directionalLight
-            position={[5, 5, 5]}
-            intensity={1.2}
-            castShadow
-          />
+          {/* 시간 기반 동적 하늘 */}
+          <DynamicSky />
           
-          {/* 가상 풀숲 바닥 */}
-          <VirtualGrassGround />
+          {/* 동적 조명 (시간 기반) */}
+          <DynamicLighting />
+          
+          {/* 가상 풀숲 바닥 + 건물 + 도로 */}
+          <VirtualEnvironment 
+            buildingsData={buildingsData} 
+            roadsData={roadsData}
+            userLocation={userLocation}
+          />
+
+          {/* 주변 방 포탈들 */}
+          {nearbyRooms.map((room) => (
+            <RoomPortal
+              key={room.roomId}
+              room={room}
+              userLocation={userLocation}
+              characterStateRef={characterStateRef}
+              onProximity={handlePortalProximity}
+              onEnter={() => handleJoinRoom(room)}
+            />
+          ))}
 
           {/* 내 캐릭터 */}
           <CharacterViewer 
             characterStateRef={characterStateRef} 
             userId={userId}
             username={username}
+            modelPath={characterModelPath}
+            nearbyRooms={nearbyRooms}
+            userLocation={userLocation}
+            onPortalEnter={handleJoinRoom}
+            isModalOpen={showMinigameModal || showRoomPopup}
           />
           
           {/* 다른 플레이어들 (App.js Level1과 동일한 로직) */}
@@ -410,6 +584,17 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           {/* 지도 마커 업데이트 (실시간) */}
           <MarkerUpdater characterStateRef={characterStateRef} mapboxManagerRef={mapboxManagerRef} userLocation={userLocation} isReady={isReady} />
         </Canvas>
+
+        {/* 미니맵 오버레이 */}
+        <Minimap 
+          userLocation={userLocation}
+          characterStateRef={characterStateRef}
+          nearbyRooms={nearbyRooms}
+          otherPlayers={otherPlayers}
+        />
+        
+        {/* 시간대 표시 */}
+        <TimeIndicator />
         
         {!isReady && (
           <div className="map-game-loading-overlay">
@@ -472,6 +657,28 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           </div>
         </div>
       )}
+
+      {/* 방 정보 팝업 */}
+      {showRoomPopup && selectedRoom && (
+        <RoomInfoPopup 
+          room={selectedRoom}
+          onJoin={() => handleJoinRoom(selectedRoom)}
+          onClose={() => {
+            setShowRoomPopup(false);
+            setSelectedRoom(null);
+          }}
+        />
+      )}
+
+      {/* 미니게임 모달 (App.js와 동일) */}
+      {showMinigameModal && (
+        <MinigameModal
+          onClose={() => setShowMinigameModal(false)}
+          userProfile={userInfo}
+          onlinePlayers={otherPlayers}
+          initialMode={minigameModalMode}
+        />
+      )}
     </div>
   );
 }
@@ -481,7 +688,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
  * MapCharacterController와 동일한 이동 로직 사용
  * + 위치 브로드캐스트 기능 추가
  */
-function CharacterViewer({ characterStateRef, userId, username }) {
+function CharacterViewer({ characterStateRef, userId, username, modelPath = DEFAULT_CHARACTER_MODEL, isModalOpen = false }) {
   const characterRef = useRef(null);
   const groupRef = useRef(null);
   const modelGroupRef = useRef(null);
@@ -494,9 +701,14 @@ function CharacterViewer({ characterStateRef, userId, username }) {
   // MapCharacterController와 동일하게 useKeyboardControls 사용
   const { forward, backward, left, right, shift } = useKeyboardControls();
   
-  // GLTF 로드
-  const { scene, animations } = useGLTF('/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf');
+  // GLTF 로드 (사용자의 캐릭터 모델 사용)
+  const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, characterRef);
+
+  // modelPath 변경 감지
+  useEffect(() => {
+    console.log('🟣 [MapCharacterViewer] modelPath 변경:', modelPath);
+  }, [modelPath]);
 
   // 애니메이션 상태 관리
   useEffect(() => {
@@ -540,6 +752,12 @@ function CharacterViewer({ characterStateRef, userId, username }) {
   // 프레임 업데이트 - MapCharacterController와 동일한 로직
   useFrame((state, delta) => {
     if (!modelGroupRef.current) {
+      return;
+    }
+
+    // 모달이 열려있으면 이동 비활성화
+    if (isModalOpen) {
+      characterStateRef.current.isMoving = false;
       return;
     }
 
@@ -591,14 +809,20 @@ function CharacterViewer({ characterStateRef, userId, username }) {
     if (now - lastBroadcastTimeRef.current > BROADCAST_INTERVAL) {
       lastBroadcastTimeRef.current = now;
       
-      // 멀티플레이어 서비스를 통해 위치 전송
-      if (multiplayerService.connected && userId && username) {
-        multiplayerService.sendPositionUpdate(
-          currentPos,
-          lastRotationYRef.current,
-          currentAnimation.toLowerCase(),
-          '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf'
-        );
+      // 멀티플레이어 서비스를 통해 위치 전송 (사용자의 캐릭터 모델 경로 사용)
+      // 연결 상태와 클라이언트 연결 상태를 모두 체크
+      if (multiplayerService.connected && multiplayerService.client?.connected && userId && username) {
+        try {
+          multiplayerService.sendPositionUpdate(
+            currentPos,
+            lastRotationYRef.current,
+            currentAnimation.toLowerCase(),
+            modelPath
+          );
+        } catch (error) {
+          // STOMP 연결 오류 무시 (재연결 시 자동 복구)
+          console.warn('Position broadcast failed:', error.message);
+        }
       }
     }
   });
@@ -608,7 +832,7 @@ function CharacterViewer({ characterStateRef, userId, username }) {
       <primitive
         ref={characterRef}
         object={scene}
-        scale={2.5}
+        scale={2}
         position={[0, 0, 0]}
       />
     </group>
@@ -680,39 +904,235 @@ function MarkerUpdater({ characterStateRef, mapboxManagerRef, userLocation, isRe
 }
 
 /**
- * 가상 풀숲 바닥 컴포넌트
- * 포켓몬 고 스타일의 풀밭 느낌 - 무한 맵
+ * 시간 기반 동적 하늘 컴포넌트
+ * 실제 시간에 따라 하늘 색상 변경 (낮/밤/노을)
  */
-function VirtualGrassGround() {
-  const grassPatches = [];
-  
-  // 랜덤 풀 패치 생성 - 더 넓은 범위
-  for (let i = 0; i < 500; i++) {
-    const x = (Math.random() - 0.5) * 500;
-    const z = (Math.random() - 0.5) * 500;
-    const scale = 0.3 + Math.random() * 0.5;
-    const rotation = Math.random() * Math.PI * 2;
-    grassPatches.push({ x, z, scale, rotation, key: i });
-  }
+function DynamicSky() {
+  const meshRef = useRef();
+  const [skyColors, setSkyColors] = useState({ top: '#87CEEB', bottom: '#E0F7FA' });
+
+  useEffect(() => {
+    const updateSkyColor = () => {
+      const hour = new Date().getHours();
+      let top, bottom;
+
+      if (hour >= 6 && hour < 8) {
+        // 새벽 (노을)
+        top = '#FF9A8B';
+        bottom = '#FFECD2';
+      } else if (hour >= 8 && hour < 17) {
+        // 낮
+        top = '#4FC3F7';
+        bottom = '#E1F5FE';
+      } else if (hour >= 17 && hour < 20) {
+        // 저녁 (노을)
+        top = '#FF6B6B';
+        bottom = '#FFE66D';
+      } else {
+        // 밤
+        top = '#1A237E';
+        bottom = '#303F9F';
+      }
+
+      setSkyColors({ top, bottom });
+    };
+
+    updateSkyColor();
+    const interval = setInterval(updateSkyColor, 60000); // 1분마다 업데이트
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <mesh ref={meshRef}>
+      <sphereGeometry args={[500, 32, 32]} />
+      <shaderMaterial
+        side={THREE.BackSide}
+        uniforms={{
+          topColor: { value: new THREE.Color(skyColors.top) },
+          bottomColor: { value: new THREE.Color(skyColors.bottom) },
+        }}
+        vertexShader={`
+          varying vec3 vWorldPosition;
+          void main() {
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPosition.xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `}
+        fragmentShader={`
+          uniform vec3 topColor;
+          uniform vec3 bottomColor;
+          varying vec3 vWorldPosition;
+          void main() {
+            float h = normalize(vWorldPosition).y;
+            gl_FragColor = vec4(mix(bottomColor, topColor, max(h, 0.0)), 1.0);
+          }
+        `}
+      />
+    </mesh>
+  );
+}
+
+/**
+ * 시간 기반 동적 조명
+ */
+function DynamicLighting() {
+  const directionalRef = useRef();
+  const [lightSettings, setLightSettings] = useState({
+    intensity: 1.2,
+    color: '#ffffff',
+    position: [5, 10, 5]
+  });
+
+  useEffect(() => {
+    const updateLighting = () => {
+      const hour = new Date().getHours();
+      
+      if (hour >= 6 && hour < 8) {
+        // 새벽
+        setLightSettings({ intensity: 0.8, color: '#FFB347', position: [-5, 3, 5] });
+      } else if (hour >= 8 && hour < 17) {
+        // 낮
+        setLightSettings({ intensity: 1.2, color: '#ffffff', position: [5, 10, 5] });
+      } else if (hour >= 17 && hour < 20) {
+        // 저녁
+        setLightSettings({ intensity: 0.9, color: '#FF6B4A', position: [10, 3, -5] });
+      } else {
+        // 밤
+        setLightSettings({ intensity: 0.4, color: '#8EC8F8', position: [0, 10, 0] });
+      }
+    };
+
+    updateLighting();
+    const interval = setInterval(updateLighting, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <>
+      <ambientLight intensity={lightSettings.intensity * 0.5} />
+      <directionalLight
+        ref={directionalRef}
+        position={lightSettings.position}
+        intensity={lightSettings.intensity}
+        color={lightSettings.color}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+      />
+    </>
+  );
+}
+
+/**
+ * 가상 환경 컴포넌트 (풀밭 + 간소화된 건물 + 도로)
+ */
+function VirtualEnvironment({ buildingsData, roadsData, userLocation }) {
+  // 기존 VirtualGrassGround 로직
+  const grassPatches = useMemo(() => {
+    const patches = [];
+    for (let i = 0; i < 300; i++) {
+      const x = (Math.random() - 0.5) * 400;
+      const z = (Math.random() - 0.5) * 400;
+      const scale = 0.3 + Math.random() * 0.5;
+      const rotation = Math.random() * Math.PI * 2;
+      patches.push({ x, z, scale, rotation, key: i });
+    }
+    return patches;
+  }, []);
+
+  const trees = useMemo(() => {
+    const treeList = [];
+    for (let i = 0; i < 30; i++) {
+      const x = (Math.random() - 0.5) * 300;
+      const z = (Math.random() - 0.5) * 300;
+      if (Math.abs(x) < 20 && Math.abs(z) < 20) continue;
+      const treeScale = 1 + Math.random() * 0.5;
+      treeList.push({ x, z, treeScale, key: i });
+    }
+    return treeList;
+  }, []);
+
+  // 간소화된 건물 데이터 (시뮬레이션)
+  const buildings = useMemo(() => {
+    const buildingList = [];
+    for (let i = 0; i < 20; i++) {
+      const x = (Math.random() - 0.5) * 350;
+      const z = (Math.random() - 0.5) * 350;
+      if (Math.abs(x) < 30 && Math.abs(z) < 30) continue;
+      const width = 5 + Math.random() * 10;
+      const depth = 5 + Math.random() * 10;
+      const height = 8 + Math.random() * 20;
+      buildingList.push({ x, z, width, depth, height, key: i });
+    }
+    return buildingList;
+  }, []);
+
+  // 도로 데이터 (십자형 도로)
+  const roads = useMemo(() => [
+    { x: 0, z: 0, width: 8, length: 400, rotation: 0 }, // 세로 도로
+    { x: 0, z: 0, width: 8, length: 400, rotation: Math.PI / 2 }, // 가로 도로
+  ], []);
+
+  const GROUND_Y = 0;
 
   return (
     <group>
-      {/* 메인 바닥 - 무한 잔디 (매우 큰 크기) */}
-      <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[2000, 2000]} />
-        <meshStandardMaterial 
-          color={0x4CAF50}
-          roughness={0.9}
-          metalness={0}
-        />
+      {/* 메인 바닥 - 잔디 */}
+      <mesh position={[0, GROUND_Y - 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[1000, 1000]} />
+        <meshStandardMaterial color={0x4CAF50} roughness={0.9} metalness={0} />
       </mesh>
 
-      {/* 풀 패치들 - 작은 원형 */}
+      {/* 도로 */}
+      {roads.map((road, i) => (
+        <mesh 
+          key={`road-${i}`} 
+          position={[road.x, GROUND_Y, road.z]} 
+          rotation={[-Math.PI / 2, 0, road.rotation]}
+          receiveShadow
+        >
+          <planeGeometry args={[road.width, road.length]} />
+          <meshStandardMaterial color={0x424242} roughness={0.95} />
+        </mesh>
+      ))}
+
+      {/* 도로 중앙선 */}
+      {roads.map((road, i) => (
+        <mesh 
+          key={`road-line-${i}`} 
+          position={[road.x, GROUND_Y + 0.01, road.z]} 
+          rotation={[-Math.PI / 2, 0, road.rotation]}
+        >
+          <planeGeometry args={[0.3, road.length]} />
+          <meshStandardMaterial color={0xFFEB3B} />
+        </mesh>
+      ))}
+
+      {/* 간소화된 건물들 */}
+      {buildings.map(({ x, z, width, depth, height, key }) => (
+        <group key={`building-${key}`} position={[x, height / 2, z]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[width, height, depth]} />
+            <meshStandardMaterial 
+              color={key % 3 === 0 ? 0xBDBDBD : key % 3 === 1 ? 0x90A4AE : 0xCFD8DC} 
+              roughness={0.8}
+            />
+          </mesh>
+          {/* 건물 창문 (간단한 패턴) */}
+          <mesh position={[0, 0, depth / 2 + 0.01]}>
+            <planeGeometry args={[width * 0.8, height * 0.8]} />
+            <meshStandardMaterial color={0x1976D2} opacity={0.6} transparent />
+          </mesh>
+        </group>
+      ))}
+
+      {/* 풀 패치들 */}
       {grassPatches.map(({ x, z, scale, rotation, key }) => (
-        <group key={key} position={[x, -1.17, z]} rotation={[0, rotation, 0]}>
-          {/* 풀 뭉치 */}
-          <mesh scale={[scale, 0.1, scale]}>
-            <cylinderGeometry args={[0.8, 1, 0.3, 8]} />
+        <group key={key} position={[x, GROUND_Y + 0.02, z]} rotation={[0, rotation, 0]}>
+          <mesh scale={[scale, 0.08, scale]}>
+            <cylinderGeometry args={[0.6, 0.8, 0.2, 6]} />
             <meshStandardMaterial 
               color={key % 3 === 0 ? 0x388E3C : key % 3 === 1 ? 0x43A047 : 0x2E7D32}
               roughness={0.9}
@@ -721,59 +1141,373 @@ function VirtualGrassGround() {
         </group>
       ))}
 
-      {/* 나무들 (랜덤 배치 - 더 많이) */}
-      {[...Array(50)].map((_, i) => {
-        const x = (Math.random() - 0.5) * 400;
-        const z = (Math.random() - 0.5) * 400;
-        // 중앙 근처는 피함
-        if (Math.abs(x) < 15 && Math.abs(z) < 15) return null;
-        const treeScale = 1 + Math.random() * 0.5;
-        return (
-          <group key={`tree-${i}`} position={[x, -1.2, z]} scale={[treeScale, treeScale, treeScale]}>
-            {/* 나무 줄기 */}
-            <mesh position={[0, 1.5, 0]}>
-              <cylinderGeometry args={[0.3, 0.5, 3, 8]} />
-              <meshStandardMaterial color={0x5D4037} roughness={0.9} />
-            </mesh>
-            {/* 나무 잎 */}
-            <mesh position={[0, 4, 0]}>
-              <coneGeometry args={[2, 4, 8]} />
-              <meshStandardMaterial color={0x2E7D32} roughness={0.8} />
-            </mesh>
-            <mesh position={[0, 5.5, 0]}>
-              <coneGeometry args={[1.5, 3, 8]} />
-              <meshStandardMaterial color={0x388E3C} roughness={0.8} />
-            </mesh>
-          </group>
-        );
-      })}
-
-      {/* 꽃들 (랜덤 배치 - 더 많이) */}
-      {[...Array(100)].map((_, i) => {
-        const x = (Math.random() - 0.5) * 300;
-        const z = (Math.random() - 0.5) * 300;
-        const colors = [0xE91E63, 0xFFEB3B, 0x9C27B0, 0xFF9800, 0x03A9F4];
-        const color = colors[i % colors.length];
-        return (
-          <mesh key={`flower-${i}`} position={[x, -1.1, z]}>
-            <sphereGeometry args={[0.15, 8, 8]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} />
+      {/* 나무들 */}
+      {trees.map(({ x, z, treeScale, key }) => (
+        <group key={`tree-${key}`} position={[x, GROUND_Y, z]} scale={[treeScale, treeScale, treeScale]}>
+          <mesh position={[0, 1.5, 0]} castShadow>
+            <cylinderGeometry args={[0.3, 0.5, 3, 8]} />
+            <meshStandardMaterial color={0x5D4037} roughness={0.9} />
           </mesh>
-        );
-      })}
-
-      {/* 돌멩이들 - 더 많이 */}
-      {[...Array(40)].map((_, i) => {
-        const x = (Math.random() - 0.5) * 300;
-        const z = (Math.random() - 0.5) * 300;
-        const scale = 0.2 + Math.random() * 0.4;
-        return (
-          <mesh key={`rock-${i}`} position={[x, -1.1, z]} scale={[scale, scale * 0.6, scale]}>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial color={0x757575} roughness={0.95} />
+          <mesh position={[0, 4, 0]} castShadow>
+            <coneGeometry args={[2, 4, 8]} />
+            <meshStandardMaterial color={0x2E7D32} roughness={0.8} />
           </mesh>
-        );
-      })}
+          <mesh position={[0, 5.5, 0]} castShadow>
+            <coneGeometry args={[1.5, 3, 8]} />
+            <meshStandardMaterial color={0x388E3C} roughness={0.8} />
+          </mesh>
+        </group>
+      ))}
     </group>
+  );
+}
+
+/**
+ * 방 포탈 컴포넌트
+ * GPS 기반으로 주변 방을 3D 포탈로 표시
+ */
+function RoomPortal({ room, userLocation, characterStateRef, onProximity, onEnter }) {
+  const portalRef = useRef();
+  const glowRef = useRef();
+  const [isNear, setIsNear] = useState(false);
+
+  // GPS -> 3D 좌표 변환
+  const portalPosition = useMemo(() => {
+    if (!userLocation || !room.gpsLng || !room.gpsLat) {
+      // 기본 위치 (roomId 기반으로 고유한 위치 생성)
+      const baseX = ((room.roomId % 10) - 5) * 15;
+      const baseZ = (((room.roomId * 7) % 10) - 5) * 15;
+      return [baseX, 0, baseZ];
+    }
+    const x = (room.gpsLng - userLocation[0]) * GPS_SCALE;
+    const z = -(room.gpsLat - userLocation[1]) * GPS_SCALE;
+    return [x, 0, z];
+  }, [room, userLocation]);
+
+  // 거리 체크 및 애니메이션
+  useFrame((state) => {
+    if (!portalRef.current) return;
+
+    // 포탈 회전 애니메이션
+    portalRef.current.rotation.y += 0.01;
+
+    // 글로우 펄스
+    if (glowRef.current) {
+      const pulse = Math.sin(state.clock.elapsedTime * 2) * 0.3 + 0.7;
+      glowRef.current.material.opacity = pulse * 0.5;
+    }
+
+    // 거리 체크 (ref에서 현재 위치 가져오기)
+    const characterPosition = characterStateRef?.current?.position || [0, 0, 0];
+    const distance = Math.sqrt(
+      Math.pow(characterPosition[0] - portalPosition[0], 2) +
+      Math.pow(characterPosition[2] - portalPosition[2], 2)
+    );
+
+    const wasNear = isNear;
+    const nowNear = distance < PORTAL_ENTER_DISTANCE * 2;
+
+    if (nowNear !== wasNear) {
+      setIsNear(nowNear);
+      onProximity?.(room, nowNear);
+    }
+
+    // 자동 입장 (포탈 중심에 매우 가까울 때)
+    if (distance < PORTAL_ENTER_DISTANCE * 0.5) {
+      // onEnter?.();
+    }
+  });
+
+  // 게임 타입별 색상
+  const portalColor = useMemo(() => {
+    const colors = {
+      '반응속도': '#FF6B6B',
+      '오목': '#4CAF50',
+      '퀴즈': '#2196F3',
+      default: '#9C27B0'
+    };
+    return colors[room.gameName] || colors.default;
+  }, [room.gameName]);
+
+  return (
+    <group position={portalPosition}>
+      {/* 베이스 원형 */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
+        <ringGeometry args={[2, 3, 32]} />
+        <meshStandardMaterial color={portalColor} side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* 포탈 토러스 */}
+      <mesh ref={portalRef} position={[0, 3, 0]}>
+        <torusGeometry args={[2, 0.3, 16, 32]} />
+        <meshStandardMaterial 
+          color={portalColor} 
+          emissive={portalColor}
+          emissiveIntensity={0.5}
+        />
+      </mesh>
+
+      {/* 글로우 이펙트 */}
+      <mesh ref={glowRef} position={[0, 3, 0]}>
+        <sphereGeometry args={[2.5, 32, 32]} />
+        <meshBasicMaterial 
+          color={portalColor} 
+          transparent 
+          opacity={0.3}
+          side={THREE.BackSide}
+        />
+      </mesh>
+
+      {/* 방 이름 표시 */}
+      <Billboard position={[0, 6, 0]} follow={true}>
+        <Text
+          fontSize={0.8}
+          color="white"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.05}
+          outlineColor="black"
+        >
+          {room.roomName || '게임 방'}
+        </Text>
+      </Billboard>
+
+      {/* 게임 타입 표시 */}
+      <Billboard position={[0, 5, 0]} follow={true}>
+        <Text
+          fontSize={0.5}
+          color={portalColor}
+          anchorX="center"
+          anchorY="middle"
+        >
+          {room.gameName} ({room.currentPlayers || 1}/{room.maxPlayers || 4})
+        </Text>
+      </Billboard>
+
+      {/* 근접 시 안내 텍스트 */}
+      {isNear && (
+        <Billboard position={[0, 7.5, 0]} follow={true}>
+          <Text
+            fontSize={0.6}
+            color="#FFD700"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.03}
+            outlineColor="black"
+          >
+            🚪 Enter를 눌러 입장
+          </Text>
+        </Billboard>
+      )}
+    </group>
+  );
+}
+
+/**
+ * 미니맵 컴포넌트
+ */
+function Minimap({ userLocation, characterStateRef, nearbyRooms, otherPlayers }) {
+  const canvasRef = useRef(null);
+  const MINIMAP_SIZE = 150;
+  const MINIMAP_SCALE = 3; // 1 유닛 = 3 픽셀
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const center = MINIMAP_SIZE / 2;
+
+    // 그리기 함수
+    const draw = () => {
+      const characterPosition = characterStateRef.current?.position || [0, 0, 0];
+      
+      // 배경
+      ctx.fillStyle = 'rgba(0, 30, 60, 0.85)';
+      ctx.fillRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
+
+      // 테두리
+      ctx.strokeStyle = 'rgba(100, 180, 255, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
+
+      // 격자
+      ctx.strokeStyle = 'rgba(100, 180, 255, 0.2)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < MINIMAP_SIZE; i += 30) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, MINIMAP_SIZE);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(MINIMAP_SIZE, i);
+        ctx.stroke();
+      }
+
+      // 주변 방 (포탈) 표시
+      nearbyRooms.forEach((room) => {
+        if (!userLocation || !room.gpsLng) return;
+        const dx = (room.gpsLng - userLocation[0]) * GPS_SCALE;
+        const dz = -(room.gpsLat - userLocation[1]) * GPS_SCALE;
+        const px = center + (dx - characterPosition[0]) * MINIMAP_SCALE;
+        const pz = center + (dz - characterPosition[2]) * MINIMAP_SCALE;
+
+        if (px > 0 && px < MINIMAP_SIZE && pz > 0 && pz < MINIMAP_SIZE) {
+          ctx.fillStyle = '#9C27B0';
+          ctx.beginPath();
+          ctx.arc(px, pz, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#E1BEE7';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      });
+
+      // 다른 플레이어 표시
+      Object.values(otherPlayers).forEach((player) => {
+        const dx = player.position[0] - characterPosition[0];
+        const dz = player.position[2] - characterPosition[2];
+        const px = center + dx * MINIMAP_SCALE;
+        const pz = center + dz * MINIMAP_SCALE;
+
+        if (px > 5 && px < MINIMAP_SIZE - 5 && pz > 5 && pz < MINIMAP_SIZE - 5) {
+          ctx.fillStyle = '#2196F3';
+          ctx.beginPath();
+          ctx.arc(px, pz, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // 내 캐릭터 (중앙, 방향 표시)
+      ctx.fillStyle = '#4CAF50';
+      ctx.beginPath();
+      ctx.arc(center, center, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#81C784';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 방향 화살표
+      ctx.fillStyle = '#FFEB3B';
+      ctx.beginPath();
+      ctx.moveTo(center, center - 10);
+      ctx.lineTo(center - 5, center);
+      ctx.lineTo(center + 5, center);
+      ctx.closePath();
+      ctx.fill();
+
+      // 나침반 표시
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('N', center, 12);
+    };
+
+    draw();
+    const interval = setInterval(draw, 100);
+
+    return () => clearInterval(interval);
+  }, [characterStateRef, nearbyRooms, otherPlayers, userLocation]);
+
+  return (
+    <div className="minimap-container">
+      <canvas 
+        ref={canvasRef} 
+        width={MINIMAP_SIZE} 
+        height={MINIMAP_SIZE}
+        style={{
+          borderRadius: '50%',
+          border: '3px solid rgba(100, 180, 255, 0.6)',
+          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(0, 50, 100, 0.3)'
+        }}
+      />
+      <div className="minimap-legend">
+        <span style={{ color: '#4CAF50' }}>● 나</span>
+        <span style={{ color: '#2196F3' }}>● 플레이어</span>
+        <span style={{ color: '#9C27B0' }}>● 방</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 방 정보 팝업 컴포넌트
+ */
+function RoomInfoPopup({ room, onJoin, onClose }) {
+  return (
+    <div className="room-info-popup">
+      <div className="room-info-header">
+        <h3>{room.roomName || '게임 방'}</h3>
+        <button className="popup-close-btn" onClick={onClose}>✕</button>
+      </div>
+      <div className="room-info-content">
+        <div className="room-info-row">
+          <span className="label">🎮 게임</span>
+          <span className="value">{room.gameName}</span>
+        </div>
+        <div className="room-info-row">
+          <span className="label">👑 방장</span>
+          <span className="value">{room.hostName || '알 수 없음'}</span>
+        </div>
+        <div className="room-info-row">
+          <span className="label">👥 인원</span>
+          <span className="value">{room.currentPlayers || 1} / {room.maxPlayers || 4}</span>
+        </div>
+        <div className="room-info-row">
+          <span className="label">🔒 상태</span>
+          <span className="value">{room.isLocked ? '비공개' : '공개'}</span>
+        </div>
+      </div>
+      <div className="room-info-actions">
+        <button className="join-room-btn" onClick={onJoin}>
+          🚪 입장하기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 시간대 표시 컴포넌트
+ */
+function TimeIndicator() {
+  const [timeInfo, setTimeInfo] = useState({ icon: '☀️', text: '낮', time: '' });
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const timeStr = `${hour}:${minutes}`;
+      
+      let icon, text;
+      if (hour >= 6 && hour < 8) {
+        icon = '🌅';
+        text = '새벽';
+      } else if (hour >= 8 && hour < 17) {
+        icon = '☀️';
+        text = '낮';
+      } else if (hour >= 17 && hour < 20) {
+        icon = '🌆';
+        text = '저녁';
+      } else {
+        icon = '🌙';
+        text = '밤';
+      }
+      
+      setTimeInfo({ icon, text, time: timeStr });
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="time-indicator">
+      <span className="time-icon">{timeInfo.icon}</span>
+      <span>{timeInfo.text} {timeInfo.time}</span>
+    </div>
   );
 }
