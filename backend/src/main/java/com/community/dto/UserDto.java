@@ -29,6 +29,10 @@ public class UserDto {
     private LocalDateTime suspendedUntil;
     private String suspensionReason;
 
+    // 재화 정보
+    private Integer goldCoins;
+    private Integer silverCoins;
+
     public static UserDto fromEntity(User user) {
         UserDtoBuilder builder = UserDto.builder()
                 .id(user.getId())
@@ -38,7 +42,9 @@ public class UserDto {
                 .createdAt(user.getCreatedAt())
                 .isPermanentlySuspended(user.getIsPermanentlySuspended())
                 .suspendedUntil(user.getSuspendedUntil())
-                .suspensionReason(user.getSuspensionReason());
+                .suspensionReason(user.getSuspensionReason())
+                .goldCoins(user.getGoldCoins())
+                .silverCoins(user.getSilverCoins());
 
         // 선택된 프로필/테두리 정보 추가
         if (user.getSelectedProfile() != null) {

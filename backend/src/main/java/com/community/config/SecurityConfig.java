@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/h2-console/**", "/error").permitAll()
                         .requestMatchers("/api/boards/**", "/api/posts/**").permitAll()
                         .requestMatchers("/api/comments/**", "/api/likes/**").permitAll()
+                        .requestMatchers("/resources/**").permitAll() // 이미지 리소스 허용 추가
                         .requestMatchers("/ws/**").permitAll() // WebSocket endpoints
                         .requestMatchers("/actuator/health/**").permitAll() // Health check endpoint
                         .anyRequest().authenticated())
