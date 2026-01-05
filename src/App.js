@@ -1,4 +1,4 @@
-import React, { Suspense, useRef, useState, useEffect, useCallback } from 'react';
+import React, { Suspense, useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import './App.css';
 import { Physics } from '@react-three/rapier';
@@ -1014,6 +1014,18 @@ function App() {
 
 
 
+  // Canvas props 최적화: 객체를 메모이제이션하여 불필요한 재렌더링 방지
+  const glConfig = useMemo(() => ({
+    alpha: true,
+    antialias: true,
+    preserveDrawingBuffer: true
+  }), []);
+
+  const cameraConfig = useMemo(() => ({
+    position: [-0.00, 28.35, 19.76],
+    rotation: [-0.96, -0.00, -0.00]
+  }), []);
+
   return (
     <div className="App">
       {/* Mapbox 배경 및 Three.js 오버레이 */}
@@ -1118,14 +1130,10 @@ function App() {
       <div className="three-overlay">
         <Canvas
           className="three-canvas"
-          camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
+          camera={cameraConfig}
           shadows={appSettings.graphics?.shadows !== 'off'}
-          gl={{
-            alpha: true, // 투명 배경 활성화
-            antialias: true,
-            preserveDrawingBuffer: true,
-            pixelRatio: appSettings.graphics?.quality === 'advanced' ? window.devicePixelRatio : 1
-          }}
+          dpr={appSettings.graphics?.quality === 'advanced' ? window.devicePixelRatio : 1}
+          gl={glConfig}
           style={{ width: '100%', height: '100%' }}
         >
           <ambientLight intensity={0.5} />
