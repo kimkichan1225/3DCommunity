@@ -202,6 +202,55 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     const unsubLeave = multiplayerService.onPlayerLeave(handlePlayerLeave);
     const unsubPosition = multiplayerService.onPositionUpdate(handlePositionUpdate);
 
+    // 방 업데이트 콜백
+    const handleRoomUpdate = (data) => {
+      console.log('🏠 방 업데이트 수신:', data);
+      
+      if (data.action === 'create') {
+        // 자신이 만든 방은 이미 추가되어 있으므로 무시
+        if (String(data.hostId) === String(userId)) {
+          console.log('자신이 만든 방 - 무시');
+          return;
+        }
+        
+        // 다른 플레이어가 만든 방 추가
+        const newRoom = {
+          roomId: data.roomId,
+          roomName: data.roomName,
+          hostId: data.hostId,
+          hostName: data.hostName,
+          maxMembers: data.maxMembers || 10,
+          isPrivate: data.isPrivate || false,
+          gpsLng: data.gpsLng,
+          gpsLat: data.gpsLat,
+          gameName: data.gameName || '개인 룸',
+          members: data.members || 1
+        };
+        
+        setNearbyRooms(prev => {
+          // 중복 체크
+          if (prev.some(r => r.roomId === newRoom.roomId)) {
+            console.log('이미 존재하는 방 - 무시');
+            return prev;
+          }
+          console.log('✅ 새로운 방 추가:', newRoom);
+          return [...prev, newRoom];
+        });
+        
+      } else if (data.action === 'delete') {
+        // 방 삭제
+        setNearbyRooms(prev => {
+          const filtered = prev.filter(r => r.roomId !== data.roomId);
+          if (filtered.length < prev.length) {
+            console.log('✅ 방 삭제:', data.roomId);
+          }
+          return filtered;
+        });
+      }
+    };
+    
+    const unsubRoom = multiplayerService.onRoomUpdate(handleRoomUpdate);
+
     // 연결 처리
     if (!multiplayerService.connected || !multiplayerService.client?.connected) {
       // 아직 연결되지 않았으면 새로 연결
@@ -231,6 +280,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
       unsubJoin?.();
       unsubLeave?.();
       unsubPosition?.();
+      unsubRoom?.();
       // 연결 해제는 하지 않음 (메인에서 관리)
     };
   }, [isLoggedIn, userId, username]);
@@ -463,8 +513,23 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     console.log('🚀 개인 룸 3D 뷰로 전환');
     setIsInPersonalRoom(true);
     
-    // TODO: 서버에 방 생성 알림 (WebSocket)
-  }, [userLocation]);
+    // WebSocket으로 다른 플레이어들에게 방 생성 알림
+    if (multiplayerService.connected && userId && username) {
+      multiplayerService.sendRoomCreate({
+        roomId: roomData.roomId,
+        roomName: roomData.roomName,
+        hostId: userId,
+        hostName: username,
+        maxMembers: roomData.maxMembers || 10,
+        isPrivate: roomData.isPrivate || false,
+        gpsLng: roomWithLocation.gpsLng,
+        gpsLat: roomWithLocation.gpsLat,
+        gameName: '개인 룸',
+        members: 1
+      });
+      console.log('✅ 방 생성 브로드캐스트 완료');
+    }
+  }, [userLocation, userId, username]);
 
   // 친구 초대 처리
   const handleInviteFriend = useCallback((friend) => {
@@ -479,6 +544,12 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     if (currentPersonalRoom) {
       // 방 목록에서 제거
       setNearbyRooms(prev => prev.filter(r => r.roomId !== currentPersonalRoom.roomId));
+      
+      // WebSocket으로 다른 플레이어들에게 방 삭제 알림
+      if (multiplayerService.connected) {
+        multiplayerService.sendRoomDelete(currentPersonalRoom.roomId);
+        console.log('✅ 방 삭제 브로드캐스트 완료');
+      }
     }
     setCurrentPersonalRoom(null);
     setIsInPersonalRoom(false); // 메인 맵으로 복귀

@@ -18,6 +18,7 @@ class MultiplayerService {
     this.onOnlineCountUpdateCallbacks = [];
     this.onFriendUpdateCallbacks = [];
     this.onDMMessageCallbacks = [];
+    this.onRoomUpdateCallbacks = []; // 방 생성/삭제 콜백 추가
   }
 
   connect(userId, username, isObserver = false) {
@@ -86,6 +87,13 @@ class MultiplayerService {
           const data = JSON.parse(message.body);
           console.log('DM message received:', data);
           this.onDMMessageCallbacks.forEach(cb => cb?.(data));
+        });
+
+        // Subscribe to room updates (방 생성/삭제)
+        this.client.subscribe('/topic/rooms', (message) => {
+          const data = JSON.parse(message.body);
+          console.log('🏠 Room update:', data);
+          this.onRoomUpdateCallbacks.forEach(cb => cb?.(data));
         });
 
         // Send join message only if not in observer mode
@@ -232,6 +240,49 @@ class MultiplayerService {
       return () => {
         this.onDMMessageCallbacks = this.onDMMessageCallbacks.filter(cb => cb !== callback);
       };
+    }
+  }
+
+  onRoomUpdate(callback) {
+    if (callback) {
+      this.onRoomUpdateCallbacks.push(callback);
+      return () => {
+        this.onRoomUpdateCallbacks = this.onRoomUpdateCallbacks.filter(cb => cb !== callback);
+      };
+    }
+  }
+
+  // 방 생성 브로드캐스트
+  sendRoomCreate(roomData) {
+    if (this.connected && this.client?.connected) {
+      try {
+        this.client.publish({
+          destination: '/app/room.create',
+          body: JSON.stringify(roomData)
+        });
+        console.log('📢 방 생성 브로드캐스트 전송:', roomData);
+      } catch (error) {
+        console.error('방 생성 브로드캐스트 실패:', error);
+      }
+    } else {
+      console.warn('WebSocket 연결되지 않음 - 방 생성 브로드캐스트 불가');
+    }
+  }
+
+  // 방 삭제 브로드캐스트
+  sendRoomDelete(roomId) {
+    if (this.connected && this.client?.connected) {
+      try {
+        this.client.publish({
+          destination: '/app/room.delete',
+          body: JSON.stringify({ roomId })
+        });
+        console.log('📢 방 삭제 브로드캐스트 전송:', roomId);
+      } catch (error) {
+        console.error('방 삭제 브로드캐스트 실패:', error);
+      }
+    } else {
+      console.warn('WebSocket 연결되지 않음 - 방 삭제 브로드캐스트 불가');
     }
   }
 }

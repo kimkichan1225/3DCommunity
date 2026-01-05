@@ -3,6 +3,7 @@ package com.community.controller;
 import com.community.dto.ChatMessageDto;
 import com.community.dto.PlayerJoinDto;
 import com.community.dto.PlayerPositionDto;
+import com.community.dto.RoomDto;
 import com.community.service.ActiveUserService;
 import com.community.service.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -102,5 +103,34 @@ public class MultiplayerController {
         }
 
         return chatDto;
+    }
+
+    /**
+     * 개인 방 생성
+     * Client -> /app/room.create
+     * Server -> /topic/rooms (broadcast to all)
+     */
+    @MessageMapping("/room.create")
+    @SendTo("/topic/rooms")
+    public RoomDto createRoom(RoomDto roomDto) {
+        roomDto.setAction("create");
+        roomDto.setTimestamp(System.currentTimeMillis());
+        log.info("방 생성 브로드캐스트: roomId={}, roomName={}, hostName={}", 
+                roomDto.getRoomId(), roomDto.getRoomName(), roomDto.getHostName());
+        return roomDto;
+    }
+
+    /**
+     * 개인 방 삭제
+     * Client -> /app/room.delete
+     * Server -> /topic/rooms (broadcast to all)
+     */
+    @MessageMapping("/room.delete")
+    @SendTo("/topic/rooms")
+    public RoomDto deleteRoom(RoomDto roomDto) {
+        roomDto.setAction("delete");
+        roomDto.setTimestamp(System.currentTimeMillis());
+        log.info("방 삭제 브로드캐스트: roomId={}", roomDto.getRoomId());
+        return roomDto;
     }
 }
