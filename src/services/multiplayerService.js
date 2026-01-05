@@ -133,7 +133,7 @@ class MultiplayerService {
     }
   }
 
-  sendPositionUpdate(position, rotationY, animation, modelPath, isChangingAvatar = false) {
+  sendPositionUpdate(position, rotationY, animation, modelPath, isChangingAvatar = false, currentRoomId = null) {
     if (this.connected && this.client?.connected) {
       try {
         this.client.publish({
@@ -147,7 +147,8 @@ class MultiplayerService {
             rotationY: rotationY,
             animation: animation,
             modelPath: modelPath,
-            isChangingAvatar: isChangingAvatar
+            isChangingAvatar: isChangingAvatar,
+            currentRoomId: currentRoomId
           })
         });
       } catch (error) {

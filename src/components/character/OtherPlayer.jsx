@@ -5,7 +5,7 @@ import { SkeletonUtils } from 'three-stdlib';
 import * as THREE from 'three';
 import ChatBubble from './ChatBubble';
 
-function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf', isChangingAvatar = false }) {
+function OtherPlayer({ userId, username, position, rotationY, animation, chatMessage, onRightClick, modelPath = '/resources/Ultimate Animated Character Pack - Nov 2019/glTF/BaseCharacter.gltf', isChangingAvatar = false, scale = 2 }) {
   const groupRef = useRef();
   const modelRef = useRef();
   const targetPosition = useRef(position || [0, 0, 0]);
@@ -117,7 +117,7 @@ function OtherPlayer({ userId, username, position, rotationY, animation, chatMes
         <primitive
           ref={modelRef}
           object={clone}
-          scale={2}
+          scale={scale}
         />
       )}
 

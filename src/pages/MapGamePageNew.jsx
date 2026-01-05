@@ -192,7 +192,8 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           rotationY: data.rotationY,
           animation: data.animation || 'idle',
           modelPath: data.modelPath || DEFAULT_CHARACTER_MODEL,
-          isChangingAvatar: data.isChangingAvatar || false
+          isChangingAvatar: data.isChangingAvatar || false,
+          currentRoomId: data.currentRoomId || null // 현재 있는 방 ID
         }
       }));
     };
@@ -638,7 +639,25 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
                 isModalOpen={false}
                 isInPersonalRoom={true}
                 onExitRoom={handleExitPersonalRoom}
+                currentPersonalRoom={currentPersonalRoom}
               />
+              
+              {/* 같은 방에 있는 다른 플레이어들 */}
+              {Object.values(otherPlayers)
+                .filter(player => player.currentRoomId === currentPersonalRoom?.roomId)
+                .map((player) => (
+                  <OtherPlayer
+                    key={player.userId}
+                    userId={player.userId}
+                    username={player.username}
+                    position={player.position}
+                    rotationY={player.rotationY}
+                    animation={player.animation}
+                    modelPath={player.modelPath}
+                    isChangingAvatar={player.isChangingAvatar}
+                    scale={1.2}
+                  />
+                ))}
               
               {/* 카메라 제어 (개인 룸용) */}
               <PersonalRoomCamera characterStateRef={characterStateRef} />
@@ -683,19 +702,22 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
             isModalOpen={showPersonalRoomModal || showRoomPopup}
           />
           
-          {/* 다른 플레이어들 (App.js Level1과 동일한 로직) */}
-          {Object.values(otherPlayers).map((player) => (
-            <OtherPlayer
-              key={player.userId}
-              userId={player.userId}
-              username={player.username}
-              position={player.position}
-              rotationY={player.rotationY}
-              animation={player.animation}
-              modelPath={player.modelPath}
-              isChangingAvatar={player.isChangingAvatar}
-            />
-          ))}
+          {/* 다른 플레이어들 (메인 맵에 있는 플레이어만) */}
+          {Object.values(otherPlayers)
+            .filter(player => !player.currentRoomId) // 방에 없는 플레이어만 (메인 맵)
+            .map((player) => (
+              <OtherPlayer
+                key={player.userId}
+                userId={player.userId}
+                username={player.username}
+                position={player.position}
+                rotationY={player.rotationY}
+                animation={player.animation}
+                modelPath={player.modelPath}
+                isChangingAvatar={player.isChangingAvatar}
+                scale={2}
+              />
+            ))}
           
           {/* 카메라 제어 */}
           <CameraTracker characterStateRef={characterStateRef} />
@@ -847,7 +869,8 @@ function CharacterViewer({
   modelPath = DEFAULT_CHARACTER_MODEL, 
   isModalOpen = false,
   isInPersonalRoom = false,
-  onExitRoom
+  onExitRoom,
+  currentPersonalRoom
 }) {
   const characterRef = useRef(null);
   const groupRef = useRef(null);
@@ -989,26 +1012,28 @@ function CharacterViewer({
     characterStateRef.current.isMoving = isMoving;
     characterStateRef.current.animation = currentAnimation.toLowerCase();
 
-    // 위치 브로드캐스트 (100ms마다) - 개인 룸이 아닐 때만
-    if (!isInPersonalRoom) {
-      const now = Date.now();
-      if (now - lastBroadcastTimeRef.current > BROADCAST_INTERVAL) {
-        lastBroadcastTimeRef.current = now;
-        
-        // 멀티플레이어 서비스를 통해 위치 전송 (사용자의 캐릭터 모델 경로 사용)
-        // 연결 상태와 클라이언트 연결 상태를 모두 체크
-        if (multiplayerService.connected && multiplayerService.client?.connected && userId && username) {
-          try {
-            multiplayerService.sendPositionUpdate(
-              currentPos,
-              lastRotationYRef.current,
-              currentAnimation.toLowerCase(),
-              modelPath
-            );
-          } catch (error) {
-            // STOMP 연결 오류 무시 (재연결 시 자동 복구)
-            console.warn('Position broadcast failed:', error.message);
-          }
+    // 위치 브로드캐스트 (100ms마다) - 메인 맵과 개인 룸 모두 전송
+    const now = Date.now();
+    if (now - lastBroadcastTimeRef.current > BROADCAST_INTERVAL) {
+      lastBroadcastTimeRef.current = now;
+      
+      // 멀티플레이어 서비스를 통해 위치 전송 (사용자의 캐릭터 모델 경로 사용)
+      // 연결 상태와 클라이언트 연결 상태를 모두 체크
+      if (multiplayerService.connected && multiplayerService.client?.connected && userId && username) {
+        try {
+          // 현재 방 ID 전달 (개인 룸에 있으면 roomId, 아니면 null)
+          const roomId = isInPersonalRoom && currentPersonalRoom ? currentPersonalRoom.roomId : null;
+          multiplayerService.sendPositionUpdate(
+            currentPos,
+            lastRotationYRef.current,
+            currentAnimation.toLowerCase(),
+            modelPath,
+            false,
+            roomId
+          );
+        } catch (error) {
+          // STOMP 연결 오류 무시 (재연결 시 자동 복구)
+          console.warn('Position broadcast failed:', error.message);
         }
       }
     }
@@ -1051,7 +1076,7 @@ export default MapGamePageNew;
  */
 function PersonalRoomCamera({ characterStateRef }) {
   const { camera } = useThree();
-  const cameraOffset = new THREE.Vector3(0, 6, 12); // 개인 룸용 카메라 오프셋 (더 가까움)
+  const cameraOffset = new THREE.Vector3(0, 10, 12); // 개인 룸용 카메라 오프셋 (위에서 보는 시점)
   const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
@@ -1083,7 +1108,7 @@ function PersonalRoomCamera({ characterStateRef }) {
  */
 function CameraTracker({ characterStateRef }) {
   const { camera } = useThree();
-  const cameraOffset = new THREE.Vector3(-0.00, 28.35, 19.76); // 고정된 카메라 오프셋 (메인맵과 동일)
+  const cameraOffset = new THREE.Vector3(-0.00, 35, 19.76); // 고정된 카메라 오프셋 (위에서 보는 시점)
   const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
