@@ -1189,11 +1189,11 @@ export default MapGamePageNew;
 
 /**
  * 개인 룸 카메라 컨트롤러
- * 더 가까운 시점으로 캐릭터를 따라감
+ * 메인맵 CameraController와 동일한 로직 (더 가까운 시점)
  */
 function PersonalRoomCamera({ characterStateRef }) {
   const { camera } = useThree();
-  const cameraOffset = new THREE.Vector3(0, 10, 12); // 개인 룸용 카메라 오프셋 (위에서 보는 시점)
+  const cameraOffset = new THREE.Vector3(-0.00, 14, 10); // 개인 룸용 오프셋 (메인맵보다 가까운 시점)
   const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
@@ -1203,17 +1203,17 @@ function PersonalRoomCamera({ characterStateRef }) {
     const [charX, charY, charZ] = characterStateRef.current.position;
     const characterPosition = new THREE.Vector3(charX, charY, charZ);
 
-    // 타겟 위치를 부드럽게 보간
-    targetPositionRef.current.lerp(characterPosition, delta * 8.0);
+    // 타겟 위치를 부드럽게 보간 (메인맵과 동일)
+    targetPositionRef.current.lerp(characterPosition, delta * 10.0);
 
-    // 타겟 위치에 오프셋을 더해서 카메라 위치 계산
+    // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
     const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
-    // 부드러운 카메라 이동
-    camera.position.lerp(targetCameraPosition, delta * 5.0);
+    // 부드러운 카메라 이동 (속도 증가)
+    camera.position.lerp(targetCameraPosition, delta * 8.0);
 
-    // 캐릭터를 바라봄
-    camera.lookAt(targetPositionRef.current.x, targetPositionRef.current.y + 1.5, targetPositionRef.current.z);
+    // 고정된 각도 유지 (lookAt 제거 - 메인맵과 동일)
+    // camera.lookAt(targetPositionRef.current);
   });
 
   return null;
@@ -1221,11 +1221,11 @@ function PersonalRoomCamera({ characterStateRef }) {
 
 /**
  * 카메라 추적 컴포넌트
- * CameraController와 동일한 로직으로 캐릭터를 따라감
+ * CameraController와 완전 동일한 로직으로 캐릭터를 따라감
  */
 function CameraTracker({ characterStateRef }) {
   const { camera } = useThree();
-  const cameraOffset = new THREE.Vector3(-0.00, 35, 19.76); // 고정된 카메라 오프셋 (위에서 보는 시점)
+  const cameraOffset = new THREE.Vector3(-0.00, 28.35, 19.76); // 메인맵 CameraController와 동일한 오프셋
   const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
@@ -1235,14 +1235,14 @@ function CameraTracker({ characterStateRef }) {
     const [charX, charY, charZ] = characterStateRef.current.position;
     const characterPosition = new THREE.Vector3(charX, charY, charZ);
 
-    // 타겟 위치를 부드럽게 보간 (떨림 방지)
+    // 타겟 위치를 부드럽게 보간 (떨림 방지 - 메인맵과 동일)
     targetPositionRef.current.lerp(characterPosition, delta * 10.0);
 
     // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
     const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
-    // 부드러운 카메라 이동 (메인맵과 동일한 속도)
-    camera.position.lerp(targetCameraPosition, delta * 5.0);
+    // 부드러운 카메라 이동 (속도 증가)
+    camera.position.lerp(targetCameraPosition, delta * 8.0);
 
     // 고정된 각도 유지 (lookAt 제거 - 메인맵과 동일)
     // camera.lookAt(targetPositionRef.current);
