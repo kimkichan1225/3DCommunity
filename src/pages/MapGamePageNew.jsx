@@ -1189,11 +1189,11 @@ export default MapGamePageNew;
 
 /**
  * 개인 룸 카메라 컨트롤러
- * 메인맵 CameraController와 동일한 로직 (더 가까운 시점)
+ * 더 가까운 시점으로 캐릭터를 따라감
  */
 function PersonalRoomCamera({ characterStateRef }) {
   const { camera } = useThree();
-  const cameraOffset = new THREE.Vector3(-0.00, 14, 10); // 개인 룸용 오프셋 (메인맵보다 가까운 시점)
+  const cameraOffset = new THREE.Vector3(0, 10, 12); // 개인 룸용 카메라 오프셋 (위에서 보는 시점)
   const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
@@ -1203,17 +1203,17 @@ function PersonalRoomCamera({ characterStateRef }) {
     const [charX, charY, charZ] = characterStateRef.current.position;
     const characterPosition = new THREE.Vector3(charX, charY, charZ);
 
-    // 타겟 위치를 부드럽게 보간 (메인맵과 동일)
-    targetPositionRef.current.lerp(characterPosition, delta * 10.0);
+    // 타겟 위치를 부드럽게 보간
+    targetPositionRef.current.lerp(characterPosition, delta * 8.0);
 
-    // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
+    // 타겟 위치에 오프셋을 더해서 카메라 위치 계산
     const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
-    // 부드러운 카메라 이동 (속도 증가)
-    camera.position.lerp(targetCameraPosition, delta * 8.0);
+    // 부드러운 카메라 이동
+    camera.position.lerp(targetCameraPosition, delta * 5.0);
 
-    // 고정된 각도 유지 (lookAt 제거 - 메인맵과 동일)
-    // camera.lookAt(targetPositionRef.current);
+    // 캐릭터를 바라봄
+    camera.lookAt(targetPositionRef.current.x, targetPositionRef.current.y + 1.5, targetPositionRef.current.z);
   });
 
   return null;
@@ -1221,11 +1221,11 @@ function PersonalRoomCamera({ characterStateRef }) {
 
 /**
  * 카메라 추적 컴포넌트
- * CameraController와 완전 동일한 로직으로 캐릭터를 따라감
+ * CameraController와 동일한 로직으로 캐릭터를 따라감
  */
 function CameraTracker({ characterStateRef }) {
   const { camera } = useThree();
-  const cameraOffset = new THREE.Vector3(-0.00, 28.35, 19.76); // 메인맵 CameraController와 동일한 오프셋
+  const cameraOffset = new THREE.Vector3(-0.00, 25, 30); // 고정된 카메라 오프셋 (위에서 보는 시점)
   const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame((state, delta) => {
@@ -1235,14 +1235,14 @@ function CameraTracker({ characterStateRef }) {
     const [charX, charY, charZ] = characterStateRef.current.position;
     const characterPosition = new THREE.Vector3(charX, charY, charZ);
 
-    // 타겟 위치를 부드럽게 보간 (떨림 방지 - 메인맵과 동일)
+    // 타겟 위치를 부드럽게 보간 (떨림 방지)
     targetPositionRef.current.lerp(characterPosition, delta * 10.0);
 
     // 타겟 위치에 고정된 오프셋을 더해서 카메라 위치 계산
     const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
-    // 부드러운 카메라 이동 (속도 증가)
-    camera.position.lerp(targetCameraPosition, delta * 8.0);
+    // 부드러운 카메라 이동 (메인맵과 동일한 속도)
+    camera.position.lerp(targetCameraPosition, delta * 5.0);
 
     // 고정된 각도 유지 (lookAt 제거 - 메인맵과 동일)
     // camera.lookAt(targetPositionRef.current);
@@ -1404,29 +1404,45 @@ function DynamicLighting() {
 }
 
 /**
+ * 시드 기반 랜덤 생성기 (모든 플레이어가 동일한 결과 생성)
+ */
+function seededRandom(seed) {
+  let value = seed;
+  return () => {
+    value = (value * 9301 + 49297) % 233280;
+    return value / 233280;
+  };
+}
+
+/**
  * 가상 환경 컴포넌트 (풀밭 + 간소화된 건물 + 도로)
+ * 시드 기반 랜덤으로 모든 플레이어에게 동일한 구조물 배치
  */
 function VirtualEnvironment({ buildingsData, roadsData, userLocation }) {
-  // 기존 VirtualGrassGround 로직
+  // 고정된 시드로 모든 플레이어가 동일한 맵 생성
+  const FIXED_SEED = 12345;
+
   const grassPatches = useMemo(() => {
+    const random = seededRandom(FIXED_SEED);
     const patches = [];
     for (let i = 0; i < 300; i++) {
-      const x = (Math.random() - 0.5) * 400;
-      const z = (Math.random() - 0.5) * 400;
-      const scale = 0.3 + Math.random() * 0.5;
-      const rotation = Math.random() * Math.PI * 2;
+      const x = (random() - 0.5) * 400;
+      const z = (random() - 0.5) * 400;
+      const scale = 0.3 + random() * 0.5;
+      const rotation = random() * Math.PI * 2;
       patches.push({ x, z, scale, rotation, key: i });
     }
     return patches;
   }, []);
 
   const trees = useMemo(() => {
+    const random = seededRandom(FIXED_SEED + 1000); // 다른 시드 사용
     const treeList = [];
     for (let i = 0; i < 30; i++) {
-      const x = (Math.random() - 0.5) * 300;
-      const z = (Math.random() - 0.5) * 300;
+      const x = (random() - 0.5) * 300;
+      const z = (random() - 0.5) * 300;
       if (Math.abs(x) < 20 && Math.abs(z) < 20) continue;
-      const treeScale = 1 + Math.random() * 0.5;
+      const treeScale = 1 + random() * 0.5;
       treeList.push({ x, z, treeScale, key: i });
     }
     return treeList;
@@ -1434,14 +1450,15 @@ function VirtualEnvironment({ buildingsData, roadsData, userLocation }) {
 
   // 간소화된 건물 데이터 (시뮬레이션)
   const buildings = useMemo(() => {
+    const random = seededRandom(FIXED_SEED + 2000); // 다른 시드 사용
     const buildingList = [];
     for (let i = 0; i < 20; i++) {
-      const x = (Math.random() - 0.5) * 350;
-      const z = (Math.random() - 0.5) * 350;
+      const x = (random() - 0.5) * 350;
+      const z = (random() - 0.5) * 350;
       if (Math.abs(x) < 30 && Math.abs(z) < 30) continue;
-      const width = 5 + Math.random() * 10;
-      const depth = 5 + Math.random() * 10;
-      const height = 8 + Math.random() * 20;
+      const width = 5 + random() * 10;
+      const depth = 5 + random() * 10;
+      const height = 8 + random() * 20;
       buildingList.push({ x, z, width, depth, height, key: i });
     }
     return buildingList;

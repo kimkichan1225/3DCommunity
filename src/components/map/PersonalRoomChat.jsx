@@ -69,8 +69,8 @@ function PersonalRoomChat({ roomId, userProfile, onChatMessage }) {
   return (
     <div style={{ 
       position: 'fixed', 
-      left: 0,  // 좌측 끝
-      bottom: 160, // 네비게이션 바(130px) 위로 배치
+      left: 24,  // 좌측으로 변경
+      bottom: 150, // 네비게이션 바(130px) 위로 배치
       width: 340, 
       maxHeight: '40vh', 
       background: 'rgba(0,0,0,0.78)', 
