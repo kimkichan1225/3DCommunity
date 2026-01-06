@@ -19,6 +19,7 @@ class MultiplayerService {
     this.onFriendUpdateCallbacks = [];
     this.onDMMessageCallbacks = [];
     this.onRoomUpdateCallbacks = []; // 방 생성/삭제 콜백 추가
+    this.onRoomChatCallbacks = []; // 개인 룸 채팅 콜백
   }
 
   connect(userId, username, isObserver = false) {
@@ -103,12 +104,15 @@ class MultiplayerService {
           this.onDMMessageCallbacks.forEach(cb => cb?.(data));
         });
 
-        // Subscribe to room updates (방 생성/삭제)
+            // Subscribe to room updates (방 생성/삭제)
         this.client.subscribe('/topic/rooms', (message) => {
           const data = JSON.parse(message.body);
           console.log('🏠 Room update:', data);
           this.onRoomUpdateCallbacks.forEach(cb => cb?.(data));
         });
+
+        // room chat subscriptions map initialization
+        if (!this.roomChatSubscriptions) this.roomChatSubscriptions = new Map();
 
         // Send join message only if not in observer mode
         if (!this.isObserver) {
@@ -292,6 +296,54 @@ class MultiplayerService {
     }
   }
 
+  // 개인 룸 채팅 리스너 등록
+  onRoomChat(callback) {
+    if (callback) {
+      this.onRoomChatCallbacks.push(callback);
+      return () => {
+        this.onRoomChatCallbacks = this.onRoomChatCallbacks.filter(cb => cb !== callback);
+      };
+    }
+  }
+
+  // 특정 방의 채팅 토픽 구독
+  subscribeRoomChat(roomId) {
+    if (!roomId) return;
+    if (!this.client || !this.client.active) {
+      console.warn('STOMP client not active - cannot subscribe to room chat yet');
+      return;
+    }
+
+    if (!this.roomChatSubscriptions) this.roomChatSubscriptions = new Map();
+    if (this.roomChatSubscriptions.has(roomId)) return; // already subscribed
+
+    const sub = this.client.subscribe(`/topic/room/${roomId}/chat`, (message) => {
+      try {
+        const data = JSON.parse(message.body);
+        this.onRoomChatCallbacks.forEach(cb => cb?.(data));
+      } catch (e) {
+        console.error('Failed to parse room chat message:', e);
+      }
+    });
+
+    this.roomChatSubscriptions.set(roomId, sub);
+    console.log('Subscribed to room chat:', roomId);
+  }
+
+  unsubscribeRoomChat(roomId) {
+    if (!roomId || !this.roomChatSubscriptions) return;
+    const sub = this.roomChatSubscriptions.get(roomId);
+    if (sub) {
+      try {
+        sub.unsubscribe();
+      } catch (e) {
+        console.warn('Failed to unsubscribe from room chat:', e);
+      }
+      this.roomChatSubscriptions.delete(roomId);
+      console.log('Unsubscribed from room chat:', roomId);
+    }
+  }
+
   // 방 생성 브로드캐스트
   sendRoomCreate(roomData) {
     if (!this.connected || !this.client) {
@@ -335,6 +387,29 @@ class MultiplayerService {
       console.log('📢 방 삭제 브로드캐스트 전송 성공:', roomId);
     } catch (error) {
       console.error('방 삭제 브로드캐스트 실패:', error.message);
+    }
+  }
+
+  // 개인 룸 채팅 전송
+  sendRoomChat(roomId, message) {
+    if (!this.connected || !this.client) {
+      console.warn('WebSocket 연결되지 않음 - 방 채팅 전송 불가');
+      return;
+    }
+
+    try {
+      if (!this.client.active) {
+        console.warn('STOMP client not active - 방 채팅 전송 불가');
+        return;
+      }
+
+      this.client.publish({
+        destination: '/app/room.chat',
+        body: JSON.stringify({ roomId, userId: this.userId, username: this.username, message })
+      });
+      console.log('📩 방 채팅 전송:', { roomId, message });
+    } catch (error) {
+      console.error('방 채팅 전송 실패:', error.message);
     }
   }
 }

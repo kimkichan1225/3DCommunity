@@ -11,6 +11,7 @@ import shopService from '../features/shop/services/shopService';
 import OtherPlayer from '../components/character/OtherPlayer';
 import PersonalRoomModal from '../components/PersonalRoomModal';
 import PersonalRoom3D from '../components/map/PersonalRoom3D';
+import PersonalRoomChat from '../components/map/PersonalRoomChat';
 import '../pages/MapGamePageNew.css';
 
 // 기본 캐릭터 모델 경로
@@ -757,14 +758,21 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
 
         {/* 개인 룸 나가기 버튼 (개인 룸 모드일 때만) */}
         {isInPersonalRoom && (
-          <div className="personal-room-exit-overlay">
-            <div className="personal-room-info">
-              <span className="room-name">🏠 {currentPersonalRoom?.roomName || '개인 룸'}</span>
-              <button className="exit-room-btn" onClick={handleExitPersonalRoom}>
-                🚪 방 나가기
-              </button>
+          <>
+            <div className="personal-room-exit-overlay">
+              <div className="personal-room-info">
+                <span className="room-name">🏠 {currentPersonalRoom?.roomName || '개인 룸'}</span>
+                <button className="exit-room-btn" onClick={handleExitPersonalRoom}>
+                  🚪 방 나가기
+                </button>
+              </div>
             </div>
-          </div>
+
+            {/* 개인 룸 채팅 */}
+            {currentPersonalRoom?.roomId && (
+              <PersonalRoomChat roomId={currentPersonalRoom.roomId} userProfile={userInfo} />
+            )}
+          </>
         )}
 
         {/* 미니맵 오버레이 (메인 맵일 때만) */}

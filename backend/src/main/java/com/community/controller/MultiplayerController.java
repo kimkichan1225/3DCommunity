@@ -4,6 +4,7 @@ import com.community.dto.ChatMessageDto;
 import com.community.dto.PlayerJoinDto;
 import com.community.dto.PlayerPositionDto;
 import com.community.dto.RoomDto;
+import com.community.dto.MinigameChatDto;
 import com.community.service.ActiveUserService;
 import com.community.service.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -132,5 +133,18 @@ public class MultiplayerController {
         roomDto.setTimestamp(System.currentTimeMillis());
         log.info("방 삭제 브로드캐스트: roomId={}", roomDto.getRoomId());
         return roomDto;
+    }
+
+    /**
+     * 개인 룸 채팅
+     * Client -> /app/room.chat
+     * Server -> /topic/room/{roomId}/chat (to room)
+     */
+    @MessageMapping("/room.chat")
+    public void sendRoomChat(MinigameChatDto chatDto) {
+        if (chatDto == null || chatDto.getRoomId() == null) return;
+        chatDto.setTimestamp(System.currentTimeMillis());
+        log.info("개인 룸 채팅: roomId={}, userId={}, message={}", chatDto.getRoomId(), chatDto.getUserId(), chatDto.getMessage());
+        messagingTemplate.convertAndSend("/topic/room/" + chatDto.getRoomId() + "/chat", chatDto);
     }
 }

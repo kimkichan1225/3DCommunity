@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './PersonalRoomModal.css';
+import PersonalRoomChat from './map/PersonalRoomChat';
 
 /**
  * 개인 룸 모달 컴포넌트 (간소화 버전)
@@ -203,6 +204,13 @@ function PersonalRoomModal({
                     </span>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* 방 채팅 (대기실) */}
+            {myRoom?.roomId && (
+              <div style={{ marginTop: 12 }}>
+                <PersonalRoomChat roomId={myRoom.roomId} userProfile={userProfile} />
               </div>
             )}
 
