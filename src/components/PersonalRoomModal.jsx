@@ -26,13 +26,13 @@ function PersonalRoomModal({
 
   // 초기화 - 'create' 모드면 바로 방 생성
   useEffect(() => {
-    if (mode === 'create' && !myRoom) {
+    if (mode === 'create' && !myRoom && userProfile?.id) {
       // 바로 방 생성
       const roomData = {
-        roomId: `room_${Date.now()}`,
-        roomName: `${userProfile?.username || '나'}의 방`,
-        hostId: userProfile?.id,
-        hostName: userProfile?.username,
+        roomId: `room_${userProfile.id}_${Date.now()}`,
+        roomName: `${userProfile.username || '나'}의 방`,
+        hostId: userProfile.id,
+        hostName: userProfile.username,
         maxMembers: 6,
         isPrivate: true,
         members: [userProfile],
@@ -42,8 +42,13 @@ function PersonalRoomModal({
       console.log('🏠 개인 룸 자동 생성:', roomData);
       setMyRoom(roomData);
       setRoomMembers([userProfile]);
-      onCreateRoom?.(roomData);
       setCurrentMode('waiting');
+      
+      // 약간의 지연 후 부모 컴포넌트에 알림 (상태 업데이트 완료 보장)
+      setTimeout(() => {
+        console.log('📢 부모 컴포넌트에 방 생성 알림:', roomData);
+        onCreateRoom?.(roomData);
+      }, 100);
     } else if (mode === 'browse') {
       setCurrentMode('browse');
     } else if (currentRoom) {

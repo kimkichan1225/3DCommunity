@@ -183,6 +183,13 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         return;
       }
       
+      console.log('📍 [MapGamePage] 위치 업데이트 수신:', {
+        userId: data.userId,
+        username: data.username,
+        position: [data.x, data.y, data.z],
+        currentRoomId: data.currentRoomId
+      });
+      
       setOtherPlayers((prev) => ({
         ...prev,
         [data.userId]: {
@@ -493,7 +500,13 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
 
   // 개인 룸 생성 처리
   const handlePersonalRoomCreate = useCallback((roomData) => {
-    console.log('🏠 개인 룸 생성됨:', roomData);
+    console.log('🏠 [MapGamePage] 개인 룸 생성 콜백 실행:', roomData);
+    
+    if (!roomData || !roomData.roomId) {
+      console.error('❌ 잘못된 방 데이터:', roomData);
+      return;
+    }
+    
     setCurrentPersonalRoom(roomData);
     
     // GPS 위치가 있으면 방 위치에 추가
@@ -505,18 +518,14 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     };
     
     // 주변 방 목록에 추가
-    setNearbyRooms(prev => [...prev, roomWithLocation]);
-    
-    // 모달 닫기
-    setShowPersonalRoomModal(false);
-    
-    // 개인 룸 3D 뷰로 전환
-    console.log('🚀 개인 룸 3D 뷰로 전환');
-    setIsInPersonalRoom(true);
+    setNearbyRooms(prev => {
+      console.log('📍 주변 방 목록에 추가:', roomWithLocation.roomName);
+      return [...prev, roomWithLocation];
+    });
     
     // WebSocket으로 다른 플레이어들에게 방 생성 알림
     if (multiplayerService.connected && userId && username) {
-      multiplayerService.sendRoomCreate({
+      const broadcastData = {
         roomId: roomData.roomId,
         roomName: roomData.roomName,
         hostId: userId,
@@ -527,9 +536,21 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         gpsLat: roomWithLocation.gpsLat,
         gameName: '개인 룸',
         members: 1
-      });
+      };
+      console.log('📢 방 생성 브로드캐스트 전송:', broadcastData);
+      multiplayerService.sendRoomCreate(broadcastData);
       console.log('✅ 방 생성 브로드캐스트 완료');
+    } else {
+      console.warn('⚠️ WebSocket 연결 안됨 - 방 생성 브로드캐스트 실패');
     }
+    
+    // 모달 닫기
+    console.log('🚪 개인 룸 모달 닫기');
+    setShowPersonalRoomModal(false);
+    
+    // 개인 룸 3D 뷰로 전환
+    console.log('🚀 개인 룸 3D 뷰로 전환');
+    setIsInPersonalRoom(true);
   }, [userLocation, userId, username]);
 
   // 친구 초대 처리
@@ -703,9 +724,14 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           />
           
           {/* 다른 플레이어들 (메인 맵에 있는 플레이어만) */}
-          {Object.values(otherPlayers)
-            .filter(player => !player.currentRoomId) // 방에 없는 플레이어만 (메인 맵)
-            .map((player) => (
+          {(() => {
+            const playersOnMap = Object.values(otherPlayers).filter(player => !player.currentRoomId);
+            console.log('👥 [MapGamePage] 메인 맵 플레이어 렌더링:', {
+              total: Object.keys(otherPlayers).length,
+              onMap: playersOnMap.length,
+              players: playersOnMap.map(p => ({ id: p.userId, name: p.username, roomId: p.currentRoomId }))
+            });
+            return playersOnMap.map((player) => (
               <OtherPlayer
                 key={player.userId}
                 userId={player.userId}
@@ -717,7 +743,8 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
                 isChangingAvatar={player.isChangingAvatar}
                 scale={2}
               />
-            ))}
+            ));
+          })()}
           
           {/* 카메라 제어 */}
           <CameraTracker characterStateRef={characterStateRef} />
@@ -1018,8 +1045,8 @@ function CharacterViewer({
       lastBroadcastTimeRef.current = now;
       
       // 멀티플레이어 서비스를 통해 위치 전송 (사용자의 캐릭터 모델 경로 사용)
-      // 연결 상태와 클라이언트 연결 상태를 모두 체크
-      if (multiplayerService.connected && multiplayerService.client?.connected && userId && username) {
+      // 연결 상태 체크 - connected만 확인 (client.connected는 간헐적으로 false일 수 있음)
+      if (multiplayerService.connected && userId && username) {
         try {
           // 현재 방 ID 전달 (개인 룸에 있으면 roomId, 아니면 null)
           const roomId = isInPersonalRoom && currentPersonalRoom ? currentPersonalRoom.roomId : null;
@@ -1032,8 +1059,10 @@ function CharacterViewer({
             roomId
           );
         } catch (error) {
-          // STOMP 연결 오류 무시 (재연결 시 자동 복구)
-          console.warn('Position broadcast failed:', error.message);
+          // STOMP 연결 오류 발생 시 로그만 남김 (재연결 시 자동 복구)
+          if (error.message && !error.message.includes('Cannot read')) {
+            console.warn('Position broadcast failed:', error.message);
+          }
         }
       }
     }

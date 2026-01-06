@@ -148,27 +148,40 @@ class MultiplayerService {
   }
 
   sendPositionUpdate(position, rotationY, animation, modelPath, isChangingAvatar = false, currentRoomId = null) {
-    if (this.connected && this.client?.connected) {
-      try {
-        this.client.publish({
-          destination: '/app/player.position',
-          body: JSON.stringify({
-            userId: this.userId,
-            username: this.username,
-            x: position[0],
-            y: position[1],
-            z: position[2],
-            rotationY: rotationY,
-            animation: animation,
-            modelPath: modelPath,
-            isChangingAvatar: isChangingAvatar,
-            currentRoomId: currentRoomId
-          })
-        });
-      } catch (error) {
-        console.warn('Failed to send position update:', error.message);
-        this.connected = false;
+    // 연결 상태 확인 - connected만 체크 (client.connected는 일시적으로 false일 수 있음)
+    if (!this.connected || !this.client) {
+      // console.warn('Not connected - skipping position update');
+      return;
+    }
+    
+    try {
+      // client.active 체크 (STOMP 클라이언트가 활성화되어 있는지)
+      if (!this.client.active) {
+        // console.warn('STOMP client not active - skipping position update');
+        return;
       }
+      
+      this.client.publish({
+        destination: '/app/player.position',
+        body: JSON.stringify({
+          userId: this.userId,
+          username: this.username,
+          x: position[0],
+          y: position[1],
+          z: position[2],
+          rotationY: rotationY,
+          animation: animation,
+          modelPath: modelPath,
+          isChangingAvatar: isChangingAvatar,
+          currentRoomId: currentRoomId
+        })
+      });
+    } catch (error) {
+      // 에러 발생 시 로그만 출력 (재연결 시 자동 복구)
+      if (error.message && !error.message.includes('Cannot read')) {
+        console.warn('Failed to send position update:', error.message);
+      }
+      // 연결 상태는 유지 (일시적인 오류일 수 있음)
     }
   }
 
@@ -281,35 +294,47 @@ class MultiplayerService {
 
   // 방 생성 브로드캐스트
   sendRoomCreate(roomData) {
-    if (this.connected && this.client?.connected) {
-      try {
-        this.client.publish({
-          destination: '/app/room.create',
-          body: JSON.stringify(roomData)
-        });
-        console.log('📢 방 생성 브로드캐스트 전송:', roomData);
-      } catch (error) {
-        console.error('방 생성 브로드캐스트 실패:', error);
-      }
-    } else {
+    if (!this.connected || !this.client) {
       console.warn('WebSocket 연결되지 않음 - 방 생성 브로드캐스트 불가');
+      return;
+    }
+    
+    try {
+      if (!this.client.active) {
+        console.warn('STOMP client not active - 방 생성 브로드캐스트 불가');
+        return;
+      }
+      
+      this.client.publish({
+        destination: '/app/room.create',
+        body: JSON.stringify(roomData)
+      });
+      console.log('📢 방 생성 브로드캐스트 전송 성공:', roomData.roomName);
+    } catch (error) {
+      console.error('방 생성 브로드캐스트 실패:', error.message);
     }
   }
 
   // 방 삭제 브로드캐스트
   sendRoomDelete(roomId) {
-    if (this.connected && this.client?.connected) {
-      try {
-        this.client.publish({
-          destination: '/app/room.delete',
-          body: JSON.stringify({ roomId })
-        });
-        console.log('📢 방 삭제 브로드캐스트 전송:', roomId);
-      } catch (error) {
-        console.error('방 삭제 브로드캐스트 실패:', error);
-      }
-    } else {
+    if (!this.connected || !this.client) {
       console.warn('WebSocket 연결되지 않음 - 방 삭제 브로드캐스트 불가');
+      return;
+    }
+    
+    try {
+      if (!this.client.active) {
+        console.warn('STOMP client not active - 방 삭제 브로드캐스트 불가');
+        return;
+      }
+      
+      this.client.publish({
+        destination: '/app/room.delete',
+        body: JSON.stringify({ roomId })
+      });
+      console.log('📢 방 삭제 브로드캐스트 전송 성공:', roomId);
+    } catch (error) {
+      console.error('방 삭제 브로드캐스트 실패:', error.message);
     }
   }
 }
