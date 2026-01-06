@@ -1040,7 +1040,7 @@ function CharacterViewer({
       return;
     }
 
-    const speed = shift ? 20 : 10; // 물리 기반 속도 (걷기: 10, 뛰기: 20)
+    const speed = shift ? 20 : 10; // 메인 맵과 동일한 속도 (걷기: 10, 뛰기: 20)
     const direction = new THREE.Vector3();
 
     if (forward) direction.z -= 1;
@@ -1203,13 +1203,13 @@ function PersonalRoomCamera({ characterStateRef }) {
     const [charX, charY, charZ] = characterStateRef.current.position;
     const characterPosition = new THREE.Vector3(charX, charY, charZ);
 
-    // 타겟 위치를 부드럽게 보간
-    targetPositionRef.current.lerp(characterPosition, delta * 8.0);
+    // 타겟 위치를 부드럽게 보간 (메인 맵과 동일)
+    targetPositionRef.current.lerp(characterPosition, delta * 10.0);
 
     // 타겟 위치에 오프셋을 더해서 카메라 위치 계산
     const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
-    // 부드러운 카메라 이동
+    // 부드러운 카메라 이동 (메인 맵과 동일)
     camera.position.lerp(targetCameraPosition, delta * 5.0);
 
     // 캐릭터를 바라봄
