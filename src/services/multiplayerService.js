@@ -20,8 +20,8 @@ class MultiplayerService {
     this.onDMMessageCallbacks = [];
     this.onRoomUpdateCallbacks = []; // 방 생성/삭제 콜백 추가
     this.onRoomChatCallbacks = []; // 개인 룸 채팅 콜백
+    this.pendingRoomChatSubscriptions = new Set(); // roomId set to subscribe on connect if subscribe requested earlier
   }
-
   connect(userId, username, isObserver = false) {
     // 이미 연결되어 있으면 재연결하지 않음
     if (this.connected && this.client && this.client.active) {
@@ -113,6 +113,18 @@ class MultiplayerService {
 
         // room chat subscriptions map initialization
         if (!this.roomChatSubscriptions) this.roomChatSubscriptions = new Map();
+
+        // If any pending room chat subscriptions were requested before connection, subscribe now
+        if (this.pendingRoomChatSubscriptions && this.pendingRoomChatSubscriptions.size > 0) {
+          this.pendingRoomChatSubscriptions.forEach(roomId => {
+            try {
+              this.subscribeRoomChat(roomId);
+              this.pendingRoomChatSubscriptions.delete(roomId);
+            } catch (e) {
+              console.warn('Failed to subscribe to pending room chat:', roomId, e);
+            }
+          });
+        }
 
         // Send join message only if not in observer mode
         if (!this.isObserver) {
@@ -309,8 +321,11 @@ class MultiplayerService {
   // 특정 방의 채팅 토픽 구독
   subscribeRoomChat(roomId) {
     if (!roomId) return;
+
+    // If client not ready, queue the subscription for later
     if (!this.client || !this.client.active) {
-      console.warn('STOMP client not active - cannot subscribe to room chat yet');
+      console.warn('STOMP client not active - queuing room chat subscription for:', roomId);
+      this.pendingRoomChatSubscriptions.add(roomId);
       return;
     }
 
@@ -331,7 +346,16 @@ class MultiplayerService {
   }
 
   unsubscribeRoomChat(roomId) {
-    if (!roomId || !this.roomChatSubscriptions) return;
+    if (!roomId) return;
+
+    // If it was pending, remove from pending set
+    if (this.pendingRoomChatSubscriptions && this.pendingRoomChatSubscriptions.has(roomId)) {
+      this.pendingRoomChatSubscriptions.delete(roomId);
+      console.log('Removed pending room chat subscription:', roomId);
+      return;
+    }
+
+    if (!this.roomChatSubscriptions) return;
     const sub = this.roomChatSubscriptions.get(roomId);
     if (sub) {
       try {

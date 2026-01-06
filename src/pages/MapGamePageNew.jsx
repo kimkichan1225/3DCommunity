@@ -12,6 +12,7 @@ import OtherPlayer from '../components/character/OtherPlayer';
 import PersonalRoomModal from '../components/PersonalRoomModal';
 import PersonalRoom3D from '../components/map/PersonalRoom3D';
 import PersonalRoomChat from '../components/map/PersonalRoomChat';
+import ChatBubble from '../components/character/ChatBubble';
 import '../pages/MapGamePageNew.css';
 
 // 기본 캐릭터 모델 경로
@@ -107,6 +108,12 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
   
   // 개인 룸 3D 뷰 모드 (true면 개인 룸 내부 3D로 전환)
   const [isInPersonalRoom, setIsInPersonalRoom] = useState(false);
+  
+  // 채팅 말풍선 상태 (개인 룸 내에서)
+  const [myChatMessage, setMyChatMessage] = useState(''); // 내 캐릭터의 채팅 메시지
+  const [playerChatMessages, setPlayerChatMessages] = useState({}); // 다른 플레이어 채팅 { odlayerId: { message, timestamp } }
+  const myMessageTimerRef = useRef(null);
+  const playerMessageTimersRef = useRef({});
   
   // 친구 목록 상태 (실제로는 서비스에서 가져옴)
   const [friendsList, setFriendsList] = useState([]);
@@ -579,6 +586,49 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     setShowPersonalRoomModal(false);
   }, [currentPersonalRoom]);
 
+  // 개인 룸 채팅 메시지 처리 (말풍선 표시)
+  const handleRoomChatMessage = useCallback((chatData) => {
+    console.log('💬 [MapGamePage] 채팅 메시지 수신:', chatData);
+    
+    if (String(chatData.userId) === String(userId)) {
+      // 내 메시지 - 내 캐릭터 위에 말풍선 표시
+      if (myMessageTimerRef.current) {
+        clearTimeout(myMessageTimerRef.current);
+      }
+      
+      setMyChatMessage(chatData.message);
+      
+      // 5초 후 말풍선 숨기기
+      myMessageTimerRef.current = setTimeout(() => {
+        setMyChatMessage('');
+        myMessageTimerRef.current = null;
+      }, 5000);
+    } else {
+      // 다른 플레이어 메시지
+      if (playerMessageTimersRef.current[chatData.userId]) {
+        clearTimeout(playerMessageTimersRef.current[chatData.userId]);
+      }
+      
+      setPlayerChatMessages(prev => ({
+        ...prev,
+        [chatData.userId]: {
+          message: chatData.message,
+          timestamp: Date.now()
+        }
+      }));
+      
+      // 5초 후 말풍선 숨기기
+      playerMessageTimersRef.current[chatData.userId] = setTimeout(() => {
+        setPlayerChatMessages(prev => {
+          const updated = { ...prev };
+          delete updated[chatData.userId];
+          return updated;
+        });
+        delete playerMessageTimersRef.current[chatData.userId];
+      }, 5000);
+    }
+  }, [userId]);
+
   // 개인 룸에서 나가기 (3D 뷰에서)
   const handleExitPersonalRoom = useCallback(() => {
     console.log('🚪 개인 룸 3D에서 나가기');
@@ -662,6 +712,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
                 isInPersonalRoom={true}
                 onExitRoom={handleExitPersonalRoom}
                 currentPersonalRoom={currentPersonalRoom}
+                chatMessage={myChatMessage}
               />
               
               {/* 같은 방에 있는 다른 플레이어들 */}
@@ -677,7 +728,8 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
                     animation={player.animation}
                     modelPath={player.modelPath}
                     isChangingAvatar={player.isChangingAvatar}
-                    scale={1.2}
+                    chatMessage={playerChatMessages[player.userId]?.message}
+                    scale={0.8}
                   />
                 ))}
               
@@ -770,7 +822,11 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
 
             {/* 개인 룸 채팅 */}
             {currentPersonalRoom?.roomId && (
-              <PersonalRoomChat roomId={currentPersonalRoom.roomId} userProfile={userInfo} />
+              <PersonalRoomChat 
+                roomId={currentPersonalRoom.roomId} 
+                userProfile={userInfo}
+                onChatMessage={handleRoomChatMessage}
+              />
             )}
           </>
         )}
@@ -905,7 +961,8 @@ function CharacterViewer({
   isModalOpen = false,
   isInPersonalRoom = false,
   onExitRoom,
-  currentPersonalRoom
+  currentPersonalRoom,
+  chatMessage
 }) {
   const characterRef = useRef(null);
   const groupRef = useRef(null);
@@ -1098,9 +1155,32 @@ function CharacterViewer({
       <primitive
         ref={characterRef}
         object={scene}
-        scale={isInPersonalRoom ? 1.2 : 2}  // 개인 룸: 1.2배, 메인 맵: 2배
+        scale={isInPersonalRoom ? 0.8 : 2}  // 개인 룸: 0.8배, 메인 맵: 2배
         position={[0, 0, 0]}
       />
+      
+      {/* 개인 룸에서 닉네임 표시 */}
+      {isInPersonalRoom && username && (
+        <Billboard position={[0, isInPersonalRoom ? 3 : 7, 0]} follow={true} lockX={false} lockY={false} lockZ={false}>
+          <Text
+            fontSize={isInPersonalRoom ? 0.3 : 0.6}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.05}
+            outlineColor="black"
+            outlineOpacity={1}
+            fontWeight="bold"
+          >
+            {username}
+          </Text>
+        </Billboard>
+      )}
+      
+      {/* 채팅 말풍선 (개인 룸에서) */}
+      {isInPersonalRoom && chatMessage && (
+        <ChatBubble message={chatMessage} position={[0, isInPersonalRoom ? 3.5 : 8.5, 0]} duration={5000} />
+      )}
     </group>
   );
 }

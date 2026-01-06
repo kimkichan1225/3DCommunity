@@ -26,61 +26,65 @@ const ChatBubble = React.memo(function ChatBubble({ message, position = [0, 8.5,
   // 메시지 길이에 따라 말풍선 크기 동적 조정
   const messageLength = message.length;
 
-  // 최대 너비 설정 (말풍선이 너무 커지지 않도록)
-  const maxWidth = 7;
+  // 글자 수에 따른 너비 계산 (한글은 약 2배 넓이)
+  const charWidth = 0.12;
+  const minWidth = 1.2;
+  const maxWidth = 4;
+  const bubbleWidth = Math.min(Math.max(messageLength * charWidth, minWidth), maxWidth);
 
-  // 글자 수에 따른 너비 계산
-  // 짧은 메시지: 최소 2.5, 긴 메시지: 최대 7
-  const bubbleWidth = Math.min(Math.max(messageLength * 0.2, 2.5), maxWidth);
-
-  // 텍스트가 줄바꿈될 것을 고려한 실제 줄 수 계산
-  // maxWidth를 기준으로 한 줄당 약 15자 정도 표시 가능
-  const charsPerLine = 15;
+  // 줄 수 계산
+  const charsPerLine = Math.floor(maxWidth / charWidth);
   const estimatedLines = Math.ceil(messageLength / charsPerLine);
-  const bubbleHeight = Math.min(0.8 + (estimatedLines * 0.5), 4); // 최소 0.8, 최대 4
+  const lineHeight = 0.35;
+  const bubbleHeight = Math.max(0.6, Math.min(estimatedLines * lineHeight + 0.3, 2));
 
-  // 폰트 크기도 메시지 길이에 따라 조정
-  const fontSize = messageLength > 30 ? 0.35 : 0.4;
+  // 폰트 크기
+  const fontSize = 0.22;
 
   return (
     <Billboard position={position} follow={true} lockX={false} lockY={false} lockZ={false}>
       <group>
+        {/* 말풍선 외곽선 (그림자 효과) */}
+        <RoundedBox
+          args={[bubbleWidth + 0.08, bubbleHeight + 0.08, 0.05]}
+          radius={0.18}
+          smoothness={8}
+          position={[0, 0, -0.03]}
+        >
+          <meshBasicMaterial color="#1a1a1a" opacity={0.3} transparent />
+        </RoundedBox>
+
         {/* 말풍선 배경 */}
         <RoundedBox
-          args={[bubbleWidth, bubbleHeight, 0.1]}
+          args={[bubbleWidth, bubbleHeight, 0.05]}
           radius={0.15}
-          smoothness={4}
+          smoothness={8}
         >
-          <meshStandardMaterial color="#ffffff" opacity={0.95} transparent />
+          <meshBasicMaterial color="#ffffff" />
         </RoundedBox>
 
-        {/* 말풍선 외곽선 */}
-        <RoundedBox
-          args={[bubbleWidth + 0.05, bubbleHeight + 0.05, 0.08]}
-          radius={0.15}
-          smoothness={4}
-          position={[0, 0, -0.02]}
-        >
-          <meshStandardMaterial color="#333333" opacity={0.8} transparent />
-        </RoundedBox>
+        {/* 말풍선 꼬리 */}
+        <mesh position={[0, -bubbleHeight / 2 - 0.12, 0]} rotation={[0, 0, Math.PI]}>
+          <coneGeometry args={[0.12, 0.2, 3]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
 
-        {/* 말풍선 꼬리 (작은 삼각형) */}
-        <mesh position={[0, -bubbleHeight / 2 - 0.2, 0]} rotation={[0, 0, Math.PI]}>
-          <coneGeometry args={[0.2, 0.4, 3]} />
-          <meshStandardMaterial color="#ffffff" opacity={0.95} transparent />
+        {/* 꼬리 그림자 */}
+        <mesh position={[0.02, -bubbleHeight / 2 - 0.14, -0.02]} rotation={[0, 0, Math.PI]}>
+          <coneGeometry args={[0.13, 0.22, 3]} />
+          <meshBasicMaterial color="#1a1a1a" opacity={0.2} transparent />
         </mesh>
 
         {/* 텍스트 */}
         <Text
-          position={[0, 0, 0.1]}
+          position={[0, 0, 0.04]}
           fontSize={fontSize}
-          color="#222222"
+          color="#333333"
           anchorX="center"
           anchorY="middle"
-          maxWidth={bubbleWidth - 0.8}
+          maxWidth={bubbleWidth - 0.3}
           textAlign="center"
-          fontWeight="500"
-          lineHeight={1.2}
+          lineHeight={1.3}
           whiteSpace="normal"
           overflowWrap="break-word"
         >
