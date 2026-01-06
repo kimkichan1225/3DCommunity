@@ -697,6 +697,11 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
               <PersonalRoom3D 
                 roomData={currentPersonalRoom}
                 onExit={handleExitPersonalRoom}
+                characterStateRef={characterStateRef}
+                onFurnitureUpdate={(furnitureData) => {
+                  // 가구 업데이트 동기화 (나중에 WebSocket으로 전송)
+                  console.log('Furniture updated:', furnitureData);
+                }}
               />
               
               {/* 내 캐릭터 (개인 룸 내부) */}
