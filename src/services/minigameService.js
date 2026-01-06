@@ -8,6 +8,7 @@ class MinigameService {
     this.userId = null;
     this.username = null;
     this.currentRoomId = null;
+    this.subscribedRooms = new Set(); // 구독한 방 ID 추적
 
     // Event Listeners (Map<EventType, Set<Callback>>)
     this.listeners = {
@@ -19,13 +20,17 @@ class MinigameService {
       roomDelete: new Set(),
       gameInvite: new Set(),
       gameEvent: new Set(),
-      joinResult: new Set()
+      joinResult: new Set(),
+      connectionStatus: new Set() // 연결 상태 변경 이벤트
     };
   }
 
   connect(userId, username, timeoutMs = 10000) {
     // If already connected, resolve immediately
-    if (this.connected) return Promise.resolve();
+    if (this.connected && this.client && this.client.active) {
+      console.log('⚠️ Minigame already connected, skipping reconnect');
+      return Promise.resolve();
+    }
 
     this.userId = userId;
     this.username = username;
@@ -55,11 +60,11 @@ class MinigameService {
         onConnect: () => {
           console.log('✅ Minigame WebSocket Connected');
           this.connected = true;
+          this.emit('connectionStatus', { connected: true }); // 연결 상태 전달
 
           // 방 목록 업데이트 구독
           this.client.subscribe('/topic/minigame/rooms', (message) => {
             const data = JSON.parse(message.body);
-            console.log('Room update:', data);
 
             if (data.action === 'create' || data.action === 'update' || data.action === 'join' || data.action === 'leave') {
               this.emit('roomUpdate', data);
@@ -71,21 +76,18 @@ class MinigameService {
           // 방 목록 전체 구독
           this.client.subscribe('/topic/minigame/rooms-list', (message) => {
             const data = JSON.parse(message.body);
-            console.log('Rooms list:', data);
             this.emit('roomsList', data);
           });
 
           // 개인 게임 초대 구독
           this.client.subscribe('/topic/minigame/invite/' + this.userId, (message) => {
             const data = JSON.parse(message.body);
-            console.log('Game invite received:', data);
             this.emit('gameInvite', data);
           });
 
           // 개인 입장 결과(ACK) 구독
           this.client.subscribe('/topic/minigame/joinResult/' + this.userId, (message) => {
             const data = JSON.parse(message.body);
-            console.log('Join result received:', data);
             this.emit('joinResult', data);
           });
 
@@ -105,6 +107,7 @@ class MinigameService {
         onWebSocketClose: () => {
           console.log('⚠️ Minigame WebSocket Closed');
           this.connected = false;
+          this.emit('connectionStatus', { connected: false }); // 연결 상태 전달
         }
       });
 
@@ -120,6 +123,7 @@ class MinigameService {
       }
       this.client.deactivate();
       this.connected = false;
+      this.subscribedRooms.clear(); // 모든 구독 목록 초기화
       console.log('🔌 Minigame WebSocket Disconnected');
     }
   }
@@ -164,7 +168,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('방 생성 요청:', payload);
   }
 
   /**
@@ -194,7 +197,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('방 입장 요청:', payload);
   }
 
   /**
@@ -205,24 +207,30 @@ class MinigameService {
       return;
     }
 
+    // 이미 구독한 방이면 중복 구독 방지
+    if (this.subscribedRooms.has(roomId)) {
+      console.log('⚠️ Already subscribed to room:', roomId);
+      return;
+    }
+
+    console.log('📡 Subscribing to room:', roomId);
+    this.subscribedRooms.add(roomId);
+
     // 방 업데이트 구독
     this.client.subscribe('/topic/minigame/room/' + roomId, (message) => {
       const data = JSON.parse(message.body);
-      console.log('Room event:', data);
       this.emit('roomJoin', data); // Reuse roomJoin or add roomUpdate specific listener
     });
 
     // 방 채팅 구독
     this.client.subscribe('/topic/minigame/room/' + roomId + '/chat', (message) => {
       const data = JSON.parse(message.body);
-      console.log('Room chat:', data);
       this.emit('roomChat', data);
     });
 
     // 게임 이벤트(타겟 스폰, 점수 업데이트 등) 구독
     this.client.subscribe('/topic/minigame/room/' + roomId + '/game', (message) => {
       const data = JSON.parse(message.body);
-      console.log('Game event:', data);
       this.emit('gameEvent', data);
     });
   }
@@ -247,7 +255,7 @@ class MinigameService {
     });
 
     this.currentRoomId = null;
-    console.log('방 나가기 요청:', payload);
+    this.subscribedRooms.delete(roomId); // 구독 목록에서 제거
   }
 
   /**
@@ -270,7 +278,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('방 설정 변경 요청:', payload);
   }
 
   /**
@@ -292,7 +299,27 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('준비 상태 변경 요청:', payload);
+  }
+
+  /**
+   * 역할 전환 (참가자 <-> 관전자)
+   */
+  switchRole(roomId) {
+    if (!this.connected || !this.client) {
+      console.error('WebSocket not connected');
+      return;
+    }
+
+    const payload = {
+      roomId,
+      userId: this.userId
+    };
+
+    this.client.publish({
+      destination: '/app/minigame.room.switchRole',
+      body: JSON.stringify(payload)
+    });
+
   }
 
   /**
@@ -313,7 +340,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('게임 시작 요청:', payload);
   }
 
   /**
@@ -337,7 +363,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('채팅 메시지 전송:', payload);
   }
 
   /**
@@ -362,7 +387,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('게임 이벤트 전송:', payload);
   }
 
   /**
@@ -394,7 +418,6 @@ class MinigameService {
       destination: '/app/minigame.room.state',
       body: JSON.stringify(payload)
     });
-    console.log('게임 상태 요청 전송:', payload);
   }
 
   /**
@@ -420,7 +443,6 @@ class MinigameService {
       body: JSON.stringify(payload)
     });
 
-    console.log('게임 초대 전송:', payload);
   }
 
   /**

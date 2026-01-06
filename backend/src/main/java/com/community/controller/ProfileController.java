@@ -38,10 +38,17 @@ public class ProfileController {
             response.put("nickname", user.getNickname());
             response.put("level", profile != null ? profile.getLevel() : 1);
             response.put("statusMessage", profile != null ? profile.getStatusMessage() : "");
+            
+            // 재화 정보 추가
+            response.put("goldCoins", user.getGoldCoins());
+            response.put("silverCoins", user.getSilverCoins());
 
             // 프로필 이미지 경로 추가 (User 엔티티의 ProfileItem 관계 사용)
             response.put("selectedProfile", user.getSelectedProfile() != null ? user.getSelectedProfile().getImagePath() : null);
             response.put("selectedOutline", user.getSelectedOutline() != null ? user.getSelectedOutline().getImagePath() : null);
+
+            // 닉네임 변경 횟수 추가
+            response.put("nicknameChangesRemaining", user.getNicknameChangesRemaining() != null ? user.getNicknameChangesRemaining() : 1);
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -60,13 +67,58 @@ public class ProfileController {
             @RequestBody Map<String, Object> updates
     ) {
         try {
-            Profile profile = profileRepository.findByUserId(currentUser.getId())
-                    .orElseGet(() -> {
-                        Profile newProfile = new Profile();
-                        newProfile.setUser(currentUser);
-                        newProfile.setLevel(1);
-                        return newProfile;
-                    });
+            Long userId = currentUser.getId();
+
+            // User 엔티티 다시 로드 (managed 상태로)
+            User managedUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+            // 기존 사용자의 nicknameChangesRemaining이 null인 경우 기본값 1로 초기화
+            if (managedUser.getNicknameChangesRemaining() == null) {
+                managedUser.setNicknameChangesRemaining(1);
+                userRepository.save(managedUser);
+            }
+
+            // 사용자명 업데이트
+            if (updates.containsKey("username")) {
+                String newUsername = (String) updates.get("username");
+
+                // 사용자명이 실제로 변경되는 경우에만 검증
+                if (!newUsername.equals(managedUser.getUsername())) {
+                    // 닉네임 변경 횟수 확인
+                    Integer remainingChanges = managedUser.getNicknameChangesRemaining();
+                    if (remainingChanges == null || remainingChanges <= 0) {
+                        Map<String, String> error = new HashMap<>();
+                        error.put("message", "닉네임 변경 횟수를 모두 사용했습니다.");
+                        return ResponseEntity.badRequest().body(error);
+                    }
+
+                    // 사용자명 중복 확인
+                    boolean exists = userRepository.findByUsername(newUsername).isPresent();
+                    if (exists) {
+                        Map<String, String> error = new HashMap<>();
+                        error.put("message", "이미 사용 중인 닉네임입니다.");
+                        return ResponseEntity.badRequest().body(error);
+                    }
+
+                    // 닉네임 변경 및 횟수 차감
+                    managedUser.setUsername(newUsername);
+                    managedUser.setNicknameChangesRemaining(remainingChanges - 1);
+                }
+
+                userRepository.save(managedUser);
+            }
+
+            // Profile 조회 또는 생성
+            Profile profile = profileRepository.findByUserId(userId).orElse(null);
+
+            if (profile == null) {
+                // 새 프로필 생성
+                profile = new Profile();
+                profile.setUser(managedUser); // @MapsId로 userId 자동 설정됨
+                profile.setLevel(1);
+                profile = profileRepository.save(profile); // 먼저 저장하여 ID 생성
+            }
 
             // 상태 메시지 업데이트
             if (updates.containsKey("statusMessage")) {
@@ -85,16 +137,22 @@ public class ProfileController {
 
             profileRepository.save(profile);
 
+            // 최종 응답 데이터 구성
             Map<String, Object> response = new HashMap<>();
-            response.put("id", currentUser.getId());
-            response.put("nickname", currentUser.getNickname());
+            response.put("id", managedUser.getId());
+            response.put("username", managedUser.getUsername());
+            response.put("email", managedUser.getEmail());
             response.put("level", profile.getLevel());
             response.put("statusMessage", profile.getStatusMessage());
-            response.put("selectedProfile", profile.getSelectedProfile());
-            response.put("selectedOutline", profile.getSelectedOutline());
+            response.put("selectedProfile", managedUser.getSelectedProfile() != null ? managedUser.getSelectedProfile().getImagePath() : null);
+            response.put("selectedOutline", managedUser.getSelectedOutline() != null ? managedUser.getSelectedOutline().getImagePath() : null);
+            response.put("silverCoins", managedUser.getSilverCoins());
+            response.put("goldCoins", managedUser.getGoldCoins());
+            response.put("nicknameChangesRemaining", managedUser.getNicknameChangesRemaining() != null ? managedUser.getNicknameChangesRemaining() : 1);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace(); // 에러 로그 출력
             Map<String, String> error = new HashMap<>();
             error.put("message", "프로필 업데이트 실패: " + e.getMessage());
             return ResponseEntity.badRequest().body(error);

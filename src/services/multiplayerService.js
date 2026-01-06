@@ -22,6 +22,23 @@ class MultiplayerService {
   }
 
   connect(userId, username, isObserver = false) {
+    // 이미 연결되어 있으면 재연결하지 않음
+    if (this.connected && this.client && this.client.active) {
+      // observer에서 player로 전환되는 경우는 재연결 필요
+      if (this.isObserver && !isObserver) {
+        console.log('🔄 Switching from observer to player, reconnecting...');
+        this.disconnect();
+      } else {
+        console.log('⚠️ Already connected, skipping reconnect');
+        return;
+      }
+    }
+
+    // 기존 연결이 있으면 먼저 정리
+    if (this.client) {
+      this.disconnect();
+    }
+
     this.userId = userId;
     this.username = username;
     this.isObserver = isObserver;
@@ -71,21 +88,18 @@ class MultiplayerService {
         // Subscribe to chat messages
         this.client.subscribe('/topic/chat', (message) => {
           const data = JSON.parse(message.body);
-          console.log('Chat message:', data);
           this.onChatMessageCallbacks.forEach(cb => cb?.(data));
         });
 
         // Subscribe to friend updates (친구 요청, 수락 등)
         this.client.subscribe('/topic/friend-updates/' + this.userId, (message) => {
           const data = JSON.parse(message.body);
-          console.log('Friend update:', data);
           this.onFriendUpdateCallbacks.forEach(cb => cb?.(data));
         });
 
         // Subscribe to DM messages
         this.client.subscribe('/topic/dm/' + this.userId, (message) => {
           const data = JSON.parse(message.body);
-          console.log('DM message received:', data);
           this.onDMMessageCallbacks.forEach(cb => cb?.(data));
         });
 
@@ -169,6 +183,18 @@ class MultiplayerService {
         })
       });
     }
+  }
+
+  // 플레이어 정보 업데이트 (닉네임 변경 등)
+  updatePlayerInfo({ username }) {
+    if (username) {
+      this.username = username;
+      console.log('✅ MultiplayerService username updated:', username);
+    }
+  }
+
+  isConnected() {
+    return this.connected;
   }
 
   // Callback setters (여러 리스너 지원)

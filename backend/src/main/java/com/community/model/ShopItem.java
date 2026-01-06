@@ -72,6 +72,7 @@ public class ShopItem {
         HAIR,
         AVATAR,
         OUTLINE,
+        NICKNAME_TICKET,  // 닉네임 변경권 (소비 아이템)
         OTHER
     }
 }

@@ -45,12 +45,12 @@ function Level1({ characterRef, mainCameraRef, onGameTriggerEnter, onGameTrigger
           ]}
           size={[
             cliffBlockInfo.size[0] * 14.4, // 약간 넓게
-            cliffBlockInfo.size[1] + 4, // 높이 여유
+            cliffBlockInfo.size[1] + 20, // 높이 여유
             cliffBlockInfo.size[2] * 8.9 // 약간 넓게
           ]}
           onEnter={onGameTriggerEnter}
           onExit={onGameTriggerExit}
-          debug={true} // 트리거 영역을 노란색 와이어프레임으로 표시
+          debug={false} // 트리거 영역 숨김
         />
       )}
     </>

@@ -38,9 +38,15 @@ function GameIconTrigger({ position = [0, 0, 0], size = [5, 5, 5], onEnter, onEx
         onIntersectionEnter={handleIntersectionEnter}
         onIntersectionExit={handleIntersectionExit}
       >
-        <mesh visible={debug}>
+        <mesh>
           <boxGeometry args={size} />
-          <meshBasicMaterial color="yellow" transparent opacity={0.3} wireframe />
+          <meshBasicMaterial
+            color="yellow"
+            transparent
+            opacity={debug ? 0.3 : 0}
+            wireframe={debug}
+            visible={debug}
+          />
         </mesh>
       </RigidBody>
     </>

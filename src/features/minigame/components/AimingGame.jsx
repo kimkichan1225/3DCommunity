@@ -186,7 +186,7 @@ export default function AimingGame({ roomId, isHost, userProfile, players = [], 
 
                 <button className="back-to-lobby-btn" onClick={onGameEnd}>
                   <span className="btn-icon">🚪</span>
-                  로비로 돌아가기
+                  대기방으로 돌아가기
                 </button>
               </div>
             </div>

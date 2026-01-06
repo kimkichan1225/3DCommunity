@@ -24,10 +24,19 @@ public class UserDto {
     private ProfileItemDto selectedProfile;
     private ProfileItemDto selectedOutline;
 
+    // 재화 관련 정보
+    private Integer silverCoins;
+    private Integer goldCoins;
+
+    // 닉네임 변경 횟수
+    private Integer nicknameChangesRemaining;
+
     // 제재 관련 정보
     private Boolean isPermanentlySuspended;
     private LocalDateTime suspendedUntil;
     private String suspensionReason;
+
+
 
     public static UserDto fromEntity(User user) {
         UserDtoBuilder builder = UserDto.builder()
@@ -36,9 +45,14 @@ public class UserDto {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .createdAt(user.getCreatedAt())
+                .silverCoins(user.getSilverCoins() != null ? user.getSilverCoins() : 1000)
+                .goldCoins(user.getGoldCoins() != null ? user.getGoldCoins() : 0)
+                .nicknameChangesRemaining(user.getNicknameChangesRemaining() != null ? user.getNicknameChangesRemaining() : 1)
                 .isPermanentlySuspended(user.getIsPermanentlySuspended())
                 .suspendedUntil(user.getSuspendedUntil())
-                .suspensionReason(user.getSuspensionReason());
+                .suspensionReason(user.getSuspensionReason())
+                .goldCoins(user.getGoldCoins())
+                .silverCoins(user.getSilverCoins());
 
         // 선택된 프로필/테두리 정보 추가
         if (user.getSelectedProfile() != null) {

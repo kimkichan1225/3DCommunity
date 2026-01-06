@@ -34,7 +34,8 @@
       "Bash(touch:*)",
       "mcp__supabase__execute_sql",
       "Bash(gradlew clean build:*)",
-      "Bash(gradlew.bat clean build:*)"
+      "Bash(gradlew.bat clean build:*)",
+      "Bash(del \"src\\\\features\\\\minigame\\\\components\\\\ReactionRace.jsx\" \"src\\\\features\\\\minigame\\\\components\\\\ReactionRace.css\")"
     ],
     "deny": [],
     "ask": []

@@ -18,9 +18,8 @@ function SettingModal({ onClose, onSettingsChange }) {
     // 기본 설정
     return {
       graphics: {
-        quality: 'medium',
-        shadows: 'medium',
-        fpsLimit: '60'
+        quality: 'basic',
+        shadows: 'on'
       },
       sound: {
         master: 70,
@@ -51,15 +50,10 @@ function SettingModal({ onClose, onSettingsChange }) {
   };
 
   const handleApply = () => {
-    try {
-      localStorage.setItem('appSettings', JSON.stringify(settings));
-      if (onSettingsChange) {
-        onSettingsChange(settings);
-      }
-      onClose();
-    } catch (error) {
-      console.error('Failed to save settings:', error);
+    if (onSettingsChange) {
+      onSettingsChange(settings);
     }
+    onClose();
   };
 
   return (
@@ -104,44 +98,26 @@ function SettingModal({ onClose, onSettingsChange }) {
               <h3 className="setting-section-title">그래픽 설정</h3>
 
               <div className="setting-item">
-                <label className="setting-label">그래픽 품질</label>
+                <label className="setting-label">해상도 품질</label>
                 <select
                   className="setting-select"
                   value={settings.graphics.quality}
                   onChange={(e) => handleSettingChange('graphics', 'quality', e.target.value)}
                 >
-                  <option value="low">낮음</option>
-                  <option value="medium">중간</option>
-                  <option value="high">높음</option>
-                  <option value="ultra">최상</option>
+                  <option value="basic">기본</option>
+                  <option value="advanced">고급</option>
                 </select>
               </div>
 
               <div className="setting-item">
-                <label className="setting-label">그림자 품질</label>
+                <label className="setting-label">그림자 설정</label>
                 <select
                   className="setting-select"
                   value={settings.graphics.shadows}
                   onChange={(e) => handleSettingChange('graphics', 'shadows', e.target.value)}
                 >
+                  <option value="on">켜기</option>
                   <option value="off">끄기</option>
-                  <option value="low">낮음</option>
-                  <option value="medium">중간</option>
-                  <option value="high">높음</option>
-                </select>
-              </div>
-
-              <div className="setting-item">
-                <label className="setting-label">FPS 제한</label>
-                <select
-                  className="setting-select"
-                  value={settings.graphics.fpsLimit}
-                  onChange={(e) => handleSettingChange('graphics', 'fpsLimit', e.target.value)}
-                >
-                  <option value="30">30 FPS</option>
-                  <option value="60">60 FPS</option>
-                  <option value="120">120 FPS</option>
-                  <option value="unlimited">제한 없음</option>
                 </select>
               </div>
             </div>

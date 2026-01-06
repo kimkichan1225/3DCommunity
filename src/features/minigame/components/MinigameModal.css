@@ -83,6 +83,46 @@
   gap: 16px;
 }
 
+/* 방이 없을 때 메시지 */
+.no-rooms-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 60px 40px;
+  color: #718096;
+}
+
+.no-rooms-icon {
+  font-size: 4em;
+  margin-bottom: 20px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.no-rooms-message h3 {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 12px 0;
+}
+
+.no-rooms-message p {
+  font-size: 1em;
+  color: #718096;
+  margin: 0;
+}
+
 /* 방 아이템 */
 .room-item {
   background: white;
@@ -966,6 +1006,29 @@
   box-shadow: 0 6px 24px rgba(16, 185, 129, 0.6);
 }
 
+.switch-role-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+.switch-role-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.6);
+}
+
+.switch-role-btn:disabled {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.switch-role-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* 반응형 */
 @media (max-width: 900px) {
   .minigame-modal {
@@ -1148,5 +1211,531 @@
   to {
     opacity: 1;
     transform: translate(-50%, -50%);
+  }
+}
+
+/* 재연결 중 로딩 오버레이 */
+.reconnecting-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10001;
+  backdrop-filter: blur(8px);
+  pointer-events: all; /* 모든 클릭 차단 */
+  cursor: not-allowed;
+}
+
+.reconnecting-spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(255, 255, 255, 0.3);
+  border-top: 5px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.reconnecting-message {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 대기방 채팅 */
+.sidebar-room-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.room-chat-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #000 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.room-chat-title svg {
+  color: #000 !important;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.no-messages {
+  text-align: center;
+  color: #999;
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+.chat-message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+  animation: slideInMessage 0.2s ease-out;
+  font-size: 14px;
+  color: #000;
+}
+
+.chat-message.my-message {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-left: 3px solid #764ba2;
+  color: #000;
+}
+
+.message-author {
+  font-weight: 700;
+  color: #000;
+}
+
+.message-separator {
+  color: #000;
+}
+
+.message-content {
+  color: #000;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.chat-input-container {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px solid #e9ecef;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.chat-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.chat-send-btn {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chat-send-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.chat-send-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes slideInMessage {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 게임 컨테이너 */
+.game-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 게임 관전자 정보 - 모던 디자인 */
+.game-spectator-info {
+  position: absolute;
+  top: 120px;
+  left: 20px;
+  background: white;
+  color: #2d3748;
+  padding: 12px 18px;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e2e8f0;
+}
+
+.game-spectator-info:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  border-color: #667eea;
+}
+
+/* 관전자 목록 모달 */
+.spectator-list-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10002;
+}
+
+.spectator-list-modal {
+  background: white;
+  border-radius: 16px;
+  width: 400px;
+  max-width: 90%;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+.spectator-list-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.spectator-list-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.spectator-list-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.no-spectators {
+  text-align: center;
+  color: #999;
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+.spectator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spectator-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.spectator-item:hover {
+  background: #e9ecef;
+  transform: translateX(4px);
+}
+
+.spectator-info {
+  flex: 1;
+}
+
+.spectator-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.spectator-level {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 에러 팝업 오버레이 */
+.error-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* 에러 팝업 모달 */
+.error-popup-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  min-width: 400px;
+  max-width: 500px;
+  animation: errorPopupSlideIn 0.3s ease-out;
+  overflow: hidden;
+}
+
+/* 에러 팝업 헤더 */
+.error-popup-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  color: white;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.error-popup-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 에러 팝업 바디 */
+.error-popup-body {
+  padding: 30px 24px;
+  text-align: center;
+}
+
+.error-popup-body p {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+/* 에러 팝업 푸터 */
+.error-popup-footer {
+  padding: 16px 24px;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #e9ecef;
+}
+
+/* 에러 팝업 닫기 버튼 */
+.error-popup-close-btn {
+  padding: 12px 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.error-popup-close-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.error-popup-close-btn:active {
+  transform: translateY(0);
+}
+
+/* 에러 팝업 애니메이션 */
+@keyframes errorPopupSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 카운트다운 오버레이 */
+.countdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease-out;
+  pointer-events: auto;
+  user-select: none;
+  cursor: default;
+}
+
+/* 카운트다운 모달 */
+.countdown-modal {
+  text-align: center;
+  animation: countdownBounce 0.5s ease-out;
+}
+
+/* 카운트다운 텍스트 */
+.countdown-text {
+  color: white;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  animation: textGlow 1s ease-in-out infinite;
+}
+
+/* 카운트다운 숫자 */
+.countdown-number {
+  color: #fff;
+  font-size: 180px;
+  font-weight: 900;
+  text-shadow: 0 0 30px rgba(102, 126, 234, 0.8),
+               0 0 60px rgba(102, 126, 234, 0.6),
+               0 4px 40px rgba(0, 0, 0, 0.5);
+  animation: numberPulse 1s ease-in-out;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+/* 카운트다운 애니메이션 */
+@keyframes countdownBounce {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes numberPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    text-shadow: 0 4px 30px rgba(255, 255, 255, 0.8),
+                 0 0 20px rgba(102, 126, 234, 0.6);
   }
 }

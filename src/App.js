@@ -1,4 +1,4 @@
-import React, { Suspense, useRef, useState, useEffect, useCallback } from 'react';
+import React, { Suspense, useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import './App.css';
 import { Physics } from '@react-three/rapier';
@@ -106,6 +106,15 @@ function App() {
       console.error('Failed to load app settings:', error);
     }
     return {
+      graphics: {
+        quality: 'basic',
+        shadows: 'on'
+      },
+      sound: {
+        master: 70,
+        effects: 80,
+        music: 60
+      },
       other: {
         showToastNotifications: true,
         chatNotifications: true,
@@ -345,13 +354,22 @@ function App() {
   };
 
   // 프로필 업데이트 시 호출되는 함수
-  const handleProfileUpdate = async () => {
+  const handleProfileUpdate = async (updatedProfile) => {
     try {
-      // 서버에서 최신 사용자 정보 가져오기
-      const updatedUser = await authService.fetchCurrentUser();
-      if (updatedUser) {
-        setUserProfile(updatedUser);
-        console.log('✅ 프로필 업데이트 완료:', updatedUser);
+      // ProfileModal에서 전달받은 업데이트된 프로필 사용
+      if (updatedProfile) {
+        setUserProfile(updatedProfile);
+        setUsername(updatedProfile.username); // 캐릭터 위 닉네임 즉시 업데이트
+        console.log('✅ 프로필 업데이트 완료:', updatedProfile);
+
+        // 멀티플레이어 서비스에 닉네임 변경 알림
+        if (multiplayerService.isConnected()) {
+          multiplayerService.updatePlayerInfo({
+            username: updatedProfile.username,
+            selectedProfile: updatedProfile.selectedProfile,
+            selectedOutline: updatedProfile.selectedOutline
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to update user profile:', error);
@@ -362,6 +380,15 @@ function App() {
   const handleSettingsChange = (newSettings) => {
     setAppSettings(newSettings);
   };
+
+  // 설정이 변경될 때 localStorage에 저장
+  useEffect(() => {
+    try {
+      localStorage.setItem('appSettings', JSON.stringify(appSettings));
+    } catch (error) {
+      console.error('Failed to save app settings:', error);
+    }
+  }, [appSettings]);
 
   // 알림 서비스 구독
   useEffect(() => {
@@ -461,7 +488,6 @@ function App() {
 
     // join result (ACK) 수신 핸들러
     minigameService.on('joinResult', (data) => {
-      console.log('🎮 joinResult 수신:', data);
       if (!data || data.payload == null) return;
       if (String(data.payload).startsWith('error')) {
         alert('게임 방 입장에 실패했습니다: ' + data.payload);
@@ -471,7 +497,6 @@ function App() {
         minigameService.requestRoomsList();
         setShowMinigameModal(false);
       } else if (data.payload === 'ok') {
-        console.log('✅ 방 입장 성공 ACK 받음');
         // 성공 시 모달을 대기방 모드로 열고 pending room을 설정하여 모달에서 자동으로 대기방으로 전환하도록 함
         setPendingJoinRoomId(data.roomId);
         setMinigameModalMode('waiting');
@@ -793,9 +818,8 @@ function App() {
     setMinigameModalMode('create'); // 방 생성 모드로 열기
   };
 
-  // Connect to multiplayer service - even when not logged in (as observer)
+  // Set up multiplayer callbacks (once)
   useEffect(() => {
-    // Set up callbacks first
     multiplayerService.onPlayerJoin((data) => {
       // 중복 로그인 체크
       if (data.action === 'duplicate') {
@@ -861,7 +885,10 @@ function App() {
     multiplayerService.onOnlineCountUpdate((count) => {
       setOnlineCount(count);
     });
+  }, []); // 콜백은 한 번만 등록
 
+  // Connect to multiplayer service when login state changes
+  useEffect(() => {
     // Connect as observer if not logged in, or as player if logged in
     if (isLoggedIn && userId && username) {
       // console.log('🔗 Connecting to multiplayer service as player...', { userId, username });
@@ -870,19 +897,16 @@ function App() {
       // 미니게임 서비스도 연결 (게임 초대를 받기 위해)
       console.log('🎮 Connecting to minigame service...', { userId, username });
       minigameService.connect(userId, username);
-    } else {
+    } else if (!isLoggedIn) {
       // Connect as observer (anonymous viewer)
       // console.log('👀 Connecting to multiplayer service as observer...');
       const observerId = 'observer_' + Date.now();
       multiplayerService.connect(observerId, 'Observer', true); // true = observer mode
     }
 
-    // Cleanup on unmount
+    // Cleanup on unmount - only disconnect when component unmounts
     return () => {
-      multiplayerService.disconnect();
-      if (isLoggedIn) {
-        minigameService.disconnect();
-      }
+      // Only disconnect on actual unmount, not on dependency changes
     };
   }, [isLoggedIn, userId, username]);
 
@@ -1014,6 +1038,18 @@ function App() {
 
 
 
+  // Canvas props 최적화: 객체를 메모이제이션하여 불필요한 재렌더링 방지
+  const glConfig = useMemo(() => ({
+    alpha: true,
+    antialias: true,
+    preserveDrawingBuffer: true
+  }), []);
+
+  const cameraConfig = useMemo(() => ({
+    position: [-0.00, 28.35, 19.76],
+    rotation: [-0.96, -0.00, -0.00]
+  }), []);
+
   return (
     <div className="App">
       {/* Mapbox 배경 및 Three.js 오버레이 */}
@@ -1118,20 +1154,17 @@ function App() {
       <div className="three-overlay">
         <Canvas
           className="three-canvas"
-          camera={{ position: [-0.00, 28.35, 19.76], rotation: [-0.96, -0.00, -0.00] }}
-          shadows
-          gl={{
-            alpha: true, // 투명 배경 활성화
-            antialias: true,
-            preserveDrawingBuffer: true
-          }}
+          camera={cameraConfig}
+          shadows={appSettings.graphics?.shadows !== 'off'}
+          dpr={appSettings.graphics?.quality === 'advanced' ? window.devicePixelRatio : 1}
+          gl={glConfig}
           style={{ width: '100%', height: '100%' }}
         >
           <ambientLight intensity={0.5} />
           <directionalLight
             position={[50, 50, 25]}
             intensity={6}
-            castShadow
+            castShadow={appSettings.graphics?.shadows !== 'off'}
             shadow-mapSize-width={8192}
             shadow-mapSize-height={8192}
             shadow-camera-far={1000}
