@@ -89,8 +89,15 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     useEffect(() => {
         if (!minigameService.connected) {
-            minigameService.connect(userProfile?.id || 'guest', userProfile?.username || '게스트');
+            minigameService.connect(userProfile?.id || 'guest', userProfile?.username || '게스트').then(() => {
+                // 연결 성공 후 방 목록 요청
+                minigameService.requestRoomsList();
+            });
+        } else {
+            // 이미 연결되어 있으면 바로 방 목록 요청
+            minigameService.requestRoomsList();
         }
+
         const onRoomsList = (roomsList) => {
             console.log('Received rooms list:', roomsList);
             setRooms(roomsList || []);
@@ -117,7 +124,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
             minigameService.off('roomDelete', onRoomDelete);
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
-    }, [userProfile, currentRoom]);
+    }, []); // 빈 배열로 변경하여 한 번만 실행
 
     useEffect(() => {
         const onRoomUpdate = (roomData) => {
@@ -309,8 +316,13 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
         if (room.isLocked) return alert('비공개 방입니다.');
         if (isJoiningRoom) return; // 중복 입장 방지
 
+        // 게임 중인 방은 관전자로만 입장 가능 알림
+        if (room.isPlaying) {
+            alert('게임이 진행 중입니다. 관전자로 입장합니다.');
+        }
+
         setIsJoiningRoom(true);
-        // 방이 가득 차도 관전자로 입장 가능
+        // 게임 중이거나 방이 가득 차면 관전자로 입장
         minigameService.joinRoom(room.roomId, userProfile?.level || 1, userProfile.selectedProfile?.imagePath || null, userProfile.selectedOutline?.imagePath || null);
 
         // 1초 후 다시 클릭 가능하도록 설정
