@@ -138,18 +138,23 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                 return; // 팝업 확인 전까지 방 업데이트 보류
             }
 
-            // 방 목록 업데이트
+            // 방 목록 업데이트 (중복 방지 강화)
             setRooms(prev => {
-                const exists = prev.some(r => r.roomId === roomData.roomId);
+                const existingIndex = prev.findIndex(r => r.roomId === roomData.roomId);
 
                 if (roomData.action === 'delete' || roomData.isDeleted) {
                     // 방 삭제
+                    console.log('Removing room from list:', roomData.roomId);
                     return prev.filter(r => r.roomId !== roomData.roomId);
-                } else if (exists) {
-                    // 기존 방 업데이트
-                    return prev.map(r => r.roomId === roomData.roomId ? roomData : r);
+                } else if (existingIndex !== -1) {
+                    // 기존 방 업데이트 (create 액션이어도 이미 존재하면 업데이트만)
+                    console.log('Updating existing room:', roomData.roomId);
+                    const newRooms = [...prev];
+                    newRooms[existingIndex] = roomData;
+                    return newRooms;
                 } else if (roomData.action === 'create') {
-                    // 새로운 방 추가
+                    // 새로운 방 추가 (존재하지 않을 때만)
+                    console.log('Adding new room to list:', roomData.roomId);
                     return [...prev, roomData];
                 } else {
                     // action이 'create'가 아니고 방이 존재하지 않으면 추가하지 않음
@@ -596,10 +601,18 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                                         {room.isPlaying ? <span className="status-badge playing">게임 중</span> : <span className="status-badge waiting">대기 중</span>}
                                     </div>
                                 </div>
-                                <div className="room-info">
-                                    <div className="room-game"><FaGamepad /><span>{room.gameName}</span></div>
-                                    <div className="room-host"><FaCrown /><span>{room.hostName}</span></div>
-                                    <div className="room-players">
+                                <div className="room-info-horizontal">
+                                    <div className="room-info-item">
+                                        <FaGamepad />
+                                        <span>{room.gameName}</span>
+                                    </div>
+                                    <div className="room-info-divider">|</div>
+                                    <div className="room-info-item">
+                                        <FaCrown />
+                                        <span>{room.hostName}</span>
+                                    </div>
+                                    <div className="room-info-divider">|</div>
+                                    <div className="room-info-item">
                                         <FaUsers />
                                         <span>{room.currentPlayers}/{room.maxPlayers}</span>
                                         {room.spectators && room.spectators.length > 0 && (
