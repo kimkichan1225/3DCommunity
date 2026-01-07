@@ -323,6 +323,41 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     }
   }, []);
 
+  // 초기 방 목록 로드 (서버에서 활성 방 목록 가져오기)
+  useEffect(() => {
+    const loadInitialRooms = async () => {
+      if (!userLocation) return;
+      
+      try {
+        console.log('🏠 초기 방 목록 로드 시작...');
+        // 서버에서 모든 활성 방 목록 가져오기
+        const rooms = await multiplayerService.fetchRoomList();
+        
+        if (rooms && rooms.length > 0) {
+          console.log('✅ 초기 방 목록 로드 완료:', rooms.length, '개');
+          // 자신이 만든 방은 제외 (이미 로컬에 있을 수 있음)
+          const filteredRooms = rooms.filter(room => String(room.hostId) !== String(userId));
+          setNearbyRooms(prev => {
+            // 기존 방과 중복 제거
+            const existingIds = new Set(prev.map(r => r.roomId));
+            const newRooms = filteredRooms.filter(r => !existingIds.has(r.roomId));
+            if (newRooms.length > 0) {
+              console.log('➕ 새로운 방 추가:', newRooms.length, '개');
+              return [...prev, ...newRooms];
+            }
+            return prev;
+          });
+        } else {
+          console.log('ℹ️ 활성 방 없음');
+        }
+      } catch (error) {
+        console.error('❌ 초기 방 목록 로드 실패:', error);
+      }
+    };
+    
+    loadInitialRooms();
+  }, [userLocation, userId]);
+
   // Mapbox 초기화
   useEffect(() => {
     const initializeMap = async () => {
@@ -847,7 +882,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         )}
         
         {/* 시간대 표시 */}
-        <TimeIndicator />
+        <TimeIndicator isInPersonalRoom={isInPersonalRoom} />
         
         {!isReady && (
           <div className="map-game-loading-overlay">
@@ -1871,7 +1906,7 @@ function RoomInfoPopup({ room, onJoin, onClose }) {
 /**
  * 시간대 표시 컴포넌트
  */
-function TimeIndicator() {
+function TimeIndicator({ isInPersonalRoom }) {
   const [timeInfo, setTimeInfo] = useState({ icon: '☀️', text: '낮', time: '' });
 
   useEffect(() => {
@@ -1905,7 +1940,7 @@ function TimeIndicator() {
   }, []);
 
   return (
-    <div className="time-indicator">
+    <div className={`time-indicator ${isInPersonalRoom ? 'personal-room' : ''}`}>
       <span className="time-icon">{timeInfo.icon}</span>
       <span>{timeInfo.text} {timeInfo.time}</span>
     </div>

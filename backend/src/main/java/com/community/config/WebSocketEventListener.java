@@ -1,7 +1,9 @@
 package com.community.config;
 
 import com.community.dto.PlayerJoinDto;
+import com.community.dto.RoomDto;
 import com.community.service.ActiveUserService;
+import com.community.service.PersonalRoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -18,6 +20,7 @@ public class WebSocketEventListener {
 
     private final SimpMessageSendingOperations messagingTemplate;
     private final ActiveUserService activeUserService;
+    private final PersonalRoomService personalRoomService;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
@@ -40,6 +43,15 @@ public class WebSocketEventListener {
                 activeUserService.removeUserBySession(sessionId);
                 log.info("Removed user {} from active users. Current count: {}",
                         userId, activeUserService.getActiveUserCount());
+            }
+
+            // 사용자가 호스트인 방이 있으면 삭제
+            RoomDto deletedRoom = personalRoomService.deleteRoomByHostId(userId);
+            if (deletedRoom != null) {
+                log.info("Deleted room {} owned by disconnected user {}", 
+                        deletedRoom.getRoomId(), userId);
+                // 다른 플레이어들에게 방 삭제 알림
+                messagingTemplate.convertAndSend("/topic/rooms", deletedRoom);
             }
 
             // 다른 플레이어들에게 퇴장 알림

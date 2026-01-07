@@ -436,6 +436,40 @@ class MultiplayerService {
       console.error('방 채팅 전송 실패:', error.message);
     }
   }
+
+  // 서버에서 활성 방 목록 요청 (REST API)
+  async fetchRoomList() {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const rooms = await response.json();
+      console.log('📋 방 목록 조회 성공:', rooms.length, '개');
+      return rooms;
+    } catch (error) {
+      console.error('방 목록 조회 실패:', error.message);
+      return [];
+    }
+  }
+
+  // 주변 방 목록 요청 (GPS 기반)
+  async fetchNearbyRooms(lng, lat, radiusKm = 10) {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms/nearby?lng=${lng}&lat=${lat}&radius=${radiusKm}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const rooms = await response.json();
+      console.log('📋 주변 방 목록 조회 성공:', rooms.length, '개');
+      return rooms;
+    } catch (error) {
+      console.error('주변 방 목록 조회 실패:', error.message);
+      return [];
+    }
+  }
 }
 
 export default new MultiplayerService();

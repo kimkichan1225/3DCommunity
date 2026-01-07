@@ -7,6 +7,7 @@ import com.community.dto.RoomDto;
 import com.community.dto.MinigameChatDto;
 import com.community.service.ActiveUserService;
 import com.community.service.MessageService;
+import com.community.service.PersonalRoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -14,6 +15,8 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
+
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -23,6 +26,7 @@ public class MultiplayerController {
     private final ActiveUserService activeUserService;
     private final SimpMessageSendingOperations messagingTemplate;
     private final MessageService messageService;
+    private final PersonalRoomService personalRoomService;
 
     /**
      * 플레이어 입장
@@ -114,11 +118,17 @@ public class MultiplayerController {
     @MessageMapping("/room.create")
     @SendTo("/topic/rooms")
     public RoomDto createRoom(RoomDto roomDto) {
-        roomDto.setAction("create");
-        roomDto.setTimestamp(System.currentTimeMillis());
-        log.info("방 생성 브로드캐스트: roomId={}, roomName={}, hostName={}", 
-                roomDto.getRoomId(), roomDto.getRoomName(), roomDto.getHostName());
-        return roomDto;
+        // PersonalRoomService에 방 저장
+        RoomDto savedRoom = personalRoomService.createRoom(roomDto);
+        if (savedRoom == null) {
+            log.warn("방 생성 실패: roomId={}", roomDto.getRoomId());
+            return null;
+        }
+        
+        log.info("방 생성 브로드캐스트: roomId={}, roomName={}, hostName={}, 현재 방 개수={}", 
+                savedRoom.getRoomId(), savedRoom.getRoomName(), savedRoom.getHostName(),
+                personalRoomService.getRoomCount());
+        return savedRoom;
     }
 
     /**
@@ -129,10 +139,48 @@ public class MultiplayerController {
     @MessageMapping("/room.delete")
     @SendTo("/topic/rooms")
     public RoomDto deleteRoom(RoomDto roomDto) {
-        roomDto.setAction("delete");
-        roomDto.setTimestamp(System.currentTimeMillis());
-        log.info("방 삭제 브로드캐스트: roomId={}", roomDto.getRoomId());
-        return roomDto;
+        // PersonalRoomService에서 방 삭제
+        RoomDto deletedRoom = personalRoomService.deleteRoom(roomDto.getRoomId());
+        if (deletedRoom == null) {
+            // 방이 없어도 삭제 브로드캐스트는 전송 (클라이언트 동기화용)
+            roomDto.setAction("delete");
+            roomDto.setTimestamp(System.currentTimeMillis());
+            log.warn("삭제할 방 없음, 브로드캐스트만 전송: roomId={}", roomDto.getRoomId());
+            return roomDto;
+        }
+        
+        log.info("방 삭제 브로드캐스트: roomId={}, 남은 방 개수={}", 
+                deletedRoom.getRoomId(), personalRoomService.getRoomCount());
+        return deletedRoom;
+    }
+
+    /**
+     * 활성 방 목록 요청
+     * Client -> /app/room.list
+     * Server -> /user/queue/rooms (개인 메시지로 응답)
+     */
+    @MessageMapping("/room.list")
+    public void getRoomList(SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+        List<RoomDto> rooms = personalRoomService.getAllRooms();
+        
+        log.info("방 목록 요청: sessionId={}, 방 개수={}", sessionId, rooms.size());
+        
+        // 요청한 클라이언트에게만 방 목록 전송
+        messagingTemplate.convertAndSendToUser(
+            sessionId, 
+            "/queue/rooms", 
+            rooms,
+            createHeaders(sessionId)
+        );
+    }
+    
+    private org.springframework.messaging.MessageHeaders createHeaders(String sessionId) {
+        org.springframework.messaging.simp.SimpMessageHeaderAccessor headerAccessor = 
+            org.springframework.messaging.simp.SimpMessageHeaderAccessor.create(org.springframework.messaging.simp.SimpMessageType.MESSAGE);
+        headerAccessor.setSessionId(sessionId);
+        headerAccessor.setLeaveMutable(true);
+        return headerAccessor.getMessageHeaders();
     }
 
     /**

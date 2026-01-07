@@ -249,36 +249,38 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
         {/* 우측 상단 꾸미기 버튼 */}
         <div style={{
           position: 'fixed',
-          top: 20,
-          right: 20,
+          top: 16,
+          right: 16,
           zIndex: 100,
           pointerEvents: 'auto',
         }}>
           <button
             onClick={() => setShowToolbar(!showToolbar)}
             style={{
-              background: showToolbar ? 'linear-gradient(135deg, #9C27B0, #7B1FA2)' : 'linear-gradient(135deg, #673AB7, #512DA8)',
+              background: showToolbar ? 'rgba(156, 39, 176, 0.9)' : 'rgba(103, 58, 183, 0.85)',
               border: 'none',
-              borderRadius: 12,
-              padding: '14px 20px',
+              borderRadius: 8,
+              padding: '10px 16px',
               color: '#fff',
               cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 'bold',
+              fontSize: 13,
+              fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              transition: 'all 0.3s',
-              boxShadow: '0 4px 15px rgba(103, 58, 183, 0.4)',
+              gap: 6,
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.background = 'rgba(123, 31, 162, 0.95)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = showToolbar ? 'rgba(156, 39, 176, 0.9)' : 'rgba(103, 58, 183, 0.85)';
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
-            🎨 {showToolbar ? '꾸미기 닫기' : '방 꾸미기'}
+            {showToolbar ? '✕' : '🎨'}
           </button>
         </div>
         
@@ -286,11 +288,11 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
         {showToolbar && (
           <div style={{
             position: 'fixed',
-            top: 75,
-            right: 20,
+            top: 60,
+            right: 16,
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
+            gap: 6,
             pointerEvents: 'auto',
             zIndex: 99,
           }}>
@@ -300,45 +302,43 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
                 if (!editMode) setShowToolbar(true);
               }}
               style={{
-                background: editMode ? 'linear-gradient(135deg, #FFA500, #FF8C00)' : 'rgba(50, 50, 70, 0.9)',
-                border: editMode ? '2px solid #FFD700' : '2px solid rgba(100, 100, 120, 0.5)',
-                borderRadius: 10,
-                padding: '12px 18px',
+                background: editMode ? 'rgba(255, 165, 0, 0.9)' : 'rgba(50, 50, 70, 0.85)',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 14px',
                 color: editMode ? '#000' : '#fff',
                 cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 'bold',
+                fontSize: 12,
+                fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
+                gap: 6,
                 transition: 'all 0.2s',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                minWidth: 150,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
               }}
             >
-              {editMode ? '✅ 편집 중' : '🔧 편집 모드 (E)'}
+              {editMode ? '✅ 편집중' : '🔧 편집'}
             </button>
             
             <button
               onClick={() => setShowInventory(!showInventory)}
               style={{
-                background: showInventory ? 'linear-gradient(135deg, #4a90d9, #357abd)' : 'rgba(50, 50, 70, 0.9)',
-                border: '2px solid rgba(100, 100, 120, 0.5)',
-                borderRadius: 10,
-                padding: '12px 18px',
+                background: showInventory ? 'rgba(74, 144, 217, 0.9)' : 'rgba(50, 50, 70, 0.85)',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 14px',
                 color: '#fff',
                 cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 'bold',
+                fontSize: 12,
+                fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
+                gap: 6,
                 transition: 'all 0.2s',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                minWidth: 150,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
               }}
             >
-              🪑 가구 추가 (I)
+              🪑 가구
             </button>
           </div>
         )}
@@ -347,20 +347,20 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
         {editMode && !placingFurniture && (
           <div style={{
             position: 'fixed',
-            top: 80,
+            top: 16,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'linear-gradient(135deg, #FF8C00, #FFA500)',
-            padding: '10px 24px',
-            borderRadius: 25,
-            color: '#000',
-            fontWeight: 'bold',
-            fontSize: 13,
-            boxShadow: '0 4px 15px rgba(255, 165, 0, 0.4)',
+            background: 'rgba(255, 140, 0, 0.9)',
+            padding: '8px 16px',
+            borderRadius: 16,
+            color: '#fff',
+            fontWeight: '600',
+            fontSize: 12,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
             pointerEvents: 'none',
             zIndex: 50,
           }}>
-            🔧 편집 모드 | 가구를 클릭하여 선택 후 드래그로 이동
+            🔧 편집 모드
           </div>
         )}
         
@@ -368,20 +368,20 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
         {placingFurniture && (
           <div style={{
             position: 'fixed',
-            top: 80,
+            top: 16,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'linear-gradient(135deg, #00C853, #00E676)',
-            padding: '10px 24px',
-            borderRadius: 25,
+            background: 'rgba(0, 200, 83, 0.9)',
+            padding: '8px 16px',
+            borderRadius: 16,
             color: '#fff',
-            fontWeight: 'bold',
-            fontSize: 13,
-            boxShadow: '0 4px 15px rgba(0, 200, 100, 0.4)',
+            fontWeight: '600',
+            fontSize: 12,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
             pointerEvents: 'none',
             zIndex: 50,
           }}>
-            🎯 바닥을 클릭하여 배치 | ESC로 취소
+            🎯 클릭하여 배치
           </div>
         )}
         
