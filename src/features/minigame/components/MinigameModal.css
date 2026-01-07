@@ -253,6 +253,12 @@
   font-size: 14px;
 }
 
+.spectator-count {
+  margin-left: 6px;
+  color: #999;
+  font-size: 13px;
+}
+
 /* 오른쪽: 사이드바 */
 .minigame-sidebar {
   width: 300px;

@@ -615,11 +615,9 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
                                     <div className="room-info-item">
                                         <FaUsers />
                                         <span>{room.currentPlayers}/{room.maxPlayers}</span>
-                                        {room.spectators && room.spectators.length > 0 && (
-                                            <span style={{ marginLeft: '8px', color: '#888', fontSize: '12px' }}>
-                                                (관전 {room.spectators.length})
-                                            </span>
-                                        )}
+                                        <span className="spectator-count">
+                                            (관전 {room.spectators?.length || 0})
+                                        </span>
                                     </div>
                                 </div>
                             </div>
