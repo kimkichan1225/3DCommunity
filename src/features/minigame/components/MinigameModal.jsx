@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './MinigameModal.css';
 import ProfileAvatar from '../../../components/ProfileAvatar';
 import { FaTimes, FaPlus, FaGamepad, FaUsers, FaCrown, FaLock, FaDoorOpen, FaComments, FaPaperPlane } from 'react-icons/fa';
@@ -8,6 +8,7 @@ import AimingGame from './AimingGame';
 import OmokGame from './OmokGame';
 
 function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lobby', initialRoomId = null, gpsLocation = null }) {
+    const hasJoinedInitialRoom = useRef(false); // 초기 방 입장 여부 추적
     const [currentView, setCurrentView] = useState(initialMode === 'create' ? 'create' : 'lobby');
     const [currentRoom, setCurrentRoom] = useState(null);
     const [rooms, setRooms] = useState([]);
@@ -19,6 +20,7 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     const [pendingRoomId, setPendingRoomId] = useState(initialRoomId);
     const [showRoomSettingsModal, setShowRoomSettingsModal] = useState(false);
     const [roomSettingsForm, setRoomSettingsForm] = useState({ gameType: '', maxPlayers: 2 });
+    const [isJoiningRoom, setIsJoiningRoom] = useState(false); // 중복 입장 방지
     const [roomChatInput, setRoomChatInput] = useState('');
     const [roomChatMessages, setRoomChatMessages] = useState([]);
     const [isSwitchingRole, setIsSwitchingRole] = useState(false);
@@ -231,10 +233,12 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
     }, [currentRoom, userProfile]);
 
     useEffect(() => {
-        if (initialRoomId && userProfile?.id) {
+        // 초기 방 ID가 있고, 아직 입장하지 않았고, 사용자 프로필이 있을 때만 입장
+        if (initialRoomId && userProfile?.id && !hasJoinedInitialRoom.current) {
+            hasJoinedInitialRoom.current = true; // 입장 완료 플래그 설정
             minigameService.joinRoom(initialRoomId, userProfile.level || 1, userProfile.selectedProfile?.imagePath || null, userProfile.selectedOutline?.imagePath || null);
         }
-    }, [initialRoomId]); // userProfile 제거하여 중복 입장 방지
+    }, [initialRoomId, userProfile?.id]); // userProfile.id 추가하여 로드 후 실행
 
     // 채팅 메시지 자동 스크롤
     useEffect(() => {
@@ -303,8 +307,14 @@ function MinigameModal({ onClose, userProfile, onlinePlayers, initialMode = 'lob
 
     const handleRoomClick = (room) => {
         if (room.isLocked) return alert('비공개 방입니다.');
+        if (isJoiningRoom) return; // 중복 입장 방지
+
+        setIsJoiningRoom(true);
         // 방이 가득 차도 관전자로 입장 가능
         minigameService.joinRoom(room.roomId, userProfile?.level || 1, userProfile.selectedProfile?.imagePath || null, userProfile.selectedOutline?.imagePath || null);
+
+        // 1초 후 다시 클릭 가능하도록 설정
+        setTimeout(() => setIsJoiningRoom(false), 1000);
     };
     const handleCreateRoom = () => setCurrentView('create');
     const handleCancelCreateRoom = () => setCurrentView('lobby');
