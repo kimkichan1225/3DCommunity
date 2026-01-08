@@ -26,10 +26,6 @@ export const useKeyboardControls = () => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
-      // 이동 키 디버그 로그 (WASD)
-      if (['w', 'a', 's', 'd'].includes(key)) {
-        console.log('⌨️ [KeyboardControls] KeyDown:', key);
-      }
       if (key === 'shift') setControls((c) => ({ ...c, shift: true }));
       if (key === 'c') setControls((c) => ({ ...c, log: true }));
       if (key === 'enter') setControls((c) => ({ ...c, enter: true }));

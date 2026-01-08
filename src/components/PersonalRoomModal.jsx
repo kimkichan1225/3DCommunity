@@ -28,10 +28,27 @@ function PersonalRoomModal({
   const [myRoom, setMyRoom] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // 이미 방 생성 시도했는지 추적
+  const [hasAttemptedCreate, setHasAttemptedCreate] = useState(false);
+
   // 초기화 - 'create' 모드면 기존 방 확인 후 방 생성 또는 입장
   useEffect(() => {
     const checkAndCreateRoom = async () => {
-      if (mode === 'create' && !myRoom && userProfile?.id) {
+      // 이미 방이 있거나, 생성 시도를 했거나, 유저 정보가 없으면 스킵
+      if (mode !== 'create' || myRoom || hasAttemptedCreate || !userProfile?.id) {
+        if (mode === 'browse') {
+          setCurrentMode('browse');
+        } else if (currentRoom) {
+          setMyRoom(currentRoom);
+          setRoomMembers(currentRoom.members || [userProfile]);
+          setCurrentMode('waiting');
+        }
+        return;
+      }
+      
+      setHasAttemptedCreate(true); // 중복 실행 방지
+      
+      if (mode === 'create' && userProfile?.id) {
         setIsLoading(true);
         
         try {
@@ -55,32 +72,65 @@ function PersonalRoomModal({
               onCreateRoom?.(existingRoom);
             }, 100);
           } else {
-            // 기존 방이 없으면 새로 생성
-            const roomData = {
+            // 기존 방이 없으면 서버에 새 방 생성 요청
+            const newRoomData = {
               roomId: `room_${userProfile.id}_${Date.now()}`,
               roomName: `${userProfile.username || '나'}의 방`,
               hostId: userProfile.id,
               hostName: userProfile.username,
               maxMembers: 6,
               isPrivate: true,
+            };
+            
+            console.log('🏠 서버에 새 개인 룸 생성 요청:', newRoomData);
+            
+            // 서버에 방 생성 API 호출
+            const serverResponse = await multiplayerService.createPersonalRoom(newRoomData);
+            
+            // 서버 응답에서 roomId 사용 (기존 방이 있으면 기존 방의 ID가 반환됨)
+            const finalRoomData = {
+              ...newRoomData,
+              roomId: serverResponse?.roomId || newRoomData.roomId,
+              roomName: serverResponse?.roomName || newRoomData.roomName,
               members: [userProfile],
               createdAt: new Date().toISOString()
             };
             
-            console.log('🏠 새 개인 룸 생성:', roomData);
-            setMyRoom(roomData);
+            console.log('🏠 최종 방 데이터:', finalRoomData);
+            setMyRoom(finalRoomData);
             setRoomMembers([userProfile]);
             setCurrentMode('waiting');
             
             // 부모 컴포넌트에 알림
             setTimeout(() => {
-              console.log('📢 부모 컴포넌트에 방 생성 알림:', roomData);
-              onCreateRoom?.(roomData);
+              console.log('📢 부모 컴포넌트에 방 생성 알림:', finalRoomData);
+              onCreateRoom?.(finalRoomData);
             }, 100);
           }
         } catch (error) {
           console.error('방 확인/생성 중 오류:', error);
-          // 오류 발생 시 새 방 생성
+          // 오류 발생 시에도 기존 방 확인 재시도
+          try {
+            const retryData = await multiplayerService.checkHasRoom(userProfile.id);
+            if (retryData.hasRoom && retryData.room) {
+              console.log('🏠 재시도 - 기존 방 발견:', retryData.room);
+              const existingRoom = {
+                ...retryData.room,
+                members: [userProfile],
+              };
+              setMyRoom(existingRoom);
+              setRoomMembers([userProfile]);
+              setCurrentMode('waiting');
+              setTimeout(() => {
+                onCreateRoom?.(existingRoom);
+              }, 100);
+              return;
+            }
+          } catch (retryError) {
+            console.error('재시도 실패:', retryError);
+          }
+          
+          // 재시도도 실패하면 로컬로만 방 생성
           const roomData = {
             roomId: `room_${userProfile.id}_${Date.now()}`,
             roomName: `${userProfile.username || '나'}의 방`,
@@ -103,17 +153,11 @@ function PersonalRoomModal({
         } finally {
           setIsLoading(false);
         }
-      } else if (mode === 'browse') {
-        setCurrentMode('browse');
-      } else if (currentRoom) {
-        setMyRoom(currentRoom);
-        setRoomMembers(currentRoom.members || [userProfile]);
-        setCurrentMode('waiting');
       }
     };
     
     checkAndCreateRoom();
-  }, [mode, userProfile, currentRoom, onCreateRoom, myRoom]);
+  }, [mode, userProfile, currentRoom, onCreateRoom, myRoom, hasAttemptedCreate]);
 
   // 친구 선택 토글
   const toggleFriendSelection = (friend) => {

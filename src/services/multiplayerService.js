@@ -454,6 +454,31 @@ class MultiplayerService {
     }
   }
 
+  // 개인 룸 생성 API
+  async createPersonalRoom(roomData) {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(roomData),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('🏠 개인 룸 생성/조회 성공:', result);
+      return result;
+    } catch (error) {
+      console.error('개인 룸 생성 실패:', error.message);
+      return null;
+    }
+  }
+
   // 주변 방 목록 요청 (GPS 기반)
   async fetchNearbyRooms(lng, lat, radiusKm = 10) {
     try {

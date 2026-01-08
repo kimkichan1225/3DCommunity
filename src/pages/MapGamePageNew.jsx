@@ -291,7 +291,15 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         };
         
         setNearbyRooms(prev => {
-          // 중복 체크
+          // hostId로 중복 체크 (한 유저당 하나의 방만 허용)
+          const existingByHost = prev.find(r => String(r.hostId) === String(newRoom.hostId));
+          if (existingByHost) {
+            console.log('⚠️ 동일 호스트의 방이 이미 존재 - 업데이트:', existingByHost.roomId, '->', newRoom.roomId);
+            return prev.map(r => 
+              String(r.hostId) === String(newRoom.hostId) ? newRoom : r
+            );
+          }
+          // roomId로 중복 체크
           if (prev.some(r => r.roomId === newRoom.roomId)) {
             console.log('이미 존재하는 방 - 무시');
             return prev;
@@ -385,9 +393,15 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           // 자신이 만든 방은 제외 (이미 로컬에 있을 수 있음)
           const filteredRooms = rooms.filter(room => String(room.hostId) !== String(userId));
           setNearbyRooms(prev => {
-            // 기존 방과 중복 제거
-            const existingIds = new Set(prev.map(r => r.roomId));
-            const newRooms = filteredRooms.filter(r => !existingIds.has(r.roomId));
+            // 기존 방의 hostId와 roomId 셋 생성
+            const existingHostIds = new Set(prev.map(r => String(r.hostId)));
+            const existingRoomIds = new Set(prev.map(r => r.roomId));
+            
+            // 중복되지 않는 새 방만 필터링 (hostId 기준 - 한 유저당 하나의 방)
+            const newRooms = filteredRooms.filter(r => 
+              !existingHostIds.has(String(r.hostId)) && !existingRoomIds.has(r.roomId)
+            );
+            
             if (newRooms.length > 0) {
               console.log('➕ 새로운 방 추가:', newRooms.length, '개');
               return [...prev, ...newRooms];
@@ -607,9 +621,24 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
       gameName: '개인 룸', // 포탈 색상용
     };
     
-    // 주변 방 목록에 추가
+    // 주변 방 목록에 추가 (중복 체크)
     setNearbyRooms(prev => {
-      console.log('📍 주변 방 목록에 추가:', roomWithLocation.roomName);
+      // hostId로 중복 체크 (한 사용자는 하나의 방만 가질 수 있음)
+      const existingByHost = prev.find(r => String(r.hostId) === String(roomWithLocation.hostId));
+      if (existingByHost) {
+        console.log('⚠️ 동일 호스트의 방이 이미 존재 - 기존 방 업데이트:', existingByHost.roomId, '->', roomWithLocation.roomId);
+        return prev.map(r => 
+          String(r.hostId) === String(roomWithLocation.hostId) 
+            ? roomWithLocation 
+            : r
+        );
+      }
+      // roomId로 중복 체크
+      if (prev.some(r => r.roomId === roomWithLocation.roomId)) {
+        console.log('⚠️ 동일 roomId의 방이 이미 존재 - 무시:', roomWithLocation.roomId);
+        return prev;
+      }
+      console.log('📍 주변 방 목록에 새 방 추가:', roomWithLocation.roomName);
       return [...prev, roomWithLocation];
     });
     
@@ -1202,11 +1231,6 @@ function CharacterViewer({
     if (backward) direction.z += 1;
     if (left) direction.x -= 1;
     if (right) direction.x += 1;
-
-    // 이동 중일 때 로그 출력 (디버그용)
-    if (forward || backward || left || right) {
-      console.log('🎮 [CharacterViewer] 이동 입력 감지 - forward:', forward, 'backward:', backward, 'left:', left, 'right:', right, 'isInPersonalRoom:', isInPersonalRoom);
-    }
 
     const isMoving = direction.length() > 0;
     let targetAngleForNetwork = null;

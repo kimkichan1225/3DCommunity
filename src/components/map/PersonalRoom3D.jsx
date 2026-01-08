@@ -77,8 +77,61 @@ const PersonalRoom3D = forwardRef(function PersonalRoom3D({ roomData, onExit, on
   const lastCheckTimeRef = useRef(0);
   const saveTimeoutRef = useRef(null);
   
-  // 호스트인지 확인
-  const isHost = roomData?.hostId === userId;
+  // 호스트인지 확인 (타입 안전 비교)
+  const isHost = String(roomData?.hostId) === String(userId);
+  
+  // 디버깅: isHost 값 확인
+  useEffect(() => {
+    console.log('🔍 호스트 체크:', {
+      roomDataHostId: roomData?.hostId,
+      userId: userId,
+      roomDataHostIdType: typeof roomData?.hostId,
+      userIdType: typeof userId,
+      roomDataHostIdString: String(roomData?.hostId),
+      userIdString: String(userId),
+      isHost: isHost,
+      equality: String(roomData?.hostId) === String(userId)
+    });
+  }, [roomData?.hostId, userId, isHost]);
+  
+  // 가구 변경 시 서버에 저장하는 헬퍼 함수 (즉시 실행)
+  const saveToServer = useCallback((updatedFurniture) => {
+    // isHost를 직접 계산 (클로저 문제 방지)
+    const currentIsHost = String(roomData?.hostId) === String(userId);
+    console.log('🔧 saveToServer 호출됨:', { 
+      currentIsHost, 
+      hostId: roomData?.hostId, 
+      userId, 
+      roomId: roomData?.roomId, 
+      furnitureCount: updatedFurniture?.length 
+    });
+    
+    if (!currentIsHost) {
+      console.log('⚠️ 호스트가 아니라서 저장하지 않음');
+      return;
+    }
+    if (!roomData?.roomId) {
+      console.log('⚠️ roomId가 없어서 저장하지 않음');
+      return;
+    }
+    
+    // 이전 타이머 취소
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // 500ms 디바운스
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const serverFurnitures = updatedFurniture.map(localToServerFurniture);
+        console.log('💾 서버에 저장 중...', { roomId: roomData.roomId, furnitures: serverFurnitures });
+        const result = await multiplayerService.saveFurnitures(roomData.roomId, serverFurnitures);
+        console.log('💾 가구 변경사항 서버에 저장됨:', result);
+      } catch (error) {
+        console.error('❌ 가구 저장 실패:', error);
+      }
+    }, 500);
+  }, [roomData?.hostId, roomData?.roomId, userId]);
   
   // useImperativeHandle로 외부에 상태와 함수 노출
   useImperativeHandle(ref, () => ({
@@ -99,30 +152,52 @@ const PersonalRoom3D = forwardRef(function PersonalRoom3D({ roomData, onExit, on
     setShowFurnitureList,
     setShowDeleteConfirm,
     handleAddFurniture: (type) => {
+      if (!isHost) {
+        console.log('⚠️ 호스트만 가구를 추가할 수 있습니다');
+        return;
+      }
+      // 배치할 가구 정보만 설정 (실제 추가는 handlePlaceFurniture에서)
       const newFurniture = {
         id: `${type}-${Date.now()}`,
         type,
         position: [0, 0, 5],
         rotation: [0, 0, 0],
       };
-      setFurniture(prev => [...prev, newFurniture]);
       setPlacingFurniture(newFurniture);
       setEditMode(true);
       setShowInventory(false);
     },
     handleRotateFurniture: (id, direction = 1) => {
-      setFurniture(prev => prev.map(f => {
-        if (f.id === id) {
-          const newRotation = [...f.rotation];
-          newRotation[1] += (Math.PI / 4) * direction;
-          return { ...f, rotation: newRotation };
-        }
-        return f;
-      }));
+      if (!isHost) {
+        console.log('⚠️ 호스트만 가구를 회전할 수 있습니다');
+        return;
+      }
+      setFurniture(prev => {
+        const updated = prev.map(f => {
+          if (f.id === id) {
+            const newRotation = [...f.rotation];
+            newRotation[1] += (Math.PI / 4) * direction;
+            return { ...f, rotation: newRotation };
+          }
+          return f;
+        });
+        saveToServer(updated);
+        onFurnitureUpdate?.(updated);
+        return updated;
+      });
     },
     handleDeleteFurniture: (id) => {
+      if (!isHost) {
+        console.log('⚠️ 호스트만 가구를 삭제할 수 있습니다');
+        return;
+      }
       if (id) {
-        setFurniture(prev => prev.filter(f => f.id !== id));
+        setFurniture(prev => {
+          const updated = prev.filter(f => f.id !== id);
+          saveToServer(updated);
+          onFurnitureUpdate?.(updated);
+          return updated;
+        });
         setSelectedFurniture(null);
       }
     },
@@ -131,7 +206,7 @@ const PersonalRoom3D = forwardRef(function PersonalRoom3D({ roomData, onExit, on
         onDeleteRoom(roomData.roomId);
       }
     },
-  }), [furniture, editMode, selectedFurniture, showToolbar, showInventory, showFurnitureList, showDeleteConfirm, isHost, roomData, onDeleteRoom]);
+  }), [furniture, editMode, selectedFurniture, showToolbar, showInventory, showFurnitureList, showDeleteConfirm, isHost, roomData, onDeleteRoom, saveToServer, onFurnitureUpdate]);
   
   // 방 입장 시 가구 데이터 로드
   useEffect(() => {
@@ -203,45 +278,24 @@ const PersonalRoom3D = forwardRef(function PersonalRoom3D({ roomData, onExit, on
     return () => clearTimeout(initialDelay);
   }, [roomData?.roomId, isHost, userId]);
   
-  // 가구 변경 시 서버에 저장 (디바운스 적용)
-  const saveFurnituresToServer = useCallback(async (updatedFurniture) => {
-    if (!isHost) {
-      console.log('⚠️ 호스트가 아니라서 저장 스킵');
-      return;
-    }
-    if (!roomData?.roomId) {
-      console.log('⚠️ roomId가 없어서 저장 스킵');
-      return;
-    }
-    
-    console.log('📝 가구 저장 예약 - roomId:', roomData.roomId, '가구 수:', updatedFurniture.length);
-    
-    // 이전 타이머 취소
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    // 500ms 디바운스
-    saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        const serverFurnitures = updatedFurniture.map(localToServerFurniture);
-        console.log('💾 서버에 저장 중...', serverFurnitures);
-        const result = await multiplayerService.saveFurnitures(roomData.roomId, serverFurnitures);
-        console.log('💾 가구 변경사항 서버에 저장됨:', result);
-      } catch (error) {
-        console.error('❌ 가구 저장 실패:', error);
-      }
-    }, 500);
-  }, [isHost, roomData?.roomId]);
-  
-  // 컴포넌트 언마운트 시 타이머 정리
+  // 컴포넌트 언마운트 시 즉시 저장 및 타이머 정리
   useEffect(() => {
     return () => {
+      // 타이머가 있으면 즉시 실행하고 취소
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        
+        // 즉시 저장 (언마운트 시)
+        if (isHost && roomData?.roomId && furniture.length > 0) {
+          const serverFurnitures = furniture.map(localToServerFurniture);
+          console.log('💾 방 나가기 전 즉시 저장:', serverFurnitures);
+          multiplayerService.saveFurnitures(roomData.roomId, serverFurnitures)
+            .then(result => console.log('✅ 최종 저장 완료:', result))
+            .catch(error => console.error('❌ 최종 저장 실패:', error));
+        }
       }
     };
-  }, []);
+  }, [isHost, roomData?.roomId, furniture]);
   
   // 캐릭터 위치 기반 근처 가구 감지 (useFrame 사용)
   useFrame(() => {
@@ -301,13 +355,13 @@ const PersonalRoom3D = forwardRef(function PersonalRoom3D({ roomData, onExit, on
       const newItem = { ...placingFurniture, position };
       setFurniture(prev => {
         const updated = [...prev, newItem];
-        saveFurnituresToServer(updated);
+        saveToServer(updated);
         return updated;
       });
       setPlacingFurniture(null);
       onFurnitureUpdate?.([...furniture, newItem]);
     }
-  }, [placingFurniture, furniture, onFurnitureUpdate, isHost, saveFurnituresToServer]);
+  }, [placingFurniture, furniture, onFurnitureUpdate, isHost, saveToServer]);
 
   // 가구 선택 (호스트만 편집 가능)
   const handleSelectFurniture = useCallback((id) => {
@@ -323,11 +377,11 @@ const PersonalRoom3D = forwardRef(function PersonalRoom3D({ roomData, onExit, on
       const updated = prev.map(f => 
         f.id === id ? { ...f, position: newPosition } : f
       );
-      saveFurnituresToServer(updated);
+      saveToServer(updated);
       onFurnitureUpdate?.(updated);
       return updated;
     });
-  }, [onFurnitureUpdate, isHost, saveFurnituresToServer]);
+  }, [onFurnitureUpdate, isHost, saveToServer]);
 
   // 가구 회전
   const handleRotateFurniture = useCallback((id, direction = 1) => {
@@ -340,23 +394,23 @@ const PersonalRoom3D = forwardRef(function PersonalRoom3D({ roomData, onExit, on
         }
         return f;
       });
-      saveFurnituresToServer(updated);
+      saveToServer(updated);
       onFurnitureUpdate?.(updated);
       return updated;
     });
-  }, [onFurnitureUpdate, isHost, saveFurnituresToServer]);
+  }, [onFurnitureUpdate, isHost, saveToServer]);
 
   // 가구 삭제
   const handleDeleteFurniture = useCallback((id) => {
     if (!isHost) return;
     setFurniture(prev => {
       const updated = prev.filter(f => f.id !== id);
-      saveFurnituresToServer(updated);
+      saveToServer(updated);
       onFurnitureUpdate?.(updated);
       return updated;
     });
     setSelectedFurniture(null);
-  }, [onFurnitureUpdate, isHost, saveFurnituresToServer]);
+  }, [onFurnitureUpdate, isHost, saveToServer]);
 
   // 키보드 이벤트
   useEffect(() => {
@@ -601,6 +655,7 @@ function DraggableFurniture({ id, type, position, rotation, editMode, isSelected
   const groupRef = useRef();
   const rigidBodyRef = useRef();
   const [isDragging, setIsDragging] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState(null);
   const { camera, raycaster, pointer, gl } = useThree();
   const planeRef = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
   const intersectPoint = useRef(new THREE.Vector3());
@@ -613,19 +668,33 @@ function DraggableFurniture({ id, type, position, rotation, editMode, isSelected
     
     if (isSelected) {
       setIsDragging(true);
+      setDragStartPos(position);
       gl.domElement.style.cursor = 'grabbing';
     }
-  }, [editMode, isSelected, onSelect, gl]);
+  }, [editMode, isSelected, onSelect, gl, position]);
 
-  // 마우스 업 핸들러
+  // 마우스 업 핸들러 (드래그 종료 시 저장)
   const handlePointerUp = useCallback(() => {
     if (isDragging) {
       setIsDragging(false);
       gl.domElement.style.cursor = 'auto';
+      
+      // 드래그 종료 시 최종 위치만 저장
+      if (rigidBodyRef.current && dragStartPos) {
+        const translation = rigidBodyRef.current.translation();
+        const finalPos = [translation.x, translation.y, translation.z];
+        
+        // 위치가 실제로 변경된 경우에만 저장
+        const moved = Math.abs(finalPos[0] - dragStartPos[0]) > 0.01 || 
+                      Math.abs(finalPos[2] - dragStartPos[2]) > 0.01;
+        if (moved) {
+          onMove(finalPos);
+        }
+      }
     }
-  }, [isDragging, gl]);
+  }, [isDragging, gl, dragStartPos, onMove]);
 
-  // 드래그 중 프레임 업데이트
+  // 드래그 중 프레임 업데이트 (저장하지 않고 위치만 업데이트)
   useFrame(() => {
     if (isDragging && rigidBodyRef.current) {
       raycaster.setFromCamera(pointer, camera);
@@ -635,8 +704,8 @@ function DraggableFurniture({ id, type, position, rotation, editMode, isSelected
       const clampedX = Math.max(-18, Math.min(18, intersectPoint.current.x));
       const clampedZ = Math.max(-18, Math.min(18, intersectPoint.current.z));
       
+      // 드래그 중에는 물리 엔진 위치만 업데이트 (저장은 하지 않음)
       rigidBodyRef.current.setTranslation({ x: clampedX, y: position[1], z: clampedZ }, true);
-      onMove([clampedX, position[1], clampedZ]);
     }
   });
 
