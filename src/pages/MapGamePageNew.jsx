@@ -1328,11 +1328,53 @@ export default MapGamePageNew;
 /**
  * 개인 룸 카메라 컨트롤러
  * 더 가까운 시점으로 캐릭터를 따라감
+ * 벽 충돌 감지로 방 밖이 보이지 않도록 처리
  */
 function PersonalRoomCamera({ characterStateRef }) {
-  const { camera } = useThree();
+  const { camera, raycaster } = useThree();
   const cameraOffset = new THREE.Vector3(0, 10, 12); // 개인 룸용 카메라 오프셋 (위에서 보는 시점)
   const targetPositionRef = useRef(new THREE.Vector3());
+
+  // 방 경계
+  const ROOM_BOUNDS = {
+    minX: -19.5,
+    maxX: 19.5,
+    minZ: -19.5,
+    maxZ: 19.5,
+    minY: 1,
+    maxY: 40,
+  };
+
+  /**
+   * 카메라 위치를 방 경계 내로 제한
+   */
+  const clampCameraToRoom = (position) => {
+    return new THREE.Vector3(
+      Math.max(ROOM_BOUNDS.minX, Math.min(ROOM_BOUNDS.maxX, position.x)),
+      Math.max(ROOM_BOUNDS.minY, Math.min(ROOM_BOUNDS.maxY, position.y)),
+      Math.max(ROOM_BOUNDS.minZ, Math.min(ROOM_BOUNDS.maxZ, position.z))
+    );
+  };
+
+  /**
+   * 카메라가 벽에 가까운지 확인하고 필요시 줌인
+   */
+  const checkWallCollision = (characterPos, cameraPos) => {
+    const margin = 3; // 벽으로부터의 안전 거리
+    const isNearWall = 
+      cameraPos.x < ROOM_BOUNDS.minX + margin ||
+      cameraPos.x > ROOM_BOUNDS.maxX - margin ||
+      cameraPos.z < ROOM_BOUNDS.minZ + margin ||
+      cameraPos.z > ROOM_BOUNDS.maxZ - margin;
+
+    if (isNearWall) {
+      const distance = characterPos.distanceTo(cameraPos);
+      const safeDistance = distance * 0.6; // 원래 거리의 60%로 줌인
+      return { hasCollision: true, distance: safeDistance };
+    }
+
+    return { hasCollision: false, distance: 0 };
+  };
 
   useFrame((state, delta) => {
     if (!characterStateRef.current) return;
@@ -1345,9 +1387,24 @@ function PersonalRoomCamera({ characterStateRef }) {
     targetPositionRef.current.lerp(characterPosition, delta * 10.0);
 
     // 타겟 위치에 오프셋을 더해서 카메라 위치 계산
-    const targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
+    let targetCameraPosition = targetPositionRef.current.clone().add(cameraOffset);
 
-    // 부드러운 카메라 이동 (메인 맵과 동일)
+    // 벽 충돌 감지 및 카메라 조정
+    const collision = checkWallCollision(targetPositionRef.current, targetCameraPosition);
+    
+    if (collision.hasCollision) {
+      // 벽이 감지되면 카메라를 캐릭터 쪽으로 이동 (줌인)
+      const direction = new THREE.Vector3()
+        .subVectors(targetCameraPosition, targetPositionRef.current)
+        .normalize();
+      targetCameraPosition = targetPositionRef.current.clone()
+        .add(direction.multiplyScalar(collision.distance));
+    }
+
+    // 카메라 위치를 방 경계 내로 제한
+    targetCameraPosition = clampCameraToRoom(targetCameraPosition);
+
+    // 부드러운 카메라 이동
     camera.position.lerp(targetCameraPosition, delta * 5.0);
 
     // 캐릭터를 바라봄

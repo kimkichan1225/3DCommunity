@@ -452,13 +452,18 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
         {showToolbar && (
           <div style={{
             position: 'fixed',
-            top: 60,
+            top: 56,
             right: 16,
             display: 'flex',
             flexDirection: 'column',
             gap: 6,
             pointerEvents: 'auto',
             zIndex: 99,
+            background: 'rgba(20, 20, 35, 0.9)',
+            padding: '10px',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
           }}>
             <button
               onClick={() => {
@@ -466,7 +471,7 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
                 if (!editMode) setShowToolbar(true);
               }}
               style={{
-                background: editMode ? 'rgba(255, 165, 0, 0.9)' : 'rgba(50, 50, 70, 0.85)',
+                background: editMode ? 'rgba(255, 165, 0, 0.9)' : 'rgba(60, 60, 80, 0.9)',
                 border: 'none',
                 borderRadius: 8,
                 padding: '10px 14px',
@@ -478,7 +483,7 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
                 alignItems: 'center',
                 gap: 6,
                 transition: 'all 0.2s',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                minWidth: 100,
               }}
             >
               {editMode ? '✅ 편집중' : '🔧 편집'}
@@ -487,7 +492,7 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
             <button
               onClick={() => setShowInventory(!showInventory)}
               style={{
-                background: showInventory ? 'rgba(74, 144, 217, 0.9)' : 'rgba(50, 50, 70, 0.85)',
+                background: showInventory ? 'rgba(74, 144, 217, 0.9)' : 'rgba(60, 60, 80, 0.9)',
                 border: 'none',
                 borderRadius: 8,
                 padding: '10px 14px',
@@ -499,7 +504,7 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
                 alignItems: 'center',
                 gap: 6,
                 transition: 'all 0.2s',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                minWidth: 100,
               }}
             >
               🪑 가구
@@ -510,7 +515,7 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 style={{
-                  background: 'rgba(200, 50, 50, 0.85)',
+                  background: 'rgba(180, 50, 50, 0.9)',
                   border: 'none',
                   borderRadius: 8,
                   padding: '10px 14px',
@@ -522,14 +527,14 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
                   alignItems: 'center',
                   gap: 6,
                   transition: 'all 0.2s',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                  marginTop: 10,
+                  marginTop: 6,
+                  minWidth: 100,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(220, 60, 60, 0.95)';
+                  e.currentTarget.style.background = 'rgba(200, 60, 60, 0.95)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(200, 50, 50, 0.85)';
+                  e.currentTarget.style.background = 'rgba(180, 50, 50, 0.9)';
                 }}
               >
                 🗑️ 방 삭제
@@ -649,30 +654,30 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
           </div>
         )}
         
-        {/* 근처 가구 상호작용 프롬프트 - 우측 상단 */}
+        {/* 근처 가구 상호작용 프롬프트 - 우측 상단 (툴바 아래) */}
         {nearbyFurniture && !editMode && (
           <div style={{
             position: 'fixed',
-            top: 70,
+            top: 120,
             right: 16,
             background: 'rgba(30, 30, 50, 0.95)',
-            padding: '12px 16px',
+            padding: '12px 14px',
             borderRadius: 12,
             border: '2px solid #4a90d9',
             color: '#fff',
             pointerEvents: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: 10,
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-            maxWidth: 200,
+            gap: 8,
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
+            width: 160,
             zIndex: 98,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 24 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.icon}</span>
+              <span style={{ fontSize: 20 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.icon}</span>
               <div>
-                <div style={{ fontWeight: 'bold', fontSize: 13 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.name}</div>
-                <div style={{ fontSize: 10, opacity: 0.7 }}>E키로 편집 모드 전환</div>
+                <div style={{ fontWeight: 'bold', fontSize: 12 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.name}</div>
+                <div style={{ fontSize: 9, opacity: 0.7 }}>E키로 편집</div>
               </div>
             </div>
             <button
@@ -684,10 +689,10 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
                 background: 'linear-gradient(135deg, #4a90d9, #357abd)',
                 border: 'none',
                 borderRadius: 8,
-                padding: '8px 16px',
+                padding: '8px 12px',
                 color: '#fff',
                 cursor: 'pointer',
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 'bold',
                 transition: 'all 0.2s',
                 width: '100%',
@@ -793,7 +798,7 @@ function FurnitureInventory({ onSelect, onClose }) {
 }
 
 /**
- * 선택된 가구 정보 UI
+ * 선택된 가구 정보 UI - 우측 상단에 컴팩트하게 표시
  */
 function SelectedFurnitureInfo({ furniture, onRotate, onDelete }) {
   if (!furniture) return null;
@@ -803,66 +808,94 @@ function SelectedFurnitureInfo({ furniture, onRotate, onDelete }) {
   return (
     <div style={{
       position: 'fixed',
-      bottom: 200,
-      left: '50%',
-      transform: 'translateX(-50%)',
+      top: 120,
+      right: 16,
       background: 'rgba(30, 30, 50, 0.95)',
-      padding: '16px 24px',
-      borderRadius: 16,
+      padding: '14px 16px',
+      borderRadius: 12,
       border: '2px solid #FFA500',
       color: '#fff',
       pointerEvents: 'auto',
-      boxShadow: '0 4px 20px rgba(255, 165, 0, 0.3)',
+      boxShadow: '0 4px 16px rgba(255, 165, 0, 0.3)',
+      width: 180,
+      zIndex: 97,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 32 }}>{typeInfo?.icon}</span>
-          <div>
-            <div style={{ fontWeight: 'bold', fontSize: 15 }}>{typeInfo?.name} 선택됨</div>
-            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>
-              드래그하여 이동 | 위치: ({furniture.position.map(p => p.toFixed(1)).join(', ')})
-            </div>
+      {/* 헤더 */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 8,
+        marginBottom: 10,
+        paddingBottom: 10,
+        borderBottom: '1px solid rgba(255, 165, 0, 0.3)',
+      }}>
+        <span style={{ fontSize: 24 }}>{typeInfo?.icon}</span>
+        <div>
+          <div style={{ fontWeight: 'bold', fontSize: 13 }}>{typeInfo?.name}</div>
+          <div style={{ fontSize: 9, opacity: 0.6 }}>
+            ({furniture.position.map(p => p.toFixed(1)).join(', ')})
           </div>
         </div>
-        
-        <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
-          <button
-            onClick={onRotate}
-            style={{
-              background: 'linear-gradient(135deg, #4a90d9, #357abd)',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 16px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            🔄 회전 (R)
-          </button>
-          <button
-            onClick={onDelete}
-            style={{
-              background: 'linear-gradient(135deg, #d94a4a, #c43c3c)',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 16px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            🗑️ 삭제
-          </button>
-        </div>
+      </div>
+      
+      {/* 안내 텍스트 */}
+      <div style={{ 
+        fontSize: 10, 
+        opacity: 0.7, 
+        marginBottom: 10,
+        lineHeight: 1.4,
+      }}>
+        드래그하여 이동
+      </div>
+      
+      {/* 버튼들 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <button
+          onClick={onRotate}
+          style={{
+            background: 'linear-gradient(135deg, #4a90d9, #357abd)',
+            border: 'none',
+            borderRadius: 8,
+            padding: '10px 12px',
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            width: '100%',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          🔄 회전 (R)
+        </button>
+        <button
+          onClick={onDelete}
+          style={{
+            background: 'linear-gradient(135deg, #d94a4a, #c43c3c)',
+            border: 'none',
+            borderRadius: 8,
+            padding: '10px 12px',
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            width: '100%',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          🗑️ 삭제
+        </button>
       </div>
     </div>
   );

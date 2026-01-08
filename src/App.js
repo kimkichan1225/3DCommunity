@@ -1243,6 +1243,7 @@ function App() {
                 characterRef={characterRef}
                 mainCameraRef={mainCameraRef}
                 isLoggedIn={isLoggedIn}
+                inPersonalRoom={false} // TODO: 개인 방 진입 시 true로 변경
               />
               {/* 지도 모드일 때만 MapFloor 렌더링 */}
               {isMapFull && <MapFloor />}
