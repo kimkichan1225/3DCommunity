@@ -42,6 +42,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/h2-console/**", "/error").permitAll()
                         .requestMatchers("/api/boards/**", "/api/posts/**").permitAll()
                         .requestMatchers("/api/comments/**", "/api/likes/**").permitAll()
+                        .requestMatchers("/api/rooms/**").permitAll() // 개인 룸 및 가구 API 허용
+                        .requestMatchers("/api/users/**").permitAll() // 사용자 API 허용
                         .requestMatchers("/resources/**").permitAll() // 이미지 리소스 허용 추가
                         .requestMatchers("/ws/**").permitAll() // WebSocket endpoints
                         .requestMatchers("/actuator/health/**").permitAll() // Health check endpoint

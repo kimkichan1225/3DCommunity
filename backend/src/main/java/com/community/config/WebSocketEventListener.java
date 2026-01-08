@@ -1,9 +1,7 @@
 package com.community.config;
 
 import com.community.dto.PlayerJoinDto;
-import com.community.dto.RoomDto;
 import com.community.service.ActiveUserService;
-import com.community.service.PersonalRoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -20,7 +18,6 @@ public class WebSocketEventListener {
 
     private final SimpMessageSendingOperations messagingTemplate;
     private final ActiveUserService activeUserService;
-    private final PersonalRoomService personalRoomService;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
@@ -45,14 +42,9 @@ public class WebSocketEventListener {
                         userId, activeUserService.getActiveUserCount());
             }
 
-            // 사용자가 호스트인 방이 있으면 삭제
-            RoomDto deletedRoom = personalRoomService.deleteRoomByHostId(userId);
-            if (deletedRoom != null) {
-                log.info("Deleted room {} owned by disconnected user {}", 
-                        deletedRoom.getRoomId(), userId);
-                // 다른 플레이어들에게 방 삭제 알림
-                messagingTemplate.convertAndSend("/topic/rooms", deletedRoom);
-            }
+            // 개인 룸은 호스트가 나가도 삭제하지 않음 (명시적인 삭제 요청 시에만 삭제)
+            // 방은 DB에 영구 저장되어 호스트가 다시 접속하면 기존 방을 사용할 수 있음
+            log.info("User {} disconnected but personal room preserved (if any)", userId);
 
             // 다른 플레이어들에게 퇴장 알림
             PlayerJoinDto leaveDto = new PlayerJoinDto();

@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Sky, Environment, Text, Billboard, Html } from '@react-three/drei';
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
+import multiplayerService from '../../services/multiplayerService';
 
 // 가구 타입 정의
 const FURNITURE_TYPES = {
@@ -17,8 +18,8 @@ const FURNITURE_TYPES = {
   bed: { name: '침대', icon: '🛏️', defaultScale: [1, 1, 1] },
 };
 
-// 초기 가구 배치
-const INITIAL_FURNITURE = [
+// 초기 가구 배치 (기본값, 방이 처음 생성될 때만 사용)
+const DEFAULT_FURNITURE = [
   { id: 'sofa-1', type: 'sofa', position: [10, 0, 0], rotation: [0, -Math.PI / 2, 0] },
   { id: 'table-1', type: 'table', position: [5, 0, 0], rotation: [0, 0, 0] },
   { id: 'bookshelf-1', type: 'bookshelf', position: [-16, 0, -16], rotation: [0, Math.PI / 4, 0] },
@@ -31,18 +32,162 @@ const INITIAL_FURNITURE = [
   { id: 'lamp-2', type: 'lamp', position: [-14, 0, -14], rotation: [0, 0, 0] },
 ];
 
+// 서버 가구 데이터를 로컬 형식으로 변환
+const serverToLocalFurniture = (serverFurniture) => ({
+  id: serverFurniture.furnitureId,
+  type: serverFurniture.furnitureType,
+  position: [serverFurniture.posX, serverFurniture.posY, serverFurniture.posZ],
+  rotation: [serverFurniture.rotX, serverFurniture.rotY, serverFurniture.rotZ],
+  scale: [serverFurniture.scaleX, serverFurniture.scaleY, serverFurniture.scaleZ],
+  isVisible: serverFurniture.isVisible,
+  color: serverFurniture.color,
+});
+
+// 로컬 가구 데이터를 서버 형식으로 변환
+const localToServerFurniture = (localFurniture) => ({
+  furnitureId: localFurniture.id,
+  furnitureType: localFurniture.type,
+  posX: localFurniture.position[0],
+  posY: localFurniture.position[1],
+  posZ: localFurniture.position[2],
+  rotX: localFurniture.rotation[0],
+  rotY: localFurniture.rotation[1],
+  rotZ: localFurniture.rotation[2],
+  scaleX: localFurniture.scale?.[0] ?? 1,
+  scaleY: localFurniture.scale?.[1] ?? 1,
+  scaleZ: localFurniture.scale?.[2] ?? 1,
+  isVisible: localFurniture.isVisible ?? true,
+  color: localFurniture.color,
+});
+
 /**
  * PersonalRoom3D - 개인 룸 3D 환경 (물리 + 가구 배치 기능)
  */
-function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef }) {
-  const [furniture, setFurniture] = useState(INITIAL_FURNITURE);
+function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef, userId, onDeleteRoom }) {
+  const [furniture, setFurniture] = useState([]);
+  const [furnitureLoaded, setFurnitureLoaded] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedFurniture, setSelectedFurniture] = useState(null);
   const [placingFurniture, setPlacingFurniture] = useState(null);
   const [showInventory, setShowInventory] = useState(false);
   const [nearbyFurniture, setNearbyFurniture] = useState(null);
   const [showToolbar, setShowToolbar] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const lastCheckTimeRef = useRef(0);
+  const saveTimeoutRef = useRef(null);
+  
+  // 호스트인지 확인
+  const isHost = roomData?.hostId === userId;
+  
+  // 방 입장 시 가구 데이터 로드
+  useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const loadFurnitures = async () => {
+      if (!roomData?.roomId) {
+        console.log('⚠️ roomId가 없어서 가구 로드 스킵');
+        return;
+      }
+      
+      console.log('🔍 가구 로드 시작 - roomId:', roomData.roomId, 'hostId:', roomData.hostId, 'userId:', userId, 'isHost:', isHost, '시도:', retryCount + 1);
+      
+      try {
+        const serverFurnitures = await multiplayerService.fetchFurnitures(roomData.roomId);
+        console.log('📥 서버 응답:', serverFurnitures);
+        
+        if (serverFurnitures && serverFurnitures.length > 0) {
+          // 서버에서 가구 데이터 로드
+          const localFurnitures = serverFurnitures
+            .filter(f => f.isVisible !== false)
+            .map(serverToLocalFurniture);
+          setFurniture(localFurnitures);
+          console.log('🛋️ 서버에서 가구 로드 완료:', localFurnitures.length, '개', localFurnitures);
+          setFurnitureLoaded(true);
+        } else {
+          // 서버에 가구 데이터가 없으면 기본 가구 배치 + 저장 시도
+          console.log('🛋️ 서버에 가구 없음, 기본 가구 배치 시도');
+          
+          // 호스트인 경우 기본 가구를 서버에 저장 시도
+          if (isHost) {
+            console.log('💾 호스트이므로 기본 가구 서버에 저장 시도...');
+            const serverFurnituresData = DEFAULT_FURNITURE.map(localToServerFurniture);
+            const saveResult = await multiplayerService.saveFurnitures(roomData.roomId, serverFurnituresData);
+            console.log('💾 기본 가구 서버 저장 결과:', saveResult);
+            
+            // 저장 실패 시 (방이 아직 DB에 없을 수 있음) 재시도
+            if ((!saveResult || saveResult.length === 0) && retryCount < maxRetries) {
+              retryCount++;
+              console.log(`⏳ 저장 실패, ${retryCount}초 후 재시도... (${retryCount}/${maxRetries})`);
+              setTimeout(loadFurnitures, 1000 * retryCount);
+              return;
+            }
+          }
+          
+          setFurniture(DEFAULT_FURNITURE);
+          setFurnitureLoaded(true);
+        }
+      } catch (error) {
+        console.error('❌ 가구 로드 실패:', error);
+        
+        // 에러 발생 시 재시도
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`⏳ 에러 발생, ${retryCount}초 후 재시도... (${retryCount}/${maxRetries})`);
+          setTimeout(loadFurnitures, 1000 * retryCount);
+          return;
+        }
+        
+        setFurniture(DEFAULT_FURNITURE);
+        setFurnitureLoaded(true);
+      }
+    };
+    
+    // 약간의 지연 후 로드 시작 (방 생성 후 DB 저장 대기)
+    const initialDelay = setTimeout(loadFurnitures, 500);
+    
+    return () => clearTimeout(initialDelay);
+  }, [roomData?.roomId, isHost, userId]);
+  
+  // 가구 변경 시 서버에 저장 (디바운스 적용)
+  const saveFurnituresToServer = useCallback(async (updatedFurniture) => {
+    if (!isHost) {
+      console.log('⚠️ 호스트가 아니라서 저장 스킵');
+      return;
+    }
+    if (!roomData?.roomId) {
+      console.log('⚠️ roomId가 없어서 저장 스킵');
+      return;
+    }
+    
+    console.log('📝 가구 저장 예약 - roomId:', roomData.roomId, '가구 수:', updatedFurniture.length);
+    
+    // 이전 타이머 취소
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // 500ms 디바운스
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const serverFurnitures = updatedFurniture.map(localToServerFurniture);
+        console.log('💾 서버에 저장 중...', serverFurnitures);
+        const result = await multiplayerService.saveFurnitures(roomData.roomId, serverFurnitures);
+        console.log('💾 가구 변경사항 서버에 저장됨:', result);
+      } catch (error) {
+        console.error('❌ 가구 저장 실패:', error);
+      }
+    }, 500);
+  }, [isHost, roomData?.roomId]);
+  
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
   
   // 캐릭터 위치 기반 근처 가구 감지 (useFrame 사용)
   useFrame(() => {
@@ -80,8 +225,12 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
     }
   });
 
-  // 가구 추가
+  // 가구 추가 (호스트만 가능)
   const handleAddFurniture = useCallback((type) => {
+    if (!isHost) {
+      console.log('⚠️ 호스트만 가구를 추가할 수 있습니다');
+      return;
+    }
     const newFurniture = {
       id: `${type}-${Date.now()}`,
       type,
@@ -90,38 +239,45 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
     };
     setPlacingFurniture(newFurniture);
     setShowInventory(false);
-  }, []);
+  }, [isHost]);
 
   // 가구 배치 확정
   const handlePlaceFurniture = useCallback((position) => {
-    if (placingFurniture) {
+    if (placingFurniture && isHost) {
       const newItem = { ...placingFurniture, position };
-      setFurniture(prev => [...prev, newItem]);
+      setFurniture(prev => {
+        const updated = [...prev, newItem];
+        saveFurnituresToServer(updated);
+        return updated;
+      });
       setPlacingFurniture(null);
       onFurnitureUpdate?.([...furniture, newItem]);
     }
-  }, [placingFurniture, furniture, onFurnitureUpdate]);
+  }, [placingFurniture, furniture, onFurnitureUpdate, isHost, saveFurnituresToServer]);
 
-  // 가구 선택
+  // 가구 선택 (호스트만 편집 가능)
   const handleSelectFurniture = useCallback((id) => {
-    if (editMode) {
+    if (editMode && isHost) {
       setSelectedFurniture(selectedFurniture === id ? null : id);
     }
-  }, [editMode, selectedFurniture]);
+  }, [editMode, selectedFurniture, isHost]);
 
   // 가구 이동
   const handleMoveFurniture = useCallback((id, newPosition) => {
+    if (!isHost) return;
     setFurniture(prev => {
       const updated = prev.map(f => 
         f.id === id ? { ...f, position: newPosition } : f
       );
+      saveFurnituresToServer(updated);
       onFurnitureUpdate?.(updated);
       return updated;
     });
-  }, [onFurnitureUpdate]);
+  }, [onFurnitureUpdate, isHost, saveFurnituresToServer]);
 
   // 가구 회전
   const handleRotateFurniture = useCallback((id, direction = 1) => {
+    if (!isHost) return;
     setFurniture(prev => {
       const updated = prev.map(f => {
         if (f.id === id) {
@@ -130,20 +286,23 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
         }
         return f;
       });
+      saveFurnituresToServer(updated);
       onFurnitureUpdate?.(updated);
       return updated;
     });
-  }, [onFurnitureUpdate]);
+  }, [onFurnitureUpdate, isHost, saveFurnituresToServer]);
 
   // 가구 삭제
   const handleDeleteFurniture = useCallback((id) => {
+    if (!isHost) return;
     setFurniture(prev => {
       const updated = prev.filter(f => f.id !== id);
+      saveFurnituresToServer(updated);
       onFurnitureUpdate?.(updated);
       return updated;
     });
     setSelectedFurniture(null);
-  }, [onFurnitureUpdate]);
+  }, [onFurnitureUpdate, isHost, saveFurnituresToServer]);
 
   // 키보드 이벤트
   useEffect(() => {
@@ -161,6 +320,11 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
         setPlacingFurniture(null);
         setShowInventory(false);
       }
+      // F키로 방 나가기
+      if (e.key === 'f' || e.key === 'F') {
+        console.log('🚪 F키로 방 나가기 시도');
+        onExit?.();
+      }
       if (selectedFurniture) {
         if (e.key === 'r' || e.key === 'R') {
           handleRotateFurniture(selectedFurniture, 1);
@@ -173,7 +337,7 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedFurniture, handleRotateFurniture, handleDeleteFurniture]);
+  }, [selectedFurniture, handleRotateFurniture, handleDeleteFurniture, onExit]);
 
   return (
     <>
@@ -340,6 +504,106 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
             >
               🪑 가구
             </button>
+            
+            {/* 방 삭제 버튼 (호스트만) */}
+            {isHost && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  background: 'rgba(200, 50, 50, 0.85)',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  marginTop: 10,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(220, 60, 60, 0.95)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(200, 50, 50, 0.85)';
+                }}
+              >
+                🗑️ 방 삭제
+              </button>
+            )}
+          </div>
+        )}
+        
+        {/* 방 삭제 확인 모달 */}
+        {showDeleteConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            pointerEvents: 'auto',
+          }}>
+            <div style={{
+              background: 'rgba(40, 40, 60, 0.98)',
+              padding: '24px 32px',
+              borderRadius: 16,
+              border: '2px solid #ff4444',
+              maxWidth: 400,
+              textAlign: 'center',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+            }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+              <h3 style={{ color: '#fff', margin: '0 0 12px', fontSize: 18 }}>정말 방을 삭제하시겠습니까?</h3>
+              <p style={{ color: '#aaa', fontSize: 14, margin: '0 0 24px', lineHeight: 1.5 }}>
+                방을 삭제하면 배치한 모든 가구와 설정이 영구적으로 삭제됩니다.<br/>
+                이 작업은 되돌릴 수 없습니다.
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{
+                    background: 'rgba(100, 100, 100, 0.8)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '12px 24px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: '600',
+                  }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    onDeleteRoom?.(roomData?.roomId);
+                  }}
+                  style={{
+                    background: 'rgba(220, 60, 60, 0.9)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '12px 24px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: '600',
+                  }}
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
           </div>
         )}
         
@@ -385,29 +649,30 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
           </div>
         )}
         
-        {/* 근처 가구 상호작용 프롬프트 */}
+        {/* 근처 가구 상호작용 프롬프트 - 우측 상단 */}
         {nearbyFurniture && !editMode && (
           <div style={{
             position: 'fixed',
-            bottom: 200,
-            left: '50%',
-            transform: 'translateX(-50%)',
+            top: 70,
+            right: 16,
             background: 'rgba(30, 30, 50, 0.95)',
-            padding: '12px 24px',
+            padding: '12px 16px',
             borderRadius: 12,
             border: '2px solid #4a90d9',
             color: '#fff',
             pointerEvents: 'auto',
             display: 'flex',
-            alignItems: 'center',
-            gap: 16,
+            flexDirection: 'column',
+            gap: 10,
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+            maxWidth: 200,
+            zIndex: 98,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 28 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.icon}</span>
+              <span style={{ fontSize: 24 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.icon}</span>
               <div>
-                <div style={{ fontWeight: 'bold', fontSize: 14 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.name}</div>
-                <div style={{ fontSize: 11, opacity: 0.7 }}>이동하려면 E키를 눌러 편집 모드로 전환</div>
+                <div style={{ fontWeight: 'bold', fontSize: 13 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.name}</div>
+                <div style={{ fontSize: 10, opacity: 0.7 }}>E키로 편집 모드 전환</div>
               </div>
             </div>
             <button
@@ -419,12 +684,13 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
                 background: 'linear-gradient(135deg, #4a90d9, #357abd)',
                 border: 'none',
                 borderRadius: 8,
-                padding: '10px 20px',
+                padding: '8px 16px',
                 color: '#fff',
                 cursor: 'pointer',
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 'bold',
                 transition: 'all 0.2s',
+                width: '100%',
               }}
             >
               🔧 이동하기

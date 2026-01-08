@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './PersonalRoomModal.css';
 import PersonalRoomChat from './map/PersonalRoomChat';
+import multiplayerService from '../services/multiplayerService';
 
 /**
  * 개인 룸 모달 컴포넌트 (간소화 버전)
  * - 방 생성 버튼 클릭 시 바로 내 개인 룸 생성
+ * - 기존에 내 방이 있으면 기존 방으로 입장
  * - 친구 목록에서 초대
  */
 function PersonalRoomModal({ 
@@ -24,39 +26,93 @@ function PersonalRoomModal({
   const [roomMembers, setRoomMembers] = useState([]);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [myRoom, setMyRoom] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 초기화 - 'create' 모드면 바로 방 생성
+  // 초기화 - 'create' 모드면 기존 방 확인 후 방 생성 또는 입장
   useEffect(() => {
-    if (mode === 'create' && !myRoom && userProfile?.id) {
-      // 바로 방 생성
-      const roomData = {
-        roomId: `room_${userProfile.id}_${Date.now()}`,
-        roomName: `${userProfile.username || '나'}의 방`,
-        hostId: userProfile.id,
-        hostName: userProfile.username,
-        maxMembers: 6,
-        isPrivate: true,
-        members: [userProfile],
-        createdAt: new Date().toISOString()
-      };
-      
-      console.log('🏠 개인 룸 자동 생성:', roomData);
-      setMyRoom(roomData);
-      setRoomMembers([userProfile]);
-      setCurrentMode('waiting');
-      
-      // 약간의 지연 후 부모 컴포넌트에 알림 (상태 업데이트 완료 보장)
-      setTimeout(() => {
-        console.log('📢 부모 컴포넌트에 방 생성 알림:', roomData);
-        onCreateRoom?.(roomData);
-      }, 100);
-    } else if (mode === 'browse') {
-      setCurrentMode('browse');
-    } else if (currentRoom) {
-      setMyRoom(currentRoom);
-      setRoomMembers(currentRoom.members || [userProfile]);
-      setCurrentMode('waiting');
-    }
+    const checkAndCreateRoom = async () => {
+      if (mode === 'create' && !myRoom && userProfile?.id) {
+        setIsLoading(true);
+        
+        try {
+          // 기존 방이 있는지 확인
+          const existingData = await multiplayerService.checkHasRoom(userProfile.id);
+          
+          if (existingData.hasRoom && existingData.room) {
+            // 기존 방이 있으면 그 방으로 입장
+            console.log('🏠 기존 방 발견, 입장:', existingData.room);
+            const existingRoom = {
+              ...existingData.room,
+              members: [userProfile],
+            };
+            setMyRoom(existingRoom);
+            setRoomMembers([userProfile]);
+            setCurrentMode('waiting');
+            
+            // 부모 컴포넌트에 알림
+            setTimeout(() => {
+              console.log('📢 기존 방으로 입장:', existingRoom);
+              onCreateRoom?.(existingRoom);
+            }, 100);
+          } else {
+            // 기존 방이 없으면 새로 생성
+            const roomData = {
+              roomId: `room_${userProfile.id}_${Date.now()}`,
+              roomName: `${userProfile.username || '나'}의 방`,
+              hostId: userProfile.id,
+              hostName: userProfile.username,
+              maxMembers: 6,
+              isPrivate: true,
+              members: [userProfile],
+              createdAt: new Date().toISOString()
+            };
+            
+            console.log('🏠 새 개인 룸 생성:', roomData);
+            setMyRoom(roomData);
+            setRoomMembers([userProfile]);
+            setCurrentMode('waiting');
+            
+            // 부모 컴포넌트에 알림
+            setTimeout(() => {
+              console.log('📢 부모 컴포넌트에 방 생성 알림:', roomData);
+              onCreateRoom?.(roomData);
+            }, 100);
+          }
+        } catch (error) {
+          console.error('방 확인/생성 중 오류:', error);
+          // 오류 발생 시 새 방 생성
+          const roomData = {
+            roomId: `room_${userProfile.id}_${Date.now()}`,
+            roomName: `${userProfile.username || '나'}의 방`,
+            hostId: userProfile.id,
+            hostName: userProfile.username,
+            maxMembers: 6,
+            isPrivate: true,
+            members: [userProfile],
+            createdAt: new Date().toISOString()
+          };
+          
+          console.log('🏠 개인 룸 생성 (폴백):', roomData);
+          setMyRoom(roomData);
+          setRoomMembers([userProfile]);
+          setCurrentMode('waiting');
+          
+          setTimeout(() => {
+            onCreateRoom?.(roomData);
+          }, 100);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (mode === 'browse') {
+        setCurrentMode('browse');
+      } else if (currentRoom) {
+        setMyRoom(currentRoom);
+        setRoomMembers(currentRoom.members || [userProfile]);
+        setCurrentMode('waiting');
+      }
+    };
+    
+    checkAndCreateRoom();
   }, [mode, userProfile, currentRoom, onCreateRoom, myRoom]);
 
   // 친구 선택 토글
@@ -104,14 +160,37 @@ function PersonalRoomModal({
         {/* 헤더 */}
         <div className="personal-room-header">
           <h2>
-            {currentMode === 'waiting' && '🏠 내 개인 룸'}
-            {currentMode === 'browse' && '🔍 공개 룸 찾기'}
+            {isLoading && '⏳ 방 확인 중...'}
+            {!isLoading && currentMode === 'waiting' && '🏠 내 개인 룸'}
+            {!isLoading && currentMode === 'browse' && '🔍 공개 룸 찾기'}
           </h2>
           <button className="close-btn" onClick={onClose}>✕</button>
         </div>
 
+        {/* 로딩 중 */}
+        {isLoading && (
+          <div className="personal-room-content" style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div className="loading-spinner" style={{
+              width: 40,
+              height: 40,
+              border: '4px solid rgba(255,255,255,0.2)',
+              borderTop: '4px solid #00bcd4',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 20px'
+            }} />
+            <p style={{ color: '#aaa' }}>기존 방이 있는지 확인하고 있습니다...</p>
+            <style>{`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
+        )}
+
         {/* 대기실 모드 */}
-        {currentMode === 'waiting' && (
+        {!isLoading && currentMode === 'waiting' && (
           <div className="personal-room-content">
             <div className="room-info-banner">
               <span className="room-name-display">{myRoom?.roomName || `${userProfile?.username}의 방`}</span>
@@ -224,7 +303,7 @@ function PersonalRoomModal({
         )}
 
         {/* 공개 룸 찾기 모드 */}
-        {currentMode === 'browse' && (
+        {!isLoading && currentMode === 'browse' && (
           <div className="personal-room-content">
             <div className="public-rooms-list">
               {availableRooms.length === 0 ? (

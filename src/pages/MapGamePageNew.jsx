@@ -131,6 +131,12 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     setFriendsList(friendsFromPlayers);
   }, [otherPlayers]);
 
+  // isInPersonalRoom 상태 변경 모니터링
+  useEffect(() => {
+    console.log('📍 isInPersonalRoom 상태 변경:', isInPersonalRoom);
+    console.log('🏠 currentPersonalRoom:', currentPersonalRoom?.roomId);
+  }, [isInPersonalRoom]);
+
   // 멀티플레이어 서비스 콜백 설정 (App.js와 동일한 로직)
   useEffect(() => {
     console.log('🎮 MapGamePageNew: 멀티플레이어 콜백 설정...');
@@ -222,11 +228,39 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     const handleRoomUpdate = (data) => {
       console.log('🏠 방 업데이트 수신:', data);
       
-      if (data.action === 'create') {
-        // 자신이 만든 방은 이미 추가되어 있으므로 무시
+      if (data.action === 'create' || data.action === 'existing') {
+        // 자신이 만든 방인 경우 - 서버에서 반환된 roomId로 업데이트
         if (String(data.hostId) === String(userId)) {
-          console.log('자신이 만든 방 - 무시');
-          return;
+          console.log('✅ 자신의 방 - 서버 응답으로 업데이트:', data);
+          
+          // currentPersonalRoom의 roomId를 서버 응답의 roomId로 업데이트
+          setCurrentPersonalRoom(prev => {
+            if (prev) {
+              const oldRoomId = prev.roomId;
+              const updated = {
+                ...prev,
+                roomId: data.roomId, // 서버에서 반환된 실제 roomId 사용
+                roomName: data.roomName,
+              };
+              console.log('🔄 currentPersonalRoom 업데이트:', oldRoomId, '->', data.roomId);
+              
+              // nearbyRooms에서도 roomId 업데이트
+              if (oldRoomId !== data.roomId) {
+                setNearbyRooms(prevRooms => 
+                  prevRooms.map(r => 
+                    r.roomId === oldRoomId 
+                      ? { ...r, roomId: data.roomId, roomName: data.roomName }
+                      : r
+                  )
+                );
+              }
+              
+              return updated;
+            }
+            return prev;
+          });
+          
+          return; // 자신의 방은 이미 nearbyRooms에 추가했으므로 더 이상 처리 안함
         }
         
         // 다른 플레이어가 만든 방 추가
@@ -603,23 +637,49 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     // multiplayerService.sendInvite(friend.id, currentPersonalRoom);
   }, [currentPersonalRoom]);
 
-  // 개인 룸 나가기
+  // 개인 룸 나가기 (방은 유지, 그냥 나가기)
   const handleLeavePersonalRoom = useCallback(() => {
-    console.log('🚪 개인 룸 나가기');
-    if (currentPersonalRoom) {
-      // 방 목록에서 제거
-      setNearbyRooms(prev => prev.filter(r => r.roomId !== currentPersonalRoom.roomId));
-      
-      // WebSocket으로 다른 플레이어들에게 방 삭제 알림
-      if (multiplayerService.connected) {
-        multiplayerService.sendRoomDelete(currentPersonalRoom.roomId);
-        console.log('✅ 방 삭제 브로드캐스트 완료');
-      }
-    }
+    console.log('🚪 개인 룸 나가기 (방 유지)');
     setCurrentPersonalRoom(null);
     setIsInPersonalRoom(false); // 메인 맵으로 복귀
     setShowPersonalRoomModal(false);
-  }, [currentPersonalRoom]);
+  }, []);
+
+  // 개인 룸 완전 삭제 (호스트만 가능)
+  const handleDeleteRoom = useCallback(async (roomId) => {
+    if (!roomId || !userId) return;
+    
+    console.log('🗑️ 개인 룸 삭제 시작:', roomId);
+    
+    try {
+      // 서버에서 방 삭제
+      const result = await multiplayerService.deleteRoom(roomId, userId);
+      
+      if (result.success) {
+        console.log('✅ 방 삭제 성공');
+        
+        // 방 목록에서 제거
+        setNearbyRooms(prev => prev.filter(r => r.roomId !== roomId));
+        
+        // WebSocket으로 다른 플레이어들에게 방 삭제 알림
+        if (multiplayerService.connected) {
+          multiplayerService.sendRoomDelete(roomId);
+          console.log('📢 방 삭제 브로드캐스트 완료');
+        }
+        
+        // 상태 정리
+        setCurrentPersonalRoom(null);
+        setIsInPersonalRoom(false);
+        setShowPersonalRoomModal(false);
+      } else {
+        console.error('❌ 방 삭제 실패:', result.message);
+        alert('방 삭제에 실패했습니다: ' + (result.message || '알 수 없는 오류'));
+      }
+    } catch (error) {
+      console.error('❌ 방 삭제 중 오류:', error);
+      alert('방 삭제 중 오류가 발생했습니다.');
+    }
+  }, [userId]);
 
   // 개인 룸 채팅 메시지 처리 (말풍선 표시)
   const handleRoomChatMessage = useCallback((chatData) => {
@@ -666,10 +726,34 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
 
   // 개인 룸에서 나가기 (3D 뷰에서)
   const handleExitPersonalRoom = useCallback(() => {
-    console.log('🚪 개인 룸 3D에서 나가기');
+    console.log('🚪 개인 룸 3D에서 나가기 시작');
+    console.log('현재 상태 - isInPersonalRoom:', isInPersonalRoom, 'currentPersonalRoom:', currentPersonalRoom);
+    
+    // 캐릭터 위치를 메인 맵 스폰 포인트로 리셋
+    if (characterStateRef.current) {
+      characterStateRef.current.position = [0, 0, 0];
+      characterStateRef.current.rotationY = 0;
+      characterStateRef.current.isMoving = false;
+      console.log('📍 캐릭터 위치 리셋: [0, 0, 0]');
+    }
+    
+    // 모달 상태 초기화
+    setShowRoomPopup(false);
+    setShowPersonalRoomModal(false);
+    
+    // 상태 업데이트
     setIsInPersonalRoom(false);
+    
+    console.log('🚪 setIsInPersonalRoom(false) 호출 완료');
+    
+    // 포커스를 document.body로 이동하여 키보드 이벤트가 정상 동작하도록 함
+    setTimeout(() => {
+      document.body.focus();
+      console.log('📍 포커스를 document.body로 이동');
+    }, 100);
+    
     // 방 데이터는 유지 (나중에 다시 들어갈 수 있음)
-  }, []);
+  }, [isInPersonalRoom, currentPersonalRoom]);
 
   // 공개 룸 입장
   const handleJoinPublicRoom = useCallback((room) => {
@@ -733,8 +817,10 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
                 roomData={currentPersonalRoom}
                 onExit={handleExitPersonalRoom}
                 characterStateRef={characterStateRef}
+                userId={userId}
+                onDeleteRoom={handleDeleteRoom}
                 onFurnitureUpdate={(furnitureData) => {
-                  // 가구 업데이트 동기화 (나중에 WebSocket으로 전송)
+                  // 가구 업데이트 동기화
                   console.log('Furniture updated:', furnitureData);
                 }}
               />
@@ -848,27 +934,13 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           )}
         </Canvas>
 
-        {/* 개인 룸 나가기 버튼 (개인 룸 모드일 때만) */}
-        {isInPersonalRoom && (
-          <>
-            <div className="personal-room-exit-overlay">
-              <div className="personal-room-info">
-                <span className="room-name">🏠 {currentPersonalRoom?.roomName || '개인 룸'}</span>
-                <button className="exit-room-btn" onClick={handleExitPersonalRoom}>
-                  🚪 방 나가기
-                </button>
-              </div>
-            </div>
-
-            {/* 개인 룸 채팅 */}
-            {currentPersonalRoom?.roomId && (
-              <PersonalRoomChat 
-                roomId={currentPersonalRoom.roomId} 
-                userProfile={userInfo}
-                onChatMessage={handleRoomChatMessage}
-              />
-            )}
-          </>
+        {/* 개인 룸 채팅만 표시 (개인 룸 모드일 때만) */}
+        {isInPersonalRoom && currentPersonalRoom?.roomId && (
+          <PersonalRoomChat 
+            roomId={currentPersonalRoom.roomId} 
+            userProfile={userInfo}
+            onChatMessage={handleRoomChatMessage}
+          />
         )}
 
         {/* 미니맵 오버레이 (메인 맵일 때만) */}
@@ -913,8 +985,8 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         </div>
       )}
 
-      {/* 하단 통합 UI 바 */}
-      {isReady && (
+      {/* 하단 통합 UI 바 (개인 룸이 아닐 때만) */}
+      {isReady && !isInPersonalRoom && (
         <div className="map-game-bottom-bar">
           {/* 좌측: 뒤로가기 */}
           <div className="bottom-bar-left">
@@ -948,6 +1020,15 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         </div>
       )}
 
+      {/* 개인 룸 전용 좌측 하단 뒤로가기 버튼 */}
+      {isReady && isInPersonalRoom && (
+        <div className="personal-room-back-button-container">
+          <button className="personal-room-back-button" onClick={handleExitPersonalRoom}>
+            ← 방 나가기
+          </button>
+        </div>
+      )}
+
       {/* 방 정보 팝업 */}
       {showRoomPopup && selectedRoom && (
         <RoomInfoPopup 
@@ -975,15 +1056,17 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         />
       )}
 
-      {/* 좌측 방 목록 패널 */}
-      <RoomListPanel 
-        rooms={nearbyRooms}
-        onRoomSelect={(room) => {
-          setSelectedRoom(room);
-          setShowRoomPopup(true);
-        }}
-        selectedRoomId={selectedRoom?.roomId}
-      />
+      {/* 좌측 방 목록 패널 (개인 룸이 아닐 때만) */}
+      {!isInPersonalRoom && (
+        <RoomListPanel 
+          rooms={nearbyRooms}
+          onRoomSelect={(room) => {
+            setSelectedRoom(room);
+            setShowRoomPopup(true);
+          }}
+          selectedRoomId={selectedRoom?.roomId}
+        />
+      )}
     </div>
   );
 }
@@ -1068,6 +1151,16 @@ function CharacterViewer({
     }
   }, []);
 
+  // 개인 룸 모드 변경 시 캐릭터 위치 리셋
+  useEffect(() => {
+    if (!isInPersonalRoom && modelGroupRef.current) {
+      // 개인 룸에서 나왔을 때 메인 맵 스폰 위치로 리셋
+      const spawnPos = characterStateRef.current?.position || [0, 0, 0];
+      modelGroupRef.current.position.set(spawnPos[0], spawnPos[1], spawnPos[2]);
+      console.log('📍 개인 룸 나가기 - 캐릭터 위치 리셋:', spawnPos);
+    }
+  }, [isInPersonalRoom]);
+
   // 프레임 업데이트 - MapCharacterController와 동일한 로직
   useFrame((state, delta) => {
     if (!modelGroupRef.current) {
@@ -1087,6 +1180,11 @@ function CharacterViewer({
     if (backward) direction.z += 1;
     if (left) direction.x -= 1;
     if (right) direction.x += 1;
+
+    // 이동 중일 때 로그 출력 (디버그용)
+    if (forward || backward || left || right) {
+      console.log('🎮 [CharacterViewer] 이동 입력 감지 - forward:', forward, 'backward:', backward, 'left:', left, 'right:', right, 'isInPersonalRoom:', isInPersonalRoom);
+    }
 
     const isMoving = direction.length() > 0;
     let targetAngleForNetwork = null;

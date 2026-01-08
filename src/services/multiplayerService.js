@@ -470,6 +470,146 @@ class MultiplayerService {
       return [];
     }
   }
+
+  // 호스트 ID로 내 방 조회
+  async fetchMyRoom(hostId) {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms/host/${hostId}`);
+      if (response.status === 404) {
+        return null; // 방이 없음
+      }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const room = await response.json();
+      console.log('🏠 내 방 조회 성공:', room.roomName);
+      return room;
+    } catch (error) {
+      console.error('내 방 조회 실패:', error.message);
+      return null;
+    }
+  }
+
+  // 호스트가 이미 방을 가지고 있는지 확인
+  async checkHasRoom(hostId) {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms/host/${hostId}/exists`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('방 존재 확인 실패:', error.message);
+      return { hasRoom: false, room: null };
+    }
+  }
+
+  // 방 삭제
+  async deleteRoom(roomId, hostId) {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms/${roomId}?hostId=${hostId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('🗑️ 방 삭제 성공:', roomId);
+      return data;
+    } catch (error) {
+      console.error('방 삭제 실패:', error.message);
+      return { success: false, message: error.message };
+    }
+  }
+
+  // ==================== 가구 관련 API ====================
+
+  // 방의 가구 목록 조회
+  async fetchFurnitures(roomId) {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms/${roomId}/furnitures`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const furnitures = await response.json();
+      console.log('🛋️ 가구 목록 조회 성공:', furnitures.length, '개');
+      return furnitures;
+    } catch (error) {
+      console.error('가구 목록 조회 실패:', error.message);
+      return [];
+    }
+  }
+
+  // 단일 가구 저장/업데이트
+  async saveFurniture(roomId, furniture) {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms/${roomId}/furnitures`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(furniture)
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const saved = await response.json();
+      console.log('💾 가구 저장 성공:', furniture.furnitureId);
+      return saved;
+    } catch (error) {
+      console.error('가구 저장 실패:', error.message);
+      return null;
+    }
+  }
+
+  // 여러 가구 일괄 저장
+  async saveFurnitures(roomId, furnitures) {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms/${roomId}/furnitures/batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(furnitures)
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const saved = await response.json();
+      console.log('💾 가구 일괄 저장 성공:', saved.length, '개');
+      return saved;
+    } catch (error) {
+      console.error('가구 일괄 저장 실패:', error.message);
+      return [];
+    }
+  }
+
+  // 가구 삭제
+  async deleteFurniture(roomId, furnitureId) {
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/rooms/${roomId}/furnitures/${furnitureId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      console.log('🗑️ 가구 삭제 성공:', furnitureId);
+      return result.success;
+    } catch (error) {
+      console.error('가구 삭제 실패:', error.message);
+      return false;
+    }
+  }
 }
 
 export default new MultiplayerService();
