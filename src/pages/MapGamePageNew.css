@@ -902,3 +902,295 @@
   transform: translateY(0);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
+
+/* ===== 개인 룸 가구 관리 UI (우측 상단) ===== */
+.personal-room-furniture-ui-container {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.personal-room-furniture-button {
+  padding: 15px 25px;
+  background: linear-gradient(135deg, #673ab7, #9c27b0);
+  border: 2px solid rgba(156, 39, 176, 0.6);
+  border-radius: 15px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(103, 58, 183, 0.4);
+  backdrop-filter: blur(10px);
+  min-width: 140px;
+}
+
+.personal-room-furniture-button:hover {
+  background: linear-gradient(135deg, #7b1fa2, #ab47bc);
+  border-color: rgba(171, 71, 188, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(103, 58, 183, 0.5);
+}
+
+.personal-room-furniture-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  border: 2px solid rgba(100, 180, 255, 0.4);
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  min-width: 180px;
+}
+
+.furniture-toolbar-btn {
+  padding: 12px 16px;
+  background: rgba(60, 60, 80, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.furniture-toolbar-btn:hover {
+  background: rgba(80, 80, 100, 0.95);
+  transform: translateX(-3px);
+}
+
+.furniture-toolbar-btn.active {
+  background: rgba(255, 165, 0, 0.9);
+  color: #000;
+  border-color: rgba(255, 165, 0, 0.8);
+}
+
+.furniture-toolbar-btn.active-blue {
+  background: rgba(74, 144, 217, 0.9);
+  border-color: rgba(74, 144, 217, 0.8);
+}
+
+.furniture-toolbar-btn.delete-btn {
+  background: rgba(180, 50, 50, 0.9);
+  border-color: rgba(200, 60, 60, 0.6);
+  margin-top: 8px;
+}
+
+.furniture-toolbar-btn.delete-btn:hover {
+  background: rgba(200, 60, 60, 0.95);
+}
+
+/* 설치된 가구 목록 */
+.personal-room-furniture-list {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 2px solid rgba(100, 180, 255, 0.4);
+  border-radius: 15px;
+  padding: 16px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  max-height: 50vh;
+  overflow-y: auto;
+  min-width: 240px;
+  max-width: 280px;
+}
+
+.furniture-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.furniture-list-header h4 {
+  color: #fff;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.furniture-list-header span {
+  color: #888;
+  font-size: 12px;
+}
+
+.furniture-list-empty {
+  color: #888;
+  font-size: 13px;
+  text-align: center;
+  padding: 25px 0;
+}
+
+.furniture-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.furniture-list-item {
+  background: rgba(60, 60, 80, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.furniture-list-item:hover {
+  background: rgba(80, 80, 100, 0.7);
+  transform: translateX(-3px);
+}
+
+.furniture-list-item.selected {
+  background: rgba(255, 165, 0, 0.25);
+  border: 2px solid #FFA500;
+}
+
+.furniture-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.furniture-icon {
+  font-size: 22px;
+}
+
+.furniture-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.furniture-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.furniture-position {
+  color: #888;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.furniture-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.furniture-action-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.furniture-action-btn.rotate {
+  background: linear-gradient(135deg, #4a90d9, #357abd);
+}
+
+.furniture-action-btn.rotate:hover {
+  background: linear-gradient(135deg, #5aa0e9, #458acd);
+}
+
+.furniture-action-btn.delete {
+  background: linear-gradient(135deg, #d94a4a, #c43c3c);
+}
+
+.furniture-action-btn.delete:hover {
+  background: linear-gradient(135deg, #e95a5a, #d44c4c);
+}
+
+/* 방 삭제 확인 모달 */
+.personal-room-delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.personal-room-delete-modal {
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  padding: 30px 40px;
+  border-radius: 20px;
+  border: 2px solid #ff4444;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.delete-modal-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+}
+
+.personal-room-delete-modal h3 {
+  color: #fff;
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+
+.personal-room-delete-modal p {
+  color: #aaa;
+  font-size: 14px;
+  margin: 0 0 28px;
+  line-height: 1.6;
+}
+
+.delete-modal-buttons {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+
+.delete-modal-btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.delete-modal-btn.cancel {
+  background: rgba(100, 100, 100, 0.8);
+  color: #fff;
+}
+
+.delete-modal-btn.cancel:hover {
+  background: rgba(120, 120, 120, 0.9);
+}
+
+.delete-modal-btn.confirm {
+  background: linear-gradient(135deg, #dc3c3c, #c42c2c);
+  color: #fff;
+}
+
+.delete-modal-btn.confirm:hover {
+  background: linear-gradient(135deg, #ec4c4c, #d43c3c);
+}

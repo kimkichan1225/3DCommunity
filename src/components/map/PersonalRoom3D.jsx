@@ -1,12 +1,12 @@
-import React, { useRef, useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Sky, Environment, Text, Billboard, Html } from '@react-three/drei';
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 import multiplayerService from '../../services/multiplayerService';
 
-// 가구 타입 정의
-const FURNITURE_TYPES = {
+// 가구 타입 정의 (export for external UI)
+export const FURNITURE_TYPES = {
   sofa: { name: '소파', icon: '🛋️', defaultScale: [1, 1, 1] },
   table: { name: '테이블', icon: '🪑', defaultScale: [1, 1, 1] },
   bookshelf: { name: '책장', icon: '📚', defaultScale: [1, 1, 1] },
@@ -63,7 +63,7 @@ const localToServerFurniture = (localFurniture) => ({
 /**
  * PersonalRoom3D - 개인 룸 3D 환경 (물리 + 가구 배치 기능)
  */
-function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef, userId, onDeleteRoom }) {
+const PersonalRoom3D = forwardRef(function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef, userId, onDeleteRoom }, ref) {
   const [furniture, setFurniture] = useState([]);
   const [furnitureLoaded, setFurnitureLoaded] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -73,11 +73,65 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
   const [nearbyFurniture, setNearbyFurniture] = useState(null);
   const [showToolbar, setShowToolbar] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showFurnitureList, setShowFurnitureList] = useState(false); // 설치된 가구 목록 표시
   const lastCheckTimeRef = useRef(0);
   const saveTimeoutRef = useRef(null);
   
   // 호스트인지 확인
   const isHost = roomData?.hostId === userId;
+  
+  // useImperativeHandle로 외부에 상태와 함수 노출
+  useImperativeHandle(ref, () => ({
+    // 상태
+    furniture,
+    editMode,
+    selectedFurniture,
+    showToolbar,
+    showInventory,
+    showFurnitureList,
+    showDeleteConfirm,
+    isHost,
+    // 함수
+    setEditMode,
+    setSelectedFurniture,
+    setShowToolbar,
+    setShowInventory,
+    setShowFurnitureList,
+    setShowDeleteConfirm,
+    handleAddFurniture: (type) => {
+      const newFurniture = {
+        id: `${type}-${Date.now()}`,
+        type,
+        position: [0, 0, 5],
+        rotation: [0, 0, 0],
+      };
+      setFurniture(prev => [...prev, newFurniture]);
+      setPlacingFurniture(newFurniture);
+      setEditMode(true);
+      setShowInventory(false);
+    },
+    handleRotateFurniture: (id, direction = 1) => {
+      setFurniture(prev => prev.map(f => {
+        if (f.id === id) {
+          const newRotation = [...f.rotation];
+          newRotation[1] += (Math.PI / 4) * direction;
+          return { ...f, rotation: newRotation };
+        }
+        return f;
+      }));
+    },
+    handleDeleteFurniture: (id) => {
+      if (id) {
+        setFurniture(prev => prev.filter(f => f.id !== id));
+        setSelectedFurniture(null);
+      }
+    },
+    handleDeleteRoom: () => {
+      if (onDeleteRoom) {
+        onDeleteRoom(roomData.roomId);
+      }
+    },
+  }), [furniture, editMode, selectedFurniture, showToolbar, showInventory, showFurnitureList, showDeleteConfirm, isHost, roomData, onDeleteRoom]);
   
   // 방 입장 시 가구 데이터 로드
   useEffect(() => {
@@ -307,18 +361,30 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
   // 키보드 이벤트
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // 편집 모드 토글
       if (e.key === 'e' || e.key === 'E') {
         setEditMode(prev => !prev);
         setSelectedFurniture(null);
         setPlacingFurniture(null);
       }
+      // 인벤토리 토글
       if (e.key === 'i' || e.key === 'I') {
         setShowInventory(prev => !prev);
+        setShowFurnitureList(false);
       }
+      // 설치된 가구 목록 토글
+      if (e.key === 'g' || e.key === 'G') {
+        setShowToolbar(true);
+        setShowFurnitureList(prev => !prev);
+        setShowInventory(false);
+      }
+      // ESC: 모든 UI 닫기
       if (e.key === 'Escape') {
         setSelectedFurniture(null);
         setPlacingFurniture(null);
         setShowInventory(false);
+        setShowFurnitureList(false);
+        setEditMode(false);
       }
       // F키로 방 나가기
       if (e.key === 'f' || e.key === 'F') {
@@ -408,326 +474,55 @@ function PersonalRoom3D({ roomData, onExit, onFurnitureUpdate, characterStateRef
         <ExitPortal position={[0, 0, -18]} onExit={onExit} />
       </Physics>
       
-      {/* UI 오버레이 */}
-      <Html fullscreen>
-        {/* 우측 상단 꾸미기 버튼 */}
-        <div style={{
-          position: 'fixed',
-          top: 16,
-          right: 16,
-          zIndex: 100,
-          pointerEvents: 'auto',
-        }}>
-          <button
-            onClick={() => setShowToolbar(!showToolbar)}
-            style={{
-              background: showToolbar ? 'rgba(156, 39, 176, 0.9)' : 'rgba(103, 58, 183, 0.85)',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 16px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              transition: 'all 0.2s',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(123, 31, 162, 0.95)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = showToolbar ? 'rgba(156, 39, 176, 0.9)' : 'rgba(103, 58, 183, 0.85)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            {showToolbar ? '✕' : '🎨'}
-          </button>
-        </div>
-        
-        {/* 툴바 (꾸미기 버튼 클릭 시 표시) */}
-        {showToolbar && (
+      {/* 배치/편집 모드 안내 - Canvas 내부 표시 */}
+      {(editMode || placingFurniture) && (
+        <Html center position={[0, 8, 0]}>
           <div style={{
-            position: 'fixed',
-            top: 56,
-            right: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-            pointerEvents: 'auto',
-            zIndex: 99,
-            background: 'rgba(20, 20, 35, 0.9)',
-            padding: '10px',
-            borderRadius: 10,
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            background: placingFurniture ? 'rgba(0, 200, 83, 0.9)' : 'rgba(255, 140, 0, 0.9)',
+            padding: '8px 16px',
+            borderRadius: 16,
+            color: '#fff',
+            fontWeight: '600',
+            fontSize: 12,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
           }}>
-            <button
-              onClick={() => {
-                setEditMode(!editMode);
-                if (!editMode) setShowToolbar(true);
-              }}
-              style={{
-                background: editMode ? 'rgba(255, 165, 0, 0.9)' : 'rgba(60, 60, 80, 0.9)',
-                border: 'none',
-                borderRadius: 8,
-                padding: '10px 14px',
-                color: editMode ? '#000' : '#fff',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                transition: 'all 0.2s',
-                minWidth: 100,
-              }}
-            >
-              {editMode ? '✅ 편집중' : '🔧 편집'}
-            </button>
-            
-            <button
-              onClick={() => setShowInventory(!showInventory)}
-              style={{
-                background: showInventory ? 'rgba(74, 144, 217, 0.9)' : 'rgba(60, 60, 80, 0.9)',
-                border: 'none',
-                borderRadius: 8,
-                padding: '10px 14px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                transition: 'all 0.2s',
-                minWidth: 100,
-              }}
-            >
-              🪑 가구
-            </button>
-            
-            {/* 방 삭제 버튼 (호스트만) */}
-            {isHost && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                style={{
-                  background: 'rgba(180, 50, 50, 0.9)',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 14px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  transition: 'all 0.2s',
-                  marginTop: 6,
-                  minWidth: 100,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(200, 60, 60, 0.95)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(180, 50, 50, 0.9)';
-                }}
-              >
-                🗑️ 방 삭제
-              </button>
-            )}
+            {placingFurniture ? '🎯 클릭하여 배치' : '🔧 편집 모드'}
           </div>
-        )}
-        
-        {/* 방 삭제 확인 모달 */}
-        {showDeleteConfirm && (
+        </Html>
+      )}
+      
+      {/* 선택된 가구 안내 */}
+      {selectedFurniture && editMode && (
+        <Html center position={[0, 6, 0]}>
           <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.7)',
+            background: 'rgba(255, 165, 0, 0.95)',
+            padding: '8px 16px',
+            borderRadius: 12,
+            color: '#000',
+            fontWeight: '600',
+            fontSize: 11,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            pointerEvents: 'auto',
+            gap: 6,
           }}>
-            <div style={{
-              background: 'rgba(40, 40, 60, 0.98)',
-              padding: '24px 32px',
-              borderRadius: 16,
-              border: '2px solid #ff4444',
-              maxWidth: 400,
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-            }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-              <h3 style={{ color: '#fff', margin: '0 0 12px', fontSize: 18 }}>정말 방을 삭제하시겠습니까?</h3>
-              <p style={{ color: '#aaa', fontSize: 14, margin: '0 0 24px', lineHeight: 1.5 }}>
-                방을 삭제하면 배치한 모든 가구와 설정이 영구적으로 삭제됩니다.<br/>
-                이 작업은 되돌릴 수 없습니다.
-              </p>
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  style={{
-                    background: 'rgba(100, 100, 100, 0.8)',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '12px 24px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: '600',
-                  }}
-                >
-                  취소
-                </button>
-                <button
-                  onClick={() => {
-                    setShowDeleteConfirm(false);
-                    onDeleteRoom?.(roomData?.roomId);
-                  }}
-                  style={{
-                    background: 'rgba(220, 60, 60, 0.9)',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '12px 24px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: '600',
-                  }}
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
+            <span>{FURNITURE_TYPES[furniture.find(f => f.id === selectedFurniture)?.type]?.icon}</span>
+            {FURNITURE_TYPES[furniture.find(f => f.id === selectedFurniture)?.type]?.name} - 드래그 이동
           </div>
-        )}
-        
-        {/* 편집 모드 알림 배너 */}
-        {editMode && !placingFurniture && (
-          <div style={{
-            position: 'fixed',
-            top: 16,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(255, 140, 0, 0.9)',
-            padding: '8px 16px',
-            borderRadius: 16,
-            color: '#fff',
-            fontWeight: '600',
-            fontSize: 12,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-            pointerEvents: 'none',
-            zIndex: 50,
-          }}>
-            🔧 편집 모드
-          </div>
-        )}
-        
-        {/* 배치 중 알림 */}
-        {placingFurniture && (
-          <div style={{
-            position: 'fixed',
-            top: 16,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(0, 200, 83, 0.9)',
-            padding: '8px 16px',
-            borderRadius: 16,
-            color: '#fff',
-            fontWeight: '600',
-            fontSize: 12,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-            pointerEvents: 'none',
-            zIndex: 50,
-          }}>
-            🎯 클릭하여 배치
-          </div>
-        )}
-        
-        {/* 근처 가구 상호작용 프롬프트 - 우측 상단 (툴바 아래) */}
-        {nearbyFurniture && !editMode && (
-          <div style={{
-            position: 'fixed',
-            top: 120,
-            right: 16,
-            background: 'rgba(30, 30, 50, 0.95)',
-            padding: '12px 14px',
-            borderRadius: 12,
-            border: '2px solid #4a90d9',
-            color: '#fff',
-            pointerEvents: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
-            width: 160,
-            zIndex: 98,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 20 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.icon}</span>
-              <div>
-                <div style={{ fontWeight: 'bold', fontSize: 12 }}>{FURNITURE_TYPES[nearbyFurniture.type]?.name}</div>
-                <div style={{ fontSize: 9, opacity: 0.7 }}>E키로 편집</div>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setEditMode(true);
-                setSelectedFurniture(nearbyFurniture.id);
-              }}
-              style={{
-                background: 'linear-gradient(135deg, #4a90d9, #357abd)',
-                border: 'none',
-                borderRadius: 8,
-                padding: '8px 12px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: 11,
-                fontWeight: 'bold',
-                transition: 'all 0.2s',
-                width: '100%',
-              }}
-            >
-              🔧 이동하기
-            </button>
-          </div>
-        )}
-        
-        {/* 가구 인벤토리 */}
-        {showInventory && (
-          <FurnitureInventory 
-            onSelect={handleAddFurniture}
-            onClose={() => setShowInventory(false)}
-          />
-        )}
-        
-        {/* 선택된 가구 정보 패널 */}
-        {selectedFurniture && editMode && (
-          <SelectedFurnitureInfo
-            furniture={furniture.find(f => f.id === selectedFurniture)}
-            onRotate={() => handleRotateFurniture(selectedFurniture, 1)}
-            onDelete={() => handleDeleteFurniture(selectedFurniture)}
-          />
-        )}
-      </Html>
+        </Html>
+      )}
     </>
   );
-}
+});
 
 /**
- * 가구 인벤토리 UI
+ * 가구 인벤토리 UI (export for external use)
  */
-function FurnitureInventory({ onSelect, onClose }) {
+export function FurnitureInventory({ onSelect, onClose }) {
   return (
     <div style={{
       position: 'fixed',
@@ -797,109 +592,7 @@ function FurnitureInventory({ onSelect, onClose }) {
   );
 }
 
-/**
- * 선택된 가구 정보 UI - 우측 상단에 컴팩트하게 표시
- */
-function SelectedFurnitureInfo({ furniture, onRotate, onDelete }) {
-  if (!furniture) return null;
-  
-  const typeInfo = FURNITURE_TYPES[furniture.type];
-  
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 120,
-      right: 16,
-      background: 'rgba(30, 30, 50, 0.95)',
-      padding: '14px 16px',
-      borderRadius: 12,
-      border: '2px solid #FFA500',
-      color: '#fff',
-      pointerEvents: 'auto',
-      boxShadow: '0 4px 16px rgba(255, 165, 0, 0.3)',
-      width: 180,
-      zIndex: 97,
-    }}>
-      {/* 헤더 */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 8,
-        marginBottom: 10,
-        paddingBottom: 10,
-        borderBottom: '1px solid rgba(255, 165, 0, 0.3)',
-      }}>
-        <span style={{ fontSize: 24 }}>{typeInfo?.icon}</span>
-        <div>
-          <div style={{ fontWeight: 'bold', fontSize: 13 }}>{typeInfo?.name}</div>
-          <div style={{ fontSize: 9, opacity: 0.6 }}>
-            ({furniture.position.map(p => p.toFixed(1)).join(', ')})
-          </div>
-        </div>
-      </div>
-      
-      {/* 안내 텍스트 */}
-      <div style={{ 
-        fontSize: 10, 
-        opacity: 0.7, 
-        marginBottom: 10,
-        lineHeight: 1.4,
-      }}>
-        드래그하여 이동
-      </div>
-      
-      {/* 버튼들 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <button
-          onClick={onRotate}
-          style={{
-            background: 'linear-gradient(135deg, #4a90d9, #357abd)',
-            border: 'none',
-            borderRadius: 8,
-            padding: '10px 12px',
-            color: '#fff',
-            cursor: 'pointer',
-            fontSize: 12,
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            width: '100%',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          🔄 회전 (R)
-        </button>
-        <button
-          onClick={onDelete}
-          style={{
-            background: 'linear-gradient(135deg, #d94a4a, #c43c3c)',
-            border: 'none',
-            borderRadius: 8,
-            padding: '10px 12px',
-            color: '#fff',
-            cursor: 'pointer',
-            fontSize: 12,
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            width: '100%',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          🗑️ 삭제
-        </button>
-      </div>
-    </div>
-  );
-}
+
 
 /**
  * 드래그 가능한 가구 컴포넌트

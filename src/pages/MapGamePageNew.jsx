@@ -10,7 +10,7 @@ import multiplayerService from '../services/multiplayerService';
 import shopService from '../features/shop/services/shopService';
 import OtherPlayer from '../components/character/OtherPlayer';
 import PersonalRoomModal from '../components/PersonalRoomModal';
-import PersonalRoom3D from '../components/map/PersonalRoom3D';
+import PersonalRoom3D, { FURNITURE_TYPES, FurnitureInventory } from '../components/map/PersonalRoom3D';
 import PersonalRoomChat from '../components/map/PersonalRoomChat';
 import ChatBubble from '../components/character/ChatBubble';
 import '../pages/MapGamePageNew.css';
@@ -84,6 +84,19 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
     rotation: 0,
     isMoving: false,
     animation: 'idle'
+  });
+
+  // PersonalRoom3D ref (가구 관리 UI용)
+  const personalRoom3DRef = useRef(null);
+  const [furnitureUIState, setFurnitureUIState] = useState({
+    furniture: [],
+    editMode: false,
+    selectedFurniture: null,
+    showToolbar: false,
+    showInventory: false,
+    showFurnitureList: false,
+    showDeleteConfirm: false,
+    isHost: false,
   });
 
   // Mapbox 참조
@@ -814,6 +827,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
             /* 개인 룸 3D 뷰 */
             <>
               <PersonalRoom3D 
+                ref={personalRoom3DRef}
                 roomData={currentPersonalRoom}
                 onExit={handleExitPersonalRoom}
                 characterStateRef={characterStateRef}
@@ -1027,6 +1041,14 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
             ← 방 나가기
           </button>
         </div>
+      )}
+
+      {/* 개인 룸 전용 우측 상단 가구 관리 UI */}
+      {isReady && isInPersonalRoom && (
+        <PersonalRoomFurnitureUI 
+          roomRef={personalRoom3DRef}
+          FURNITURE_TYPES={FURNITURE_TYPES}
+        />
       )}
 
       {/* 방 정보 팝업 */}
@@ -1320,6 +1342,197 @@ function CharacterViewer({
         <ChatBubble message={chatMessage} position={[0, isInPersonalRoom ? 3.5 : 8.5, 0]} duration={5000} />
       )}
     </group>
+  );
+}
+
+/**
+ * 개인 룸 가구 관리 UI (우측 상단 고정)
+ */
+function PersonalRoomFurnitureUI({ roomRef, FURNITURE_TYPES }) {
+  const [, forceUpdate] = useState(0);
+  
+  // ref 상태 동기화를 위한 폴링
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate(n => n + 1);
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+  
+  if (!roomRef?.current) return null;
+  
+  const {
+    furniture = [],
+    editMode,
+    selectedFurniture,
+    showToolbar,
+    showInventory,
+    showFurnitureList,
+    showDeleteConfirm,
+    isHost,
+    setEditMode,
+    setSelectedFurniture,
+    setShowToolbar,
+    setShowInventory,
+    setShowFurnitureList,
+    setShowDeleteConfirm,
+    handleAddFurniture,
+    handleRotateFurniture,
+    handleDeleteFurniture,
+    handleDeleteRoom,
+  } = roomRef.current;
+
+  return (
+    <>
+      {/* 우측 상단 꾸미기 버튼 컨테이너 */}
+      <div className="personal-room-furniture-ui-container">
+        {/* 메인 꾸미기 버튼 */}
+        <button
+          className="personal-room-furniture-button"
+          onClick={() => setShowToolbar(!showToolbar)}
+        >
+          {showToolbar ? '✕ 닫기' : '🎨 방 꾸미기'}
+        </button>
+        
+        {/* 툴바 */}
+        {showToolbar && (
+          <div className="personal-room-furniture-toolbar">
+            {/* 설치된 가구 목록 버튼 */}
+            <button
+              className={`furniture-toolbar-btn ${showFurnitureList ? 'active' : ''}`}
+              onClick={() => {
+                setShowFurnitureList(!showFurnitureList);
+                setShowInventory(false);
+              }}
+            >
+              📦 설치된 가구 ({furniture.length})
+            </button>
+            
+            {/* 새 가구 추가 버튼 */}
+            <button
+              className={`furniture-toolbar-btn ${showInventory ? 'active-blue' : ''}`}
+              onClick={() => {
+                setShowInventory(!showInventory);
+                setShowFurnitureList(false);
+              }}
+            >
+              ➕ 새 가구 추가
+            </button>
+            
+            {/* 방 삭제 버튼 (호스트만) */}
+            {isHost && (
+              <button
+                className="furniture-toolbar-btn delete-btn"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                🗑️ 방 삭제
+              </button>
+            )}
+          </div>
+        )}
+        
+        {/* 설치된 가구 목록 패널 */}
+        {showFurnitureList && showToolbar && (
+          <div className="personal-room-furniture-list">
+            <div className="furniture-list-header">
+              <h4>📦 설치된 가구</h4>
+              <span>{furniture.length}개</span>
+            </div>
+            
+            {furniture.length === 0 ? (
+              <div className="furniture-list-empty">
+                설치된 가구가 없습니다
+              </div>
+            ) : (
+              <div className="furniture-list-items">
+                {furniture.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`furniture-list-item ${selectedFurniture === item.id ? 'selected' : ''}`}
+                    onClick={() => {
+                      setSelectedFurniture(item.id);
+                      setEditMode(true);
+                    }}
+                  >
+                    <div className="furniture-item-info">
+                      <span className="furniture-icon">{FURNITURE_TYPES[item.type]?.icon}</span>
+                      <div className="furniture-details">
+                        <span className="furniture-name">{FURNITURE_TYPES[item.type]?.name}</span>
+                        <span className="furniture-position">
+                          위치: ({item.position[0].toFixed(1)}, {item.position[2].toFixed(1)})
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {selectedFurniture === item.id && (
+                      <div className="furniture-item-actions">
+                        <button
+                          className="furniture-action-btn rotate"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRotateFurniture(item.id, 1);
+                          }}
+                        >
+                          🔄 회전
+                        </button>
+                        <button
+                          className="furniture-action-btn delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteFurniture(item.id);
+                          }}
+                        >
+                          🗑️ 삭제
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* 가구 인벤토리 모달 */}
+      {showInventory && (
+        <FurnitureInventory 
+          onSelect={handleAddFurniture}
+          onClose={() => setShowInventory(false)}
+        />
+      )}
+      
+      {/* 방 삭제 확인 모달 */}
+      {showDeleteConfirm && (
+        <div className="personal-room-delete-modal-overlay">
+          <div className="personal-room-delete-modal">
+            <div className="delete-modal-icon">⚠️</div>
+            <h3>정말 방을 삭제하시겠습니까?</h3>
+            <p>
+              방을 삭제하면 배치한 모든 가구와 설정이 영구적으로 삭제됩니다.<br/>
+              이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="delete-modal-buttons">
+              <button
+                className="delete-modal-btn cancel"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                취소
+              </button>
+              <button
+                className="delete-modal-btn confirm"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  handleDeleteRoom?.();
+                }}
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
