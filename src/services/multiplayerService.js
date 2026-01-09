@@ -18,6 +18,8 @@ class MultiplayerService {
     this.onOnlineCountUpdateCallbacks = [];
     this.onFriendUpdateCallbacks = [];
     this.onDMMessageCallbacks = [];
+    this.onConnectCallbacks = []; // 연결 성공 리스너
+    this.roomSubscriptions = new Map(); // Track room subscriptions
   }
 
   connect(userId, username, isObserver = false) {
@@ -50,7 +52,7 @@ class MultiplayerService {
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
-      debug: () => {}, // Empty function to disable debug logging
+      debug: () => { }, // Empty function to disable debug logging
       onConnect: () => {
         console.log('✅ WebSocket Connected');
         this.connected = true;
@@ -106,6 +108,9 @@ class MultiplayerService {
         if (!this.isObserver) {
           this.sendPlayerJoin();
         }
+
+        // Notify connection listeners
+        this.onConnectCallbacks.forEach(cb => cb?.(true));
       },
       onStompError: (frame) => {
         console.error('❌ STOMP Error:', frame.headers['message']);
@@ -170,6 +175,101 @@ class MultiplayerService {
       });
     }
   }
+
+  // --- Messenger Methods ---
+
+  // --- Messenger Methods ---
+
+  subscribeToRoom(roomId, callback) {
+    if (!this.connected || !this.client) {
+      console.warn(`[MultiplayerService] subscribeToRoom failed: Not connected. (roomId: ${roomId})`);
+      return null;
+    }
+
+    const roomIdStr = String(roomId); // Force string
+    const destination = `/topic/chat/room/${roomIdStr}`;
+    console.log(`[MultiplayerService] Subscribing to: ${destination}`);
+
+    // Unsubscribe if already subscribed to this room
+    if (this.roomSubscriptions.has(roomIdStr)) {
+      console.log(`[MultiplayerService] Already subscribed to ${roomIdStr}, resubscribing...`);
+      this.roomSubscriptions.get(roomIdStr).unsubscribe();
+    }
+
+    const subscription = this.client.subscribe(destination, (message) => {
+      console.log(`[MultiplayerService] Message received on ${destination}:`, message.body);
+      const data = JSON.parse(message.body);
+      callback(data);
+    });
+
+    this.roomSubscriptions.set(roomIdStr, subscription);
+    return subscription;
+  }
+
+  unsubscribeFromRoom(roomId) {
+    const roomIdStr = String(roomId);
+    const subscription = this.roomSubscriptions.get(roomIdStr);
+    if (subscription) {
+      console.log(`[MultiplayerService] Unsubscribing from: /topic/chat/room/${roomIdStr}`);
+      subscription.unsubscribe();
+      this.roomSubscriptions.delete(roomIdStr);
+    }
+  }
+
+  sendRoomMessage(roomId, content) {
+    console.log(`[MultiplayerService] sendRoomMessage attempt - Connected: ${this.connected}, Client: ${!!this.client}, RoomId: ${roomId}, UserId: ${this.userId}`);
+
+    if (this.connected && this.client) {
+      // userId가 없으면 전송하지 않음 (안전장치)
+      if (!this.userId) {
+        console.error('[MultiplayerService] Cannot send message: User ID is missing.');
+        return false;
+      }
+
+      try {
+        const payload = {
+          roomId: roomId,
+          userId: this.userId,
+          content: content
+        };
+        console.log('[MultiplayerService] Publishing to /app/chat.send with payload:', payload);
+
+        this.client.publish({
+          destination: '/app/chat.send',
+          body: JSON.stringify(payload)
+        });
+        console.log('[MultiplayerService] WebSocket publish success');
+        return true;
+      } catch (e) {
+        console.error('[MultiplayerService] WebSocket publish failed:', e);
+        return false;
+      }
+    }
+    console.warn('[MultiplayerService] WebSocket not connected, falling back to REST');
+    return false;
+  }
+
+  sendTypingIndicator(roomId, isTyping) {
+    if (this.connected && this.client) {
+      this.client.publish({
+        destination: '/app/chat.typing',
+        body: JSON.stringify({
+          roomId,
+          userId: this.userId,
+          isTyping
+        })
+      });
+    }
+  }
+
+  subscribeToUserUpdates(userId, callback) {
+    if (!this.connected || !this.client) return null;
+    return this.client.subscribe(`/topic/user/${userId}/updates`, (message) => {
+      callback(JSON.parse(message.body));
+    });
+  }
+
+  // --- End Messenger Methods ---
 
   // 플레이어 정보 업데이트 (닉네임 변경 등)
   updatePlayerInfo({ username }) {
@@ -252,6 +352,19 @@ class MultiplayerService {
       this.onDMMessageCallbacks.push(callback);
       return () => {
         this.onDMMessageCallbacks = this.onDMMessageCallbacks.filter(cb => cb !== callback);
+      };
+    }
+  }
+
+  onConnect(callback) {
+    if (callback) {
+      this.onConnectCallbacks.push(callback);
+      // 이미 연결된 상태면 즉시 호출
+      if (this.connected) {
+        callback(true);
+      }
+      return () => {
+        this.onConnectCallbacks = this.onConnectCallbacks.filter(cb => cb !== callback);
       };
     }
   }
