@@ -555,6 +555,39 @@
   white-space: nowrap;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.create-room-btn {
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  width: 36px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(34, 197, 94, 0.4);
+}
+
+.create-room-btn:hover {
+  background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+.create-room-btn:active {
+  transform: translateY(0);
+}
+
 .collapse-btn {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -866,6 +899,96 @@
 @keyframes fadeInOut {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
+}
+
+/* 좌측 하단 뒤로가기 버튼 (메인 맵용) */
+.game-back-button-container {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 150;
+}
+
+.game-back-button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #FF6B6B 0%, #EE5A52 50%, #DD3333 100%);
+  color: #fff;
+  border: 2px solid #CC3333;
+  border-radius: 25px;
+  cursor: pointer;
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  box-shadow: 
+    0 6px 20px rgba(255, 100, 100, 0.4),
+    inset 0 1px 0 rgba(255, 150, 150, 0.5),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.game-back-button:hover {
+  background: linear-gradient(135deg, #EE5A52 0%, #DD3333 50%, #CC1111 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(255, 100, 100, 0.5),
+    inset 0 1px 0 rgba(255, 150, 150, 0.6),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.game-back-button:active {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(255, 100, 100, 0.3),
+    inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 우측 상단 내 방 만들기 버튼 (메인 맵용) */
+.game-create-room-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 150;
+}
+
+.game-create-room-button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 50%, #15803D 100%);
+  color: #fff;
+  border: 2px solid #15803D;
+  border-radius: 25px;
+  cursor: pointer;
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  box-shadow: 
+    0 6px 20px rgba(34, 197, 94, 0.4),
+    inset 0 1px 0 rgba(100, 255, 150, 0.3),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.game-create-room-button:hover {
+  background: linear-gradient(135deg, #16A34A 0%, #15803D 50%, #14532D 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(34, 197, 94, 0.5),
+    inset 0 1px 0 rgba(100, 255, 150, 0.4),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.game-create-room-button:active {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(34, 197, 94, 0.3),
+    inset 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 /* 개인 룸 전용 좌측 하단 뒤로가기 버튼 */

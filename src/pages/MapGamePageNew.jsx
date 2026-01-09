@@ -1028,38 +1028,12 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         </div>
       )}
 
-      {/* 하단 통합 UI 바 (개인 룸이 아닐 때만) */}
+      {/* 좌측 하단: 뒤로가기 버튼 (개인 룸이 아닐 때만) */}
       {isReady && !isInPersonalRoom && (
-        <div className="map-game-bottom-bar">
-          {/* 좌측: 뒤로가기 */}
-          <div className="bottom-bar-left">
-            <button className="map-game-back-button" onClick={handleBack}>
-              ← 뒤로가기
-            </button>
-          </div>
-
-          {/* 중앙: 개인 룸 버튼 */}
-          <div className="bottom-bar-center">
-            <button className="room-button room-create-button" onClick={handleCreateRoom}>
-              🏠 내 방 만들기
-            </button>
-            <button className="room-button room-join-button" onClick={handleBrowseRooms}>
-              🔍 공개 방 찾기
-            </button>
-          </div>
-
-          {/* 우측: 액션 버튼들 */}
-          <div className="bottom-bar-right">
-            <button className="bottom-bar-button" title="채팅">
-              💬
-            </button>
-            <button className="bottom-bar-button" title="설정">
-              ⚙️
-            </button>
-            <button className="bottom-bar-button" title="메뉴">
-              ☰
-            </button>
-          </div>
+        <div className="game-back-button-container">
+          <button className="game-back-button" onClick={handleBack}>
+            ← 뒤로가기
+          </button>
         </div>
       )}
 
@@ -1116,6 +1090,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
             setShowRoomPopup(true);
           }}
           selectedRoomId={selectedRoom?.roomId}
+          onCreateRoom={handleCreateRoom}
         />
       )}
     </div>
@@ -2343,7 +2318,7 @@ function TimeIndicator({ isInPersonalRoom }) {
  * 좌측 방 목록 패널 컴포넌트
  * GPS 기반 주변 방 목록을 표시하고 클릭 시 확대 보기
  */
-function RoomListPanel({ rooms, onRoomSelect, selectedRoomId }) {
+function RoomListPanel({ rooms, onRoomSelect, selectedRoomId, onCreateRoom }) {
   const [expandedRoomId, setExpandedRoomId] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -2398,12 +2373,21 @@ function RoomListPanel({ rooms, onRoomSelect, selectedRoomId }) {
     <div className={`room-list-panel ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="room-list-header">
         <h3>📍 주변 게임방 ({rooms.length})</h3>
-        <button 
-          className="collapse-btn"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {isCollapsed ? '▶' : '◀'}
-        </button>
+        <div className="header-buttons">
+          <button 
+            className="create-room-btn"
+            onClick={onCreateRoom}
+            title="내 방 만들기"
+          >
+            🏠
+          </button>
+          <button 
+            className="collapse-btn"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+          >
+            {isCollapsed ? '▶' : '◀'}
+          </button>
+        </div>
       </div>
       
       {!isCollapsed && (
