@@ -663,13 +663,11 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
       console.warn('⚠️ WebSocket 연결 안됨 - 방 생성 브로드캐스트 실패');
     }
     
-    // 모달 닫기
-    console.log('🚪 개인 룸 모달 닫기');
-    setShowPersonalRoomModal(false);
-    
-    // 개인 룸 3D 뷰로 전환
-    console.log('🚀 개인 룸 3D 뷰로 전환');
-    setIsInPersonalRoom(true);
+    // 모달을 닫지 않고 대기실(팝업)을 플레이어에게 보여줌
+    // 사용자가 '입장하기'를 누르면 실제로 입장 처리함
+    console.log('💡 개인 룸 생성: 팝업 대기 모드로 전환 (모달 유지)');
+    setPersonalRoomMode('waiting');
+    setShowPersonalRoomModal(true);
   }, [userLocation, userId, username]);
 
   // 친구 초대 처리
@@ -1091,6 +1089,8 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           }}
           selectedRoomId={selectedRoom?.roomId}
           onCreateRoom={handleCreateRoom}
+          onJoinRoom={handleJoinPublicRoom}
+          userId={userId}
         />
       )}
     </div>
@@ -1199,7 +1199,8 @@ function CharacterViewer({
       return;
     }
 
-    const speed = shift ? 20 : 10; // 메인 맵과 동일한 속도 (걷기: 10, 뛰기: 20)
+    // 개인 룸에서는 이동 속도를 줄임 (보행: 5, 뛰기: 10)
+    const speed = isInPersonalRoom ? (shift ? 10 : 5) : (shift ? 20 : 10);
     const direction = new THREE.Vector3();
 
     if (forward) direction.z -= 1;
@@ -2318,7 +2319,7 @@ function TimeIndicator({ isInPersonalRoom }) {
  * 좌측 방 목록 패널 컴포넌트
  * GPS 기반 주변 방 목록을 표시하고 클릭 시 확대 보기
  */
-function RoomListPanel({ rooms, onRoomSelect, selectedRoomId, onCreateRoom }) {
+function RoomListPanel({ rooms, onRoomSelect, selectedRoomId, onCreateRoom, onJoinRoom, userId }) {
   const [expandedRoomId, setExpandedRoomId] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -2421,6 +2422,21 @@ function RoomListPanel({ rooms, onRoomSelect, selectedRoomId, onCreateRoom }) {
                       </span>
                       {room.isLocked && <span className="lock-icon">🔒</span>}
                     </div>
+
+                    {/* 내 방인 경우 헤더에 입장 버튼 표시 (바로 입장 가능) */}
+                    {String(room.hostId) === String(userId) && (
+                      <div className="my-room-action">
+                        <button
+                          className="my-room-enter-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onJoinRoom?.(room);
+                          }}
+                        >
+                          🚪 입장 (내 방)
+                        </button>
+                      </div>
+                    )}
                   </div>
                   
                   {/* 확대 시 추가 정보 */}
@@ -2454,10 +2470,28 @@ function RoomListPanel({ rooms, onRoomSelect, selectedRoomId, onCreateRoom }) {
                          room.currentPlayers >= room.maxPlayers ? '인원 초과' : 
                          '🚪 입장하기'}
                       </button>
+
+                      {/* 내 방용 추가 입장 버튼 (확장 영역에도 표시) */}
+                      {String(room.hostId) === String(userId) && (
+                        <button
+                          className="join-btn my-room-join-btn"
+                          onClick={(e) => { e.stopPropagation(); onJoinRoom?.(room); }}
+                        >
+                          🚪 내 방 입장
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
               ))}
+
+              {/* 스타일 추가를 위한 inline style block (간단 추가) */}
+              <style>{`
+                .my-room-action { margin-left: 8px; }
+                .my-room-enter-btn { padding:6px 8px; background: linear-gradient(135deg,#4CAF50,#45a049); border:none; color:#fff; border-radius:8px; cursor:pointer; font-weight:600; }
+                .my-room-enter-btn:hover { transform: translateY(-1px); }
+                .my-room-join-btn { margin-left:8px; background: linear-gradient(135deg,#00bcd4,#0097a7); }
+              `}</style>
             </div>
           )}
         </div>
