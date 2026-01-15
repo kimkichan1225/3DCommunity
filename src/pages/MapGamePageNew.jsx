@@ -28,6 +28,12 @@ const PORTAL_ENTER_DISTANCE = 5;
 const EXIT_PORTAL_POSITION = [0, 0, -18]; // PersonalRoom3D.jsx의 ExitPortal 위치와 동일
 const EXIT_DISTANCE = 3; // 출구 포탈 진입 거리
 
+// Map-specific debug toggle (false to silence verbose map logs)
+const MAP_LOG = false;
+const mapLog = (...args) => {
+  if (MAP_LOG) console.log(...args);
+};
+
 /**
  * 새로운 지도 게임 페이지
  * 좌측: Three.js 3D 캐릭터 (Level1과 동일한 이동 로직)
@@ -210,7 +216,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
         return;
       }
       
-      console.log('📍 [MapGamePage] 위치 업데이트 수신:', {
+      mapLog('📍 [MapGamePage] 위치 업데이트 수신:', {
         userId: data.userId,
         username: data.username,
         position: [data.x, data.y, data.z],
@@ -946,7 +952,7 @@ function MapGamePageNew({ onShowCreateRoom, onShowLobby }) {
           {/* 다른 플레이어들 (메인 맵에 있는 플레이어만) */}
           {(() => {
             const playersOnMap = Object.values(otherPlayers).filter(player => !player.currentRoomId);
-            console.log('👥 [MapGamePage] 메인 맵 플레이어 렌더링:', {
+            mapLog('👥 [MapGamePage] 메인 맵 플레이어 렌더링:', {
               total: Object.keys(otherPlayers).length,
               onMap: playersOnMap.length,
               players: playersOnMap.map(p => ({ id: p.userId, name: p.username, roomId: p.currentRoomId }))
