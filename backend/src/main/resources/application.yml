@@ -6,12 +6,13 @@ spring:
   main:
     lazy-initialization: ${LAZY_INIT:true}
 
-  # 데이터베이스 설정 (PostgreSQL - Supabase Session Pooler)
+  # 데이터베이스 설정 (PostgreSQL - Supabase 등)
+  # 운영(Railway), 개발 모두 환경변수로 주입 — 절대 하드코딩 금지
   datasource:
-    url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require&prepareThreshold=0
+    url: ${DB_URL}
     driver-class-name: org.postgresql.Driver
-    username: postgres.krnevmhwahnxiqvyrjeu
-    password: "!Q@W#E$R!"
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: 3
       minimum-idle: 1
